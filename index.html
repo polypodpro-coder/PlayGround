@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Generator - STL Export</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Toolbar -->
+        <header id="toolbar">
+            <div class="toolbar-left">
+                <h1>3D Model Generator</h1>
+            </div>
+            <div class="toolbar-center">
+                <button id="btn-select" class="tool-btn active" title="Select & Transform">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+                    Select
+                </button>
+                <div class="separator"></div>
+                <button id="btn-move" class="tool-btn" title="Move">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+                    Move
+                </button>
+                <button id="btn-rotate" class="tool-btn" title="Rotate">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    Rotate
+                </button>
+                <button id="btn-scale" class="tool-btn" title="Scale">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/><path d="M7 14V10h4"/></svg>
+                    Scale
+                </button>
+            </div>
+            <div class="toolbar-right">
+                <button id="btn-undo" class="icon-btn" title="Undo (Ctrl+Z)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6.69 3L3 13"/></svg>
+                </button>
+                <button id="btn-redo" class="icon-btn" title="Redo (Ctrl+Y)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016.69 3L21 13"/></svg>
+                </button>
+                <div class="separator"></div>
+                <button id="btn-export" class="primary-btn" title="Export as STL">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    Export STL
+                </button>
+            </div>
+        </header>
+
+        <div id="main-content">
+            <!-- Left Panel - Primitives & Reference -->
+            <aside id="left-panel">
+                <div class="panel-section">
+                    <h3>Add Primitives</h3>
+                    <div class="primitive-grid">
+                        <button class="prim-btn" data-shape="box" title="Box">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                            <span>Box</span>
+                        </button>
+                        <button class="prim-btn" data-shape="sphere" title="Sphere">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="10" ry="4"/>
+                                <path d="M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/>
+                            </svg>
+                            <span>Sphere</span>
+                        </button>
+                        <button class="prim-btn" data-shape="cylinder" title="Cylinder">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/>
+                                <ellipse cx="12" cy="19" rx="8" ry="3" stroke-dasharray="4 2"/>
+                            </svg>
+                            <span>Cylinder</span>
+                        </button>
+                        <button class="prim-btn" data-shape="cone" title="Cone">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2L4 20"/><path d="M12 2l8 18"/>
+                                <ellipse cx="12" cy="20" rx="8" ry="2.5"/>
+                            </svg>
+                            <span>Cone</span>
+                        </button>
+                        <button class="prim-btn" data-shape="torus" title="Torus">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <ellipse cx="12" cy="12" rx="10" ry="4"/>
+                                <path d="M6 12c0-1.66 2.69-3 6-3s6 1.34 6 3-2.69 3-6 3-6-1.34-6-3"/>
+                            </svg>
+                            <span>Torus</span>
+                        </button>
+                        <button class="prim-btn" data-shape="plane" title="Plane">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M2 16l6-4 6 4 6-4"/><path d="M2 12l6-4 6 4 6-4"/>
+                            </svg>
+                            <span>Plane</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Boolean Operations</h3>
+                    <div class="bool-grid">
+                        <button id="btn-union" class="bool-btn" title="Union: Merge selected objects">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="12" r="7"/><circle cx="15" cy="12" r="7"/>
+                            </svg>
+                            Union
+                        </button>
+                        <button id="btn-subtract" class="bool-btn" title="Subtract: Remove second from first">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="12" r="7"/><circle cx="15" cy="12" r="7" stroke-dasharray="3 3"/>
+                            </svg>
+                            Subtract
+                        </button>
+                        <button id="btn-intersect" class="bool-btn" title="Intersect: Keep only overlapping area">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="12" r="7" stroke-dasharray="3 3"/><circle cx="15" cy="12" r="7" stroke-dasharray="3 3"/>
+                                <path d="M12 6a7 7 0 010 12 7 7 0 000-12"/>
+                            </svg>
+                            Intersect
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Reference Image</h3>
+                    <div id="ref-image-area">
+                        <input type="file" id="ref-image-input" accept="image/*" hidden>
+                        <div id="ref-image-dropzone">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            <p>Drop image here or click to upload</p>
+                            <span class="hint">PNG, JPG, SVG supported</span>
+                        </div>
+                        <div id="ref-image-preview" class="hidden">
+                            <img id="ref-preview-img" alt="Reference">
+                            <div class="ref-controls">
+                                <label>Opacity: <input type="range" id="ref-opacity" min="0" max="100" value="50"></label>
+                                <label>
+                                    <input type="checkbox" id="ref-show-in-viewport" checked> Show in viewport
+                                </label>
+                                <select id="ref-plane">
+                                    <option value="front">Front View</option>
+                                    <option value="back">Back View</option>
+                                    <option value="left">Left View</option>
+                                    <option value="right">Right View</option>
+                                    <option value="top">Top View</option>
+                                    <option value="bottom">Bottom View</option>
+                                </select>
+                                <button id="btn-remove-ref" class="danger-btn">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 3D Viewport -->
+            <main id="viewport-container">
+                <canvas id="viewport"></canvas>
+                <div id="viewport-overlay">
+                    <div id="axis-indicator"></div>
+                    <div id="snap-info" class="hidden">Snap: Grid</div>
+                </div>
+                <div id="viewport-controls">
+                    <button id="btn-view-front" class="view-btn" title="Front View">Front</button>
+                    <button id="btn-view-top" class="view-btn" title="Top View">Top</button>
+                    <button id="btn-view-right" class="view-btn" title="Right View">Right</button>
+                    <button id="btn-view-persp" class="view-btn active" title="Perspective View">Persp</button>
+                </div>
+            </main>
+
+            <!-- Right Panel - Properties -->
+            <aside id="right-panel">
+                <div class="panel-section">
+                    <h3>Scene Objects</h3>
+                    <ul id="object-list"></ul>
+                </div>
+
+                <div class="panel-section" id="properties-panel">
+                    <h3>Properties</h3>
+                    <div id="no-selection">
+                        <p>Select an object to edit properties</p>
+                    </div>
+                    <div id="object-properties" class="hidden">
+                        <div class="prop-group">
+                            <label>Name</label>
+                            <input type="text" id="prop-name" class="prop-input">
+                        </div>
+                        <div class="prop-group">
+                            <label>Position</label>
+                            <div class="xyz-inputs">
+                                <div class="xyz-field">
+                                    <span class="axis-label x">X</span>
+                                    <input type="number" id="prop-pos-x" step="0.1" class="prop-input">
+                                </div>
+                                <div class="xyz-field">
+                                    <span class="axis-label y">Y</span>
+                                    <input type="number" id="prop-pos-y" step="0.1" class="prop-input">
+                                </div>
+                                <div class="xyz-field">
+                                    <span class="axis-label z">Z</span>
+                                    <input type="number" id="prop-pos-z" step="0.1" class="prop-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prop-group">
+                            <label>Rotation (deg)</label>
+                            <div class="xyz-inputs">
+                                <div class="xyz-field">
+                                    <span class="axis-label x">X</span>
+                                    <input type="number" id="prop-rot-x" step="1" class="prop-input">
+                                </div>
+                                <div class="xyz-field">
+                                    <span class="axis-label y">Y</span>
+                                    <input type="number" id="prop-rot-y" step="1" class="prop-input">
+                                </div>
+                                <div class="xyz-field">
+                                    <span class="axis-label z">Z</span>
+                                    <input type="number" id="prop-rot-z" step="1" class="prop-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prop-group">
+                            <label>Scale</label>
+                            <div class="xyz-inputs">
+                                <div class="xyz-field">
+                                    <span class="axis-label x">X</span>
+                                    <input type="number" id="prop-scl-x" step="0.1" min="0.01" class="prop-input">
+                                </div>
+                                <div class="xyz-field">
+                                    <span class="axis-label y">Y</span>
+                                    <input type="number" id="prop-scl-y" step="0.1" min="0.01" class="prop-input">
+                                </div>
+                                <div class="xyz-field">
+                                    <span class="axis-label z">Z</span>
+                                    <input type="number" id="prop-scl-z" step="0.1" min="0.01" class="prop-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prop-group">
+                            <label>Color</label>
+                            <input type="color" id="prop-color" value="#4a90d9" class="prop-color">
+                        </div>
+                        <div class="prop-group">
+                            <label>Wireframe</label>
+                            <input type="checkbox" id="prop-wireframe">
+                        </div>
+                        <div class="prop-actions">
+                            <button id="btn-duplicate" class="action-btn">Duplicate</button>
+                            <button id="btn-delete" class="danger-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Export Settings</h3>
+                    <div class="prop-group">
+                        <label>Format</label>
+                        <select id="export-format" class="prop-input">
+                            <option value="binary">STL Binary (smaller)</option>
+                            <option value="ascii">STL ASCII (readable)</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label>Filename</label>
+                        <input type="text" id="export-filename" value="model" class="prop-input">
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Status Bar -->
+        <footer id="status-bar">
+            <span id="status-objects">Objects: 0</span>
+            <span id="status-triangles">Triangles: 0</span>
+            <span id="status-info">Left-click: Select | Middle-click: Pan | Right-click: Rotate | Scroll: Zoom</span>
+        </footer>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
