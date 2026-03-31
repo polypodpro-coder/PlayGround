@@ -2,7 +2,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
-import { CSG } from 'three/addons/math/CSG.js';
+
+// CSG is optional - boolean operations will be disabled if unavailable
+let CSG = null;
+try {
+    const csgModule = await import('three/addons/math/CSG.js');
+    CSG = csgModule.CSG;
+} catch (e) {
+    console.warn('CSG module not available. Boolean operations disabled.');
+}
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -42,7 +50,7 @@ orbitControls.maxDistance = 100;
 // Transform Controls
 const transformControls = new TransformControls(camera, canvas);
 transformControls.setSize(0.75);
-scene.add(transformControls.getHelper());
+scene.add(transformControls);
 
 transformControls.addEventListener('dragging-changed', (e) => {
     orbitControls.enabled = !e.value;
@@ -307,6 +315,11 @@ saveUndoState();
 
 // ── Boolean Operations ─────────────────────────────────────────────────────
 function performBoolean(operation) {
+    if (!CSG) {
+        showToast('Boolean operations not available (CSG module failed to load)', 'error');
+        return;
+    }
+
     if (state.objects.length < 2) {
         showToast('Need at least 2 objects for boolean operations', 'error');
         return;
