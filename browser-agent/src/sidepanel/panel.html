@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Browser Agent</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <h1>Local Agent</h1>
+      <button id="open-options" class="link" type="button">Settings</button>
+    </header>
+
+    <form id="goal-form" class="goal">
+      <textarea
+        id="goal-input"
+        rows="3"
+        placeholder="What should the agent do on this page?&#10;e.g. Find the support email address"
+      ></textarea>
+      <div class="goal-actions">
+        <button id="start" type="submit" class="primary">Start</button>
+        <button id="abort" type="button" class="ghost" hidden>Stop</button>
+      </div>
+    </form>
+
+    <p id="status" class="status"></p>
+
+    <section id="pending" class="card pending" hidden>
+      <div class="card-head">
+        <span class="badge" id="pending-tool"></span>
+        <span class="step" id="pending-step"></span>
+      </div>
+      <p class="action" id="pending-description"></p>
+      <p class="reasoning" id="pending-reasoning"></p>
+      <p class="warn" id="pending-warning" hidden></p>
+
+      <label class="edit" id="edit-wrap" hidden>
+        <span id="edit-label">Text</span>
+        <input id="edit-input" type="text" />
+      </label>
+
+      <div class="card-actions">
+        <button id="approve" class="primary" type="button">Approve</button>
+        <button id="skip" class="ghost" type="button">Reject</button>
+      </div>
+    </section>
+
+    <section id="question" class="card question" hidden>
+      <div class="card-head"><span class="badge ask">question</span></div>
+      <p class="action" id="question-text"></p>
+      <form id="answer-form">
+        <input id="answer-input" type="text" placeholder="Your answer" />
+        <button class="primary" type="submit">Send</button>
+      </form>
+    </section>
+
+    <section id="result" class="card result" hidden>
+      <div class="card-head"><span class="badge done">done</span></div>
+      <p class="action" id="result-text"></p>
+      <button id="reset" class="ghost" type="button">New goal</button>
+    </section>
+
+    <section id="failure" class="card failure" hidden>
+      <div class="card-head"><span class="badge error">stopped</span></div>
+      <p class="action" id="failure-text"></p>
+      <button id="reset-error" class="ghost" type="button">New goal</button>
+    </section>
+
+    <h2 class="history-title" id="history-title" hidden>Steps</h2>
+    <ol id="history" class="history"></ol>
+
+    <script type="module" src="panel.js"></script>
+  </body>
+</html>

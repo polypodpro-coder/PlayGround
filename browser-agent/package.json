@@ -1,0 +1,17 @@
+{
+  "name": "local-browser-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome MV3 extension: a goal-driven browsing agent powered by a local LLM.",
+  "scripts": {
+    "test": "node --test test/unit.test.mjs test/dom.test.mjs test/extension.test.mjs",
+    "test:unit": "node --test test/unit.test.mjs",
+    "test:dom": "node --test test/dom.test.mjs",
+    "test:extension": "node --test test/extension.test.mjs",
+    "mock-llm": "node test/mock-llm-server.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

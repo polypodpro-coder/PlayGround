@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Browser Agent — Settings</title>
+    <link rel="stylesheet" href="../sidepanel/panel.css" />
+    <style>
+      body {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      label {
+        display: block;
+        margin-bottom: 16px;
+      }
+      label > span {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      label small {
+        display: block;
+        color: var(--muted);
+        font-weight: 400;
+        margin-bottom: 5px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 20px;
+      }
+      #test-result {
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Local Browser Agent</h1>
+    <p class="status">
+      Everything runs on this machine. Page contents are sent to the endpoint
+      below and nowhere else — keep it pointed at localhost.
+    </p>
+
+    <label>
+      <span>LM Studio endpoint</span>
+      <small>The OpenAI-compatible base URL. LM Studio's default is shown.</small>
+      <input id="endpoint" type="text" placeholder="http://localhost:1234/v1" />
+    </label>
+
+    <label>
+      <span>Model</span>
+      <small>Must match the model identifier LM Studio has loaded.</small>
+      <input id="model" type="text" placeholder="qwen3-4b-instruct-2507" />
+    </label>
+
+    <label>
+      <span>Temperature</span>
+      <small>Low is better here — 0.2 keeps a small model on task.</small>
+      <input id="temperature" type="text" />
+    </label>
+
+    <label>
+      <span>Step limit</span>
+      <small>The run stops after this many actions.</small>
+      <input id="maxSteps" type="text" />
+    </label>
+
+    <label>
+      <span>Request timeout (seconds)</span>
+      <small>Raise this if your GPU is slow to produce the first token.</small>
+      <input id="timeout" type="text" />
+    </label>
+
+    <label>
+      <span>Domain allowlist</span>
+      <small>
+        One host per line, e.g. <code>wikipedia.org</code>. Leave empty to allow
+        every site. Navigations outside the list are flagged in the approval card.
+      </small>
+      <textarea id="allowlist" rows="4"></textarea>
+    </label>
+
+    <div class="row">
+      <button id="save" class="primary" type="button">Save</button>
+      <button id="test" class="ghost" type="button">Test connection</button>
+      <span id="test-result"></span>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sign in — Fixture</title>
+  </head>
+  <body>
+    <main>
+      <h1>Sign in to Fixture</h1>
+      <p>Support: help@fixture.test</p>
+
+      <form id="login">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com" />
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" value="hunter2" />
+
+        <label for="plan">Plan</label>
+        <select id="plan">
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+          <option value="team">Team</option>
+        </select>
+
+        <label><input id="remember" type="checkbox" /> Remember me</label>
+
+        <button id="submit" type="button">Sign in</button>
+      </form>
+
+      <a id="forgot" href="/forgot">Forgot password?</a>
+      <button id="hidden-btn" style="display: none">Invisible</button>
+    </main>
+
+    <script>
+      // Records what the actuator did, so tests can assert on real effects
+      // rather than on the actuator's own return value.
+      window.__events = [];
+      for (const id of ['email', 'password', 'plan']) {
+        document.getElementById(id).addEventListener('input', (e) => {
+          window.__events.push(`input:${id}:${e.target.value}`);
+        });
+        document.getElementById(id).addEventListener('change', (e) => {
+          window.__events.push(`change:${id}:${e.target.value}`);
+        });
+      }
+      document.getElementById('submit').addEventListener('click', () => {
+        window.__events.push('click:submit');
+        document.title = 'Signed in — Fixture';
+      });
+    </script>
+  </body>
+</html>

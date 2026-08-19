@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Local Browser Agent",
+  "version": "0.1.0",
+  "description": "Goal-driven browsing agent powered by a local LLM (LM Studio). Every action requires your approval.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/panel.html"
+  },
+  "options_page": "src/options/options.html",
+  "action": {
+    "default_title": "Local Browser Agent"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/content/highlight.js",
+        "src/content/observer.js",
+        "src/content/actuator.js",
+        "src/content/index.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}
