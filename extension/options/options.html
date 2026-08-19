@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local Browser Agent — Settings</title>
+    <link rel="stylesheet" href="../sidepanel/sidepanel.css" />
+    <style>
+      body { max-width: 640px; margin: 0 auto; padding: 24px; height: auto; }
+      label.field { display: block; margin-bottom: 16px; }
+      label.field span { display: block; margin-bottom: 4px; font-weight: 600; }
+      label.field small { display: block; color: var(--muted); font-weight: 400; margin-top: 4px; }
+      input[type="number"], select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
+      #status { color: var(--ok); }
+    </style>
+  </head>
+  <body>
+    <h1>Local Browser Agent — Settings</h1>
+
+    <label class="field">
+      <span>Ollama endpoint</span>
+      <input type="text" id="endpoint" />
+      <small>Your local Ollama server. Default <code>http://localhost:11434</code>.</small>
+    </label>
+
+    <label class="field">
+      <span>Model</span>
+      <select id="model"></select>
+      <small id="model-hint">Loading installed models…</small>
+    </label>
+
+    <label class="field">
+      <span>Max steps per task</span>
+      <input type="number" id="maxSteps" min="1" max="100" />
+    </label>
+
+    <label class="field">
+      <span>Temperature</span>
+      <input type="number" id="temperature" min="0" max="1" step="0.1" />
+      <small>Low values keep the agent decisive. 0.2 is a good default.</small>
+    </label>
+
+    <label class="field">
+      <span>Context window (num_ctx)</span>
+      <input type="number" id="contextWindow" min="2048" max="131072" step="1024" />
+      <small>Bigger sees more of the page but uses more RAM/VRAM.</small>
+    </label>
+
+    <label class="check"><input type="checkbox" id="stepMode" /> Ask me to approve every action</label>
+    <label class="check"><input type="checkbox" id="allowNavigate" /> Let the agent open URLs directly</label>
+    <label class="check"><input type="checkbox" id="useVision" /> Send a screenshot each step (needs a vision model)</label>
+
+    <div class="row">
+      <button id="save" class="primary">Save</button>
+      <button id="test">Test connection</button>
+      <span id="status"></span>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

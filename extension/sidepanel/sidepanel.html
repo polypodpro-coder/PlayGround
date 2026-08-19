@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Browser Agent</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="dot" id="status-dot"></span>
+        <h1>Local Browser Agent</h1>
+      </div>
+      <button id="settings" class="ghost" title="Settings">Settings</button>
+    </header>
+
+    <section class="composer">
+      <textarea id="goal" rows="3" placeholder="What should I do? e.g. Find the top 3 Hacker News stories about Rust and summarise them"></textarea>
+      <div class="row">
+        <button id="run" class="primary">Run</button>
+        <button id="stop" class="danger" disabled>Stop</button>
+        <label class="check"><input type="checkbox" id="stepMode" /> Approve each action</label>
+      </div>
+      <p class="meta" id="target">…</p>
+    </section>
+
+    <section id="approval" class="approval hidden">
+      <p id="approval-text"></p>
+      <input id="approval-note" type="text" placeholder="Reply / note (optional)" />
+      <div class="row">
+        <button id="approve" class="primary">Continue</button>
+        <button id="reject" class="danger">Cancel</button>
+      </div>
+    </section>
+
+    <section id="log" class="log" aria-live="polite"></section>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>
