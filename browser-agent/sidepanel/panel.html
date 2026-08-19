@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local Browser Agent</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Local Browser Agent</h1>
+      <span id="model-badge" class="badge">…</span>
+    </header>
+
+    <section class="composer">
+      <textarea id="goal" rows="3" placeholder="e.g. Find the top Hacker News story about Rust and summarise it"></textarea>
+      <div class="row">
+        <button id="run" class="primary">Run</button>
+        <button id="stop" disabled>Stop</button>
+        <button id="clear" class="ghost">Clear log</button>
+        <button id="options" class="ghost">Settings</button>
+      </div>
+    </section>
+
+    <section id="ask" class="ask hidden">
+      <p id="ask-question"></p>
+      <div class="row">
+        <input id="ask-input" type="text" placeholder="Your answer…" />
+        <button id="ask-send" class="primary">Send</button>
+      </div>
+    </section>
+
+    <ul id="log" class="log"></ul>
+
+    <script type="module" src="panel.js"></script>
+  </body>
+</html>

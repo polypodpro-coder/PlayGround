@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local Browser Agent — Settings</title>
+    <link rel="stylesheet" href="../sidepanel/panel.css" />
+    <style>
+      body { max-width: 560px; margin: 0 auto; padding: 24px; }
+      label { display: block; margin-top: 14px; font-weight: 600; }
+      .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+      select, input[type="number"] { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+      #status { margin-top: 14px; min-height: 20px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <h1>Local Browser Agent — Settings</h1>
+
+    <label>Provider
+      <select id="provider">
+        <option value="ollama">Ollama (/api/chat)</option>
+        <option value="openai">OpenAI-compatible (/v1/chat/completions)</option>
+      </select>
+    </label>
+
+    <label>Server endpoint
+      <input id="endpoint" type="text" placeholder="http://localhost:11434" />
+      <span class="hint">Ollama: http://localhost:11434 · LM Studio: http://localhost:1234 · llama.cpp: http://localhost:8080</span>
+    </label>
+
+    <label>Model
+      <input id="model" type="text" placeholder="qwen3:8b" list="model-list" />
+      <datalist id="model-list"></datalist>
+      <span class="hint">Tool-following models work best: qwen3:8b, qwen2.5:14b, llama3.1:8b, mistral-small.</span>
+    </label>
+
+    <label>API key <span class="hint">(only if your local server requires one)</span>
+      <input id="apiKey" type="text" placeholder="" />
+    </label>
+
+    <label>Temperature
+      <input id="temperature" type="number" min="0" max="1" step="0.1" />
+    </label>
+
+    <label>Max steps per task
+      <input id="maxSteps" type="number" min="1" max="200" />
+    </label>
+
+    <label>Allowed domains <span class="hint">(comma separated, empty = any site)</span>
+      <input id="allowedDomains" type="text" placeholder="wikipedia.org, news.ycombinator.com" />
+    </label>
+
+    <div class="row">
+      <button id="save" class="primary">Save</button>
+      <button id="test">Test connection</button>
+    </div>
+    <p id="status"></p>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

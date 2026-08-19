@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Local Browser Agent",
+  "version": "0.1.0",
+  "description": "Goal-driven browsing agent powered by a local LLM (Ollama or any OpenAI-compatible server). Runs entirely on your machine.",
+  "minimum_chrome_version": "116",
+  "permissions": ["tabs", "scripting", "storage", "activeTab", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/panel.html"
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_title": "Local Browser Agent"
+  }
+}
