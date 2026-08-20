@@ -3,13 +3,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 
-// CSG is optional - boolean operations will be disabled if unavailable
-let CSG = null;
+// Boolean operations are backed by three-bvh-csg. If the module cannot be
+// loaded the feature degrades gracefully instead of throwing at import time.
+let csg = null;
 try {
-    const csgModule = await import('three/addons/math/CSG.js');
-    CSG = csgModule.CSG;
+    const { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION } = await import('three-bvh-csg');
+    const evaluator = new Evaluator();
+    evaluator.attributes = ['position', 'normal'];
+    evaluator.useGroups = false;
+    csg = {
+        evaluator,
+        Brush,
+        ops: { union: ADDITION, subtract: SUBTRACTION, intersect: INTERSECTION },
+    };
 } catch (e) {
-    console.warn('CSG module not available. Boolean operations disabled.');
+    console.warn('three-bvh-csg unavailable — boolean operations disabled.', e);
 }
 
 // ── App State ──────────────────────────────────────────────────────────────
@@ -27,14 +35,15 @@ const state = {
 // ── Scene Setup ────────────────────────────────────────────────────────────
 const canvas = document.getElementById('viewport');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a2e);
+scene.background = new THREE.Color(0x151a2b);
+scene.fog = new THREE.Fog(0x151a2b, 26, 60);
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
 camera.position.set(5, 4, 6);
@@ -80,15 +89,15 @@ dirLight.shadow.camera.top = 10;
 dirLight.shadow.camera.bottom = -10;
 scene.add(dirLight);
 
-const fillLight = new THREE.DirectionalLight(0x8899bb, 0.3);
+const fillLight = new THREE.DirectionalLight(0x8fa6d8, 0.32);
 fillLight.position.set(-3, 5, -5);
 scene.add(fillLight);
 
-const hemiLight = new THREE.HemisphereLight(0x6688cc, 0x443322, 0.3);
+const hemiLight = new THREE.HemisphereLight(0x6f8ecf, 0x3a2f45, 0.35);
 scene.add(hemiLight);
 
 // ── Grid ───────────────────────────────────────────────────────────────────
-const gridHelper = new THREE.GridHelper(20, 20, 0x3a4a6a, 0x2a3a5e);
+const gridHelper = new THREE.GridHelper(20, 20, 0x4d6a8f, 0x2b3550);
 gridHelper.material.opacity = 0.5;
 gridHelper.material.transparent = true;
 scene.add(gridHelper);
@@ -110,14 +119,25 @@ function onResize() {
     camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', onResize);
+new ResizeObserver(onResize).observe(document.getElementById('viewport-container'));
 onResize();
 
 // ── Utility ────────────────────────────────────────────────────────────────
+let toastHost = null;
 function showToast(msg, type = '') {
+    if (!toastHost) {
+        toastHost = document.createElement('div');
+        toastHost.id = 'toast-host';
+        toastHost.setAttribute('role', 'status');
+        toastHost.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toastHost);
+    }
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = `toast ${type}`.trim();
     toast.textContent = msg;
-    document.body.appendChild(toast);
+    toastHost.appendChild(toast);
+    // Keep the stack short so a burst of messages cannot cover the viewport.
+    while (toastHost.children.length > 4) toastHost.firstElementChild.remove();
     setTimeout(() => toast.remove(), 3000);
 }
 
@@ -125,7 +145,7 @@ function radToDeg(r) { return r * (180 / Math.PI); }
 function degToRad(d) { return d * (Math.PI / 180); }
 
 // ── Object Management ──────────────────────────────────────────────────────
-function createMaterial(color = 0x4a90d9) {
+function createMaterial(color = 0x5b9bd5) {
     return new THREE.MeshStandardMaterial({
         color,
         roughness: 0.5,
@@ -234,43 +254,57 @@ function duplicateSelected() {
 
 // ── Undo / Redo ────────────────────────────────────────────────────────────
 function serializeState() {
-    return state.objects.map(obj => ({
-        name: obj.userData.name,
-        type: obj.userData.type,
-        position: obj.position.toArray(),
-        rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-        scale: obj.scale.toArray(),
-        color: obj.material.color.getHex(),
-        wireframe: obj.material.wireframe,
-        geometryType: obj.userData.type,
-        visible: obj.visible,
-    }));
+    return {
+        counter: state.objectCounter,
+        selected: state.selected ? state.selected.uuid : null,
+        objects: state.objects.map(obj => ({
+            uuid: obj.uuid,
+            name: obj.userData.name,
+            type: obj.userData.type,
+            position: obj.position.toArray(),
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: obj.scale.toArray(),
+            color: obj.material.color.getHex(),
+            wireframe: obj.material.wireframe,
+            geometryType: obj.userData.type,
+            visible: obj.visible,
+            // Boolean results have no parametric description, so the buffers
+            // themselves are the only way to bring them back.
+            geometry: obj.userData.type === 'boolean' ? obj.geometry.toJSON() : null,
+        })),
+    };
+}
+
+function geometryFromSnapshot(data) {
+    if (data.geometry) {
+        return new THREE.BufferGeometryLoader().parse(data.geometry);
+    }
+    switch (data.geometryType) {
+        case 'box': return new THREE.BoxGeometry(1, 1, 1);
+        case 'sphere': return new THREE.SphereGeometry(0.5, 32, 24);
+        case 'cylinder': return new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+        case 'cone': return new THREE.ConeGeometry(0.5, 1, 32);
+        case 'torus': return new THREE.TorusGeometry(0.5, 0.18, 24, 48);
+        case 'plane': return new THREE.PlaneGeometry(2, 2, 1, 1);
+        default: return new THREE.BoxGeometry(1, 1, 1);
+    }
 }
 
 function restoreState(snapshot) {
-    // Remove current objects
+    // Detach first: the gizmo must never keep pointing at a disposed mesh.
+    transformControls.detach();
     state.objects.forEach(obj => {
-        transformControls.detach();
         scene.remove(obj);
         obj.geometry.dispose();
         obj.material.dispose();
     });
     state.objects = [];
     state.selected = null;
+    state.objectCounter = snapshot.counter ?? state.objectCounter;
 
     // Restore from snapshot
-    snapshot.forEach(data => {
-        let geometry;
-        switch (data.geometryType) {
-            case 'box': geometry = new THREE.BoxGeometry(1, 1, 1); break;
-            case 'sphere': geometry = new THREE.SphereGeometry(0.5, 32, 24); break;
-            case 'cylinder': geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); break;
-            case 'cone': geometry = new THREE.ConeGeometry(0.5, 1, 32); break;
-            case 'torus': geometry = new THREE.TorusGeometry(0.5, 0.18, 24, 48); break;
-            case 'plane': geometry = new THREE.PlaneGeometry(2, 2, 1, 1); break;
-            default: geometry = new THREE.BoxGeometry(1, 1, 1);
-        }
-
+    snapshot.objects.forEach(data => {
+        const geometry = geometryFromSnapshot(data);
         const mat = createMaterial(data.color);
         mat.wireframe = data.wireframe;
         const mesh = new THREE.Mesh(geometry, mat);
@@ -282,8 +316,10 @@ function restoreState(snapshot) {
         mesh.userData.name = data.name;
         mesh.userData.type = data.geometryType;
         mesh.visible = data.visible;
+        mesh.userData.uuid = data.uuid;
         scene.add(mesh);
         state.objects.push(mesh);
+        if (data.uuid && data.uuid === snapshot.selected) selectObject(mesh);
     });
 
     updateObjectList();
@@ -315,8 +351,8 @@ saveUndoState();
 
 // ── Boolean Operations ─────────────────────────────────────────────────────
 function performBoolean(operation) {
-    if (!CSG) {
-        showToast('Boolean operations not available (CSG module failed to load)', 'error');
+    if (!csg) {
+        showToast('Boolean operations unavailable (CSG module failed to load)', 'error');
         return;
     }
 
@@ -330,53 +366,36 @@ function performBoolean(operation) {
         return;
     }
 
-    // Use the selected object as A and the next object in the list as B
+    // A is the selected object; B is the most recently added other object.
     const objA = state.selected;
-    const otherObjects = state.objects.filter(o => o !== objA);
-
-    if (otherObjects.length === 0) {
-        showToast('Need a second object', 'error');
-        return;
-    }
-
-    // Prompt-like: use the last added object that isn't selected
-    const objB = otherObjects[otherObjects.length - 1];
+    const objB = state.objects.filter(o => o !== objA).pop();
 
     try {
-        // Update matrices
-        objA.updateMatrix();
-        objB.updateMatrix();
+        const brushA = toBrush(objA);
+        const brushB = toBrush(objB);
 
-        let resultCSG;
-        const csgA = CSG.fromMesh(objA);
-        const csgB = CSG.fromMesh(objB);
+        const result = csg.evaluator.evaluate(brushA, brushB, csg.ops[operation]);
 
-        switch (operation) {
-            case 'union':
-                resultCSG = csgA.union(csgB);
-                break;
-            case 'subtract':
-                resultCSG = csgA.subtract(csgB);
-                break;
-            case 'intersect':
-                resultCSG = csgA.intersect(csgB);
-                break;
-        }
-
-        const resultMesh = CSG.toMesh(resultCSG, objA.matrix, objA.material.clone());
+        // Bake the world transform into the geometry, then reset the mesh so
+        // its handles sit on the result rather than on A's old origin.
+        const resultMesh = new THREE.Mesh(result.geometry.clone(), objA.material.clone());
+        resultMesh.geometry.computeVertexNormals();
+        resultMesh.geometry.computeBoundingBox();
+        resultMesh.geometry.computeBoundingSphere();
         resultMesh.castShadow = true;
         resultMesh.receiveShadow = true;
         resultMesh.userData.name = `Boolean_${++state.objectCounter}`;
         resultMesh.userData.type = 'boolean';
 
+        [brushA, brushB, result].forEach(b => b.geometry.dispose());
+
         // Remove originals
         transformControls.detach();
-        scene.remove(objA);
-        scene.remove(objB);
-        objA.geometry.dispose();
-        objA.material.dispose();
-        objB.geometry.dispose();
-        objB.material.dispose();
+        [objA, objB].forEach(obj => {
+            scene.remove(obj);
+            obj.geometry.dispose();
+            obj.material.dispose();
+        });
         state.objects = state.objects.filter(o => o !== objA && o !== objB);
 
         scene.add(resultMesh);
@@ -385,16 +404,33 @@ function performBoolean(operation) {
         updateObjectList();
         updateStatusBar();
         saveUndoState();
-        showToast(`Boolean ${operation} complete`, 'success');
+        showToast(`${objA.userData.name} ${operation} ${objB.userData.name}`, 'success');
     } catch (err) {
         console.error('Boolean operation failed:', err);
         showToast(`Boolean ${operation} failed: ${err.message}`, 'error');
     }
 }
 
+// three-bvh-csg operates on world-space brushes, so the mesh transform is
+// baked in before evaluating and the result is left in world space.
+function toBrush(mesh) {
+    mesh.updateMatrixWorld(true);
+    const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+    geometry.deleteAttribute('uv');
+    const brush = new csg.Brush(geometry.toNonIndexed());
+    geometry.dispose();
+    brush.updateMatrixWorld(true);
+    return brush;
+}
+
 // ── Reference Image ────────────────────────────────────────────────────────
 function loadReferenceImage(file) {
+    if (!file.type.startsWith('image/')) {
+        showToast('That file is not an image', 'error');
+        return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => showToast('Could not read that image', 'error');
     reader.onload = (e) => {
         const dataUrl = e.target.result;
         state.refImage = dataUrl;
@@ -417,6 +453,7 @@ function addRefImageToViewport(dataUrl) {
     removeRefImageFromViewport();
 
     const texture = new THREE.TextureLoader().load(dataUrl, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
         const aspect = tex.image.width / tex.image.height;
         const height = 5;
         const width = height * aspect;
@@ -432,6 +469,8 @@ function addRefImageToViewport(dataUrl) {
 
         const mesh = new THREE.Mesh(geometry, material);
         mesh.userData.isReference = true;
+        mesh.renderOrder = -1;
+        mesh.visible = document.getElementById('ref-show-in-viewport').checked;
         applyRefPlane(mesh);
         scene.add(mesh);
         state.refMesh = mesh;
@@ -490,15 +529,18 @@ function exportSTL() {
     const format = document.getElementById('export-format').value;
     const filename = document.getElementById('export-filename').value || 'model';
 
-    // Create a temporary group for export (excludes reference images, grid, etc.)
+    const visible = state.objects.filter(obj => obj.visible);
+    if (visible.length === 0) {
+        showToast('All objects are hidden — nothing to export', 'error');
+        return;
+    }
+
+    // Temporary group holding the exported meshes only (no grid, no reference
+    // image). Mesh.clone() shares geometry and material with the source, so
+    // nothing here may be disposed afterwards.
     const exportGroup = new THREE.Group();
-    state.objects.forEach(obj => {
-        if (obj.visible) {
-            const clone = obj.clone();
-            clone.updateMatrix();
-            exportGroup.add(clone);
-        }
-    });
+    visible.forEach(obj => exportGroup.add(obj.clone()));
+    exportGroup.updateMatrixWorld(true);
 
     const exporter = new STLExporter();
     const binary = format === 'binary';
@@ -512,19 +554,25 @@ function exportSTL() {
         blob = new Blob([result], { type: 'text/plain' });
     }
 
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${filename}.stl`;
+    link.href = url;
+    link.download = `${safeFilename(filename)}.stl`;
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(link.href);
+    link.remove();
+    // Revoking synchronously can cancel the download in some browsers.
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-    // Clean up clones
-    exportGroup.children.forEach(child => {
-        child.geometry.dispose();
-        child.material.dispose();
-    });
+    // The clones share geometry and material with the live objects — just drop
+    // the references and let the group be collected.
+    exportGroup.clear();
 
-    showToast(`Exported ${filename}.stl (${binary ? 'binary' : 'ASCII'})`, 'success');
+    showToast(`Exported ${safeFilename(filename)}.stl (${binary ? 'binary' : 'ASCII'})`, 'success');
+}
+
+function safeFilename(name) {
+    return name.trim().replace(/[^\w.-]+/g, '_').replace(/^\.+/, '').slice(0, 64) || 'model';
 }
 
 // ── UI Updates ─────────────────────────────────────────────────────────────
@@ -535,15 +583,29 @@ function updateObjectList() {
     state.objects.forEach((obj) => {
         const li = document.createElement('li');
         li.className = obj === state.selected ? 'selected' : '';
-        li.innerHTML = `
-            <span class="obj-color" style="background:${obj.material.color ? '#' + obj.material.color.getHexString() : '#4a90d9'}"></span>
-            <span>${obj.userData.name}</span>
-            <span class="obj-visibility" data-obj="${obj.userData.name}">${obj.visible ? '&#128065;' : '&#128064;'}</span>
-        `;
+        if (!obj.visible) li.classList.add('hidden-object');
+
+        const swatch = document.createElement('span');
+        swatch.className = 'obj-color';
+        swatch.style.background = '#' + obj.material.color.getHexString();
+
+        const label = document.createElement('span');
+        label.className = 'obj-name';
+        label.textContent = obj.userData.name;
+
+        const eye = document.createElement('button');
+        eye.className = 'obj-visibility';
+        eye.type = 'button';
+        eye.textContent = obj.visible ? '\u{1F441}' : '\u{1F440}';
+        eye.title = obj.visible ? 'Hide object' : 'Show object';
+        eye.setAttribute('aria-label', `${obj.visible ? 'Hide' : 'Show'} ${obj.userData.name}`);
+
+        li.append(swatch, label, eye);
         li.addEventListener('click', (e) => {
-            if (e.target.classList.contains('obj-visibility')) {
+            if (e.target === eye) {
                 obj.visible = !obj.visible;
                 updateObjectList();
+                updateStatusBar();
                 return;
             }
             selectObject(obj);
@@ -583,7 +645,7 @@ function updatePropertiesPanel() {
 function updateStatusBar() {
     document.getElementById('status-objects').textContent = `Objects: ${state.objects.length}`;
     let triangles = 0;
-    state.objects.forEach(obj => {
+    state.objects.filter(o => o.visible).forEach(obj => {
         if (obj.geometry.index) {
             triangles += obj.geometry.index.count / 3;
         } else {
@@ -665,6 +727,13 @@ document.getElementById('btn-union').addEventListener('click', () => performBool
 document.getElementById('btn-subtract').addEventListener('click', () => performBoolean('subtract'));
 document.getElementById('btn-intersect').addEventListener('click', () => performBoolean('intersect'));
 
+if (!csg) {
+    document.querySelectorAll('.bool-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.title = 'Boolean operations unavailable — CSG module failed to load';
+    });
+}
+
 // Undo / Redo
 document.getElementById('btn-undo').addEventListener('click', undo);
 document.getElementById('btn-redo').addEventListener('click', redo);
@@ -704,8 +773,10 @@ bindPropInput('prop-scl-z', (obj, v) => { obj.scale.z = Math.max(0.01, v); });
 
 document.getElementById('prop-name').addEventListener('change', (e) => {
     if (state.selected) {
-        state.selected.userData.name = e.target.value;
+        state.selected.userData.name = e.target.value.trim() || state.selected.userData.name;
+        e.target.value = state.selected.userData.name;
         updateObjectList();
+        saveUndoState();
     }
 });
 
@@ -716,9 +787,14 @@ document.getElementById('prop-color').addEventListener('input', (e) => {
     }
 });
 
+document.getElementById('prop-color').addEventListener('change', () => {
+    if (state.selected) saveUndoState();
+});
+
 document.getElementById('prop-wireframe').addEventListener('change', (e) => {
     if (state.selected) {
         state.selected.material.wireframe = e.target.checked;
+        saveUndoState();
     }
 });
 
@@ -772,28 +848,37 @@ document.getElementById('btn-remove-ref').addEventListener('click', () => {
     refInput.value = '';
 });
 
-// Viewport click selection
-canvas.addEventListener('click', (e) => {
-    // Don't interfere with transform controls
+// Viewport click selection. A click only counts as a pick if the pointer
+// barely moved — otherwise it was an orbit/pan drag and the selection stands.
+const DRAG_SLOP_PX = 5;
+let pointerDownAt = null;
+
+canvas.addEventListener('pointerdown', (e) => {
+    pointerDownAt = { x: e.clientX, y: e.clientY, button: e.button };
+});
+
+canvas.addEventListener('pointerup', (e) => {
+    const down = pointerDownAt;
+    pointerDownAt = null;
+    if (!down || down.button !== 0 || e.button !== 0) return;
     if (transformControls.dragging) return;
+    if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > DRAG_SLOP_PX) return;
 
     const rect = canvas.getBoundingClientRect();
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(state.objects);
+    const pickable = state.objects.filter(o => o.visible);
+    const intersects = raycaster.intersectObjects(pickable, false);
 
-    if (intersects.length > 0) {
-        selectObject(intersects[0].object);
-    } else {
-        selectObject(null);
-    }
+    selectObject(intersects.length > 0 ? intersects[0].object : null);
 });
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
         deleteSelected();
@@ -803,10 +888,10 @@ document.addEventListener('keydown', (e) => {
         document.getElementById('btn-rotate').click();
     } else if (e.key === 's' && !e.ctrlKey) {
         document.getElementById('btn-scale').click();
-    } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+    } else if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
         e.preventDefault();
         undo();
-    } else if (e.key === 'y' && (e.ctrlKey || e.metaKey)) {
+    } else if ((e.key === 'y' || (e.key === 'Z' && e.shiftKey)) && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         redo();
     } else if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
@@ -828,11 +913,46 @@ document.addEventListener('keydown', (e) => {
 // ── Render Loop ────────────────────────────────────────────────────────────
 function animate() {
     requestAnimationFrame(animate);
+    if (document.hidden) return;
     orbitControls.update();
     renderer.render(scene, camera);
 }
 
 animate();
+
+// ── Test / debug hook ──────────────────────────────────────────────────────
+// Exposed so the automated suite can drive the app the way a user would.
+window.__app = {
+    THREE, state, scene, camera, renderer, orbitControls, transformControls,
+    addPrimitive, selectObject, deleteSelected, duplicateSelected,
+    exportSTL, performBoolean, saveUndoState, undo, redo,
+    csgAvailable: () => csg !== null,
+    reset() {
+        transformControls.detach();
+        state.objects.forEach(obj => {
+            scene.remove(obj);
+            obj.geometry.dispose();
+            obj.material.dispose();
+        });
+        state.objects = [];
+        state.selected = null;
+        state.objectCounter = 0;
+        state.undoStack = [];
+        state.redoStack = [];
+        saveUndoState();
+        updateObjectList();
+        updatePropertiesPanel();
+        updateStatusBar();
+    },
+    screenPositionOf(obj) {
+        const rect = canvas.getBoundingClientRect();
+        const v = new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld).project(camera);
+        return {
+            x: rect.left + ((v.x + 1) / 2) * rect.width,
+            y: rect.top + ((1 - v.y) / 2) * rect.height,
+        };
+    },
+};
 
 // ── Initial state ──────────────────────────────────────────────────────────
 updateStatusBar();
