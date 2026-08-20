@@ -30,10 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Sync the static files onto gh-pages
+        id: sync
         run: |
           set -e
           git config user.name "github-actions[bot]"
@@ -48,8 +50,18 @@ jobs:
 
           if git diff --quiet; then
             echo "gh-pages already up to date"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git add index.html app.js style.css
             git commit -m "Preview: sync from ${GITHUB_SHA::7}"
             git push origin gh-pages
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Pushes made with GITHUB_TOKEN do not trigger workflows, so the
+      # gh-pages deployment is dispatched explicitly.
+      - name: Deploy the updated gh-pages branch
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --ref gh-pages
