@@ -1,0 +1,67 @@
+name: Test and publish preview
+
+on:
+  push:
+    branches:
+      - claude/poly-pod-pro-tests-ui-0wn5ys
+  workflow_dispatch:
+
+concurrency:
+  group: preview
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+
+  # The github-pages environment only accepts deployments from gh-pages, so the
+  # site files are synced onto that branch and its own workflow publishes them.
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync the static files onto gh-pages
+        id: sync
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p /tmp/site
+          cp index.html app.js style.css /tmp/site/
+
+          git fetch origin gh-pages
+          git checkout gh-pages
+          cp /tmp/site/* .
+
+          if git diff --quiet; then
+            echo "gh-pages already up to date"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git add index.html app.js style.css
+            git commit -m "Preview: sync from ${GITHUB_SHA::7}"
+            git push origin gh-pages
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pushes made with GITHUB_TOKEN do not trigger workflows, so the
+      # gh-pages deployment is dispatched explicitly. It runs even when the
+      # sync was a no-op, so a re-run always republishes the current files.
+      - name: Deploy the gh-pages branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --ref gh-pages

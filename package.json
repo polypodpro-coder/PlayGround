@@ -1,0 +1,17 @@
+{
+  "name": "poly-pod-pro",
+  "version": "3.1.0",
+  "private": true,
+  "description": "Browser-based 3D model generator with STL export",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "serve": "node tests/serve.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1",
+    "three": "0.162.0",
+    "three-bvh-csg": "0.0.16",
+    "three-mesh-bvh": "0.7.8"
+  }
+}
