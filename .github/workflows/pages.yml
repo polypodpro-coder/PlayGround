@@ -59,9 +59,9 @@ jobs:
           fi
 
       # Pushes made with GITHUB_TOKEN do not trigger workflows, so the
-      # gh-pages deployment is dispatched explicitly.
-      - name: Deploy the updated gh-pages branch
-        if: steps.sync.outputs.changed == 'true'
+      # gh-pages deployment is dispatched explicitly. It runs even when the
+      # sync was a no-op, so a re-run always republishes the current files.
+      - name: Deploy the gh-pages branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run pages.yml --ref gh-pages
