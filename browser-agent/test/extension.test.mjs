@@ -178,6 +178,108 @@ test('the agent runs a scripted goal end to end', async (t) => {
   }
 });
 
+test('checkpoint mode runs ordinary actions unattended and only pauses on a sensitive one', async (t) => {
+  const fixture = await startFixtureServer();
+  const mock = await startMockServer({ port: 0 });
+
+  mock.setScript([
+    { reasoning: "I'll fill in the email first.", tool: 'type', ref: 1, text: 'agent@fixture.test' },
+    { reasoning: "I'll submit the form now.", tool: 'click', ref: 5, sensitive: true },
+    { reasoning: 'Signed in.', tool: 'done', summary: 'Signed in as agent@fixture.test' },
+  ]);
+
+  let context;
+  let extensionId;
+  try {
+    ({ context, extensionId } = await launchWithExtension());
+  } catch (error) {
+    await Promise.all([fixture.close(), mock.close()]);
+    return t.skip(`this Chromium cannot load an unpacked extension: ${error.message}`);
+  }
+
+  try {
+    const target = await context.newPage();
+    await target.goto(fixture.url);
+
+    const panel = await context.newPage();
+    await panel.goto(`chrome-extension://${extensionId}/src/sidepanel/panel.html`);
+
+    await panel.evaluate(async (endpoint) => {
+      await chrome.storage.local.set({
+        settings: {
+          provider: 'local',
+          endpoint,
+          model: 'mock-model',
+          temperature: 0,
+          maxSteps: 10,
+          requestTimeoutMs: 15000,
+          allowlist: [],
+          // Force checkpoint mode regardless of provider, so this test exercises
+          // the approval-gating logic itself rather than a provider default.
+          approvalMode: 'checkpoints',
+        },
+      });
+      window.__states = [];
+      window.__port = chrome.runtime.connect({ name: 'agent-panel' });
+      window.__port.onMessage.addListener((message) => {
+        if (message.type === 'bg:state') window.__states.push(message.state);
+      });
+    }, `http://127.0.0.1:${mock.port}/v1`);
+
+    const tabId = await panel.evaluate(async (url) => {
+      const [tab] = await chrome.tabs.query({ url });
+      return tab.id;
+    }, fixture.url);
+
+    const allStates = () => panel.evaluate(() => window.__states);
+    const latest = () => panel.evaluate(() => window.__states.at(-1));
+
+    await panel.evaluate(
+      ([goal, id]) => window.__port.postMessage({ type: 'panel:start', goal, tabId: id }),
+      ['Sign in to the fixture site', tabId],
+    );
+
+    // The sensitive click is the first (and only) approval pause in this run.
+    await panel.waitForFunction(
+      () => window.__states.at(-1)?.status === 'awaiting_approval',
+      null,
+      { timeout: 20000 },
+    );
+
+    // By the time it pauses, the type action has already run unattended — no
+    // approval step for it at all.
+    const states = await allStates();
+    assert.ok(
+      !states.some((s) => s.status === 'awaiting_approval' && s.pending?.action?.tool === 'type'),
+      'a non-sensitive action must never pause for approval in checkpoint mode',
+    );
+    assert.equal(await target.inputValue('#email'), 'agent@fixture.test');
+
+    const pause = await latest();
+    assert.equal(pause.pending.action.tool, 'click');
+    assert.equal(pause.pending.action.sensitive, true);
+    assert.equal(pause.history.length, 1, 'the type step is already recorded');
+    assert.equal(pause.history[0].tool, 'type');
+
+    const seen = await panel.evaluate(() => window.__states.length);
+    await panel.evaluate(() => window.__port.postMessage({ type: 'panel:approve' }));
+
+    await panel.waitForFunction(
+      ([from]) => window.__states.length > from && window.__states.at(-1)?.status === 'done',
+      [seen],
+      { timeout: 20000 },
+    );
+
+    const final = await latest();
+    assert.equal(final.answer, 'Signed in as agent@fixture.test');
+    assert.equal(final.history.length, 2);
+    assert.equal(await target.title(), 'Signed in — Fixture');
+  } finally {
+    await context?.close();
+    await Promise.all([fixture.close(), mock.close()]);
+  }
+});
+
 test('rejecting an action leaves the page untouched and tells the model why', async (t) => {
   const fixture = await startFixtureServer();
   const mock = await startMockServer({ port: 0 });

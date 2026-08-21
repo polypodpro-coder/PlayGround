@@ -3,19 +3,41 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local Browser Agent — Settings</title>
+    <title>Local Agent — Settings</title>
     <link rel="stylesheet" href="../sidepanel/panel.css" />
     <style>
       body {
         max-width: 640px;
         margin: 0 auto;
         padding: 24px 16px 48px;
+        display: block;
+      }
+      h1 {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 28px 0 12px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      p.intro {
+        color: var(--muted);
+        margin: 6px 0 0;
       }
       label {
         display: block;
         margin-bottom: 16px;
       }
-      label > span {
+      label > span.field-label {
         display: block;
         font-weight: 600;
         margin-bottom: 3px;
@@ -26,67 +48,156 @@
         font-weight: 400;
         margin-bottom: 5px;
       }
+      input[type='text'],
+      input[type='password'],
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--fg);
+        font: inherit;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
+      .provider-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .provider-tab {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .provider-tab.selected {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        font-weight: 600;
+      }
+      .key-row {
+        display: flex;
+        gap: 6px;
+      }
+      .key-row input {
+        flex: 1;
+      }
       .row {
         display: flex;
         gap: 10px;
         align-items: center;
-        margin-top: 20px;
+        margin-top: 8px;
       }
       #test-result {
         color: var(--muted);
         overflow-wrap: anywhere;
       }
+      .provider-section[hidden] {
+        display: none;
+      }
     </style>
   </head>
   <body>
-    <h1>Local Browser Agent</h1>
-    <p class="status">
-      Everything runs on this machine. Page contents are sent to the endpoint
-      below and nowhere else — keep it pointed at localhost.
+    <h1>Local Agent</h1>
+    <p class="intro">
+      Page contents go only to the backend selected below. Local stays on this
+      machine and costs nothing; Gemini uses your API key and Google's servers.
     </p>
 
+    <h2>Backend</h2>
+    <div class="provider-tabs" id="provider-tabs" role="tablist">
+      <button type="button" class="provider-tab" data-provider="local">Local (LM Studio)</button>
+      <button type="button" class="provider-tab" data-provider="gemini">Gemini</button>
+    </div>
+
+    <div id="section-local" class="provider-section">
+      <label>
+        <span class="field-label">LM Studio endpoint</span>
+        <small>The OpenAI-compatible base URL. LM Studio's default is shown.</small>
+        <input id="endpoint" type="text" placeholder="http://localhost:1234/v1" />
+      </label>
+      <label>
+        <span class="field-label">Model</span>
+        <small>Must match the model identifier LM Studio has loaded.</small>
+        <input id="model" type="text" placeholder="qwen3-4b-instruct-2507" />
+      </label>
+    </div>
+
+    <div id="section-gemini" class="provider-section">
+      <label>
+        <span class="field-label">Gemini API key</span>
+        <small>
+          From <span style="white-space: nowrap">Google AI Studio</span>. Stored only on this
+          device and sent only to Google's API.
+        </small>
+        <div class="key-row">
+          <input id="geminiApiKey" type="password" placeholder="AIza…" autocomplete="off" />
+          <button id="toggle-key" class="btn" type="button">Show</button>
+        </div>
+      </label>
+      <label>
+        <span class="field-label">Model</span>
+        <small>gemini-2.5-flash is fast and cheap; gemini-2.5-pro is stronger on hard pages.</small>
+        <input id="geminiModel" type="text" placeholder="gemini-2.5-flash" />
+      </label>
+    </div>
+
+    <h2>Approval</h2>
     <label>
-      <span>LM Studio endpoint</span>
-      <small>The OpenAI-compatible base URL. LM Studio's default is shown.</small>
-      <input id="endpoint" type="text" placeholder="http://localhost:1234/v1" />
+      <span class="field-label">When should the agent pause for you?</span>
+      <small>
+        Local defaults to every step (a small model misclicks often enough that this
+        matters). Gemini defaults to checkpoints only — form submits, navigation off
+        your allowlist, or anything the model itself flags as sensitive.
+      </small>
+      <select id="approvalMode">
+        <option value="">Automatic (recommended for the selected backend)</option>
+        <option value="checkpoints">Checkpoints only — pause only for sensitive actions</option>
+        <option value="every-step">Every step — pause before every action</option>
+        <option value="manual">Manual — same as every step, regardless of backend</option>
+      </select>
     </label>
 
+    <h2>Run limits</h2>
     <label>
-      <span>Model</span>
-      <small>Must match the model identifier LM Studio has loaded.</small>
-      <input id="model" type="text" placeholder="qwen3-4b-instruct-2507" />
-    </label>
-
-    <label>
-      <span>Temperature</span>
-      <small>Low is better here — 0.2 keeps a small model on task.</small>
+      <span class="field-label">Temperature</span>
+      <small>Low is better here — 0.2 keeps the model on task.</small>
       <input id="temperature" type="text" />
     </label>
-
     <label>
-      <span>Step limit</span>
+      <span class="field-label">Step limit</span>
       <small>The run stops after this many actions.</small>
       <input id="maxSteps" type="text" />
     </label>
-
     <label>
-      <span>Request timeout (seconds)</span>
-      <small>Raise this if your GPU is slow to produce the first token.</small>
+      <span class="field-label">Request timeout (seconds)</span>
+      <small>Raise this if the model is slow to answer.</small>
       <input id="timeout" type="text" />
     </label>
-
     <label>
-      <span>Domain allowlist</span>
+      <span class="field-label">Domain allowlist</span>
       <small>
         One host per line, e.g. <code>wikipedia.org</code>. Leave empty to allow
-        every site. Navigations outside the list are flagged in the approval card.
+        every site. A navigation outside the list always pauses for approval,
+        regardless of approval mode.
       </small>
       <textarea id="allowlist" rows="4"></textarea>
     </label>
 
     <div class="row">
-      <button id="save" class="primary" type="button">Save</button>
-      <button id="test" class="ghost" type="button">Test connection</button>
+      <button id="save" class="btn btn-primary" type="button">Save</button>
+      <button id="test" class="btn" type="button">Test connection</button>
       <span id="test-result"></span>
     </div>
 

@@ -51,15 +51,55 @@ export const STATUS = {
 /** A run in one of these states will never advance on its own again. */
 export const TERMINAL_STATUSES = [STATUS.DONE, STATUS.ABORTED, STATUS.ERROR];
 
+/** Which backend answers requestAction(). */
+export const PROVIDERS = { LOCAL: 'local', GEMINI: 'gemini' };
+
+/**
+ * How much runs pause for approval.
+ *   every-step  — every page-touching action waits for the user (local's default;
+ *                 a 4B model misclicks often enough that this is not optional there).
+ *   checkpoints — only sensitive actions (form submits, off-allowlist navigation,
+ *                 anything the model flags) wait; everything else runs immediately
+ *                 (Gemini's default — its tool-calling is reliable enough to trust).
+ *   manual      — every-step, regardless of backend. For Gemini + extra caution.
+ */
+export const APPROVAL_MODES = {
+  EVERY_STEP: 'every-step',
+  CHECKPOINTS: 'checkpoints',
+  MANUAL: 'manual',
+};
+
+/** Default approval mode per backend, used when the user hasn't overridden it. */
+export const DEFAULT_APPROVAL_MODE_BY_PROVIDER = {
+  [PROVIDERS.LOCAL]: APPROVAL_MODES.EVERY_STEP,
+  [PROVIDERS.GEMINI]: APPROVAL_MODES.CHECKPOINTS,
+};
+
 export const DEFAULT_SETTINGS = {
+  provider: PROVIDERS.LOCAL,
+
+  // Local (LM Studio)
   endpoint: 'http://localhost:1234/v1',
   model: 'qwen3-4b-instruct-2507',
+
+  // Gemini
+  geminiApiKey: '',
+  geminiModel: 'gemini-2.5-flash',
+
+  // Shared
   temperature: 0.2,
   maxSteps: 25,
   requestTimeoutMs: 120000,
   /** Empty list = every domain allowed. Entries are bare hosts, e.g. "github.com". */
   allowlist: [],
+  /** 'every-step' | 'checkpoints' | 'manual' | '' — '' means "use the provider's default". */
+  approvalMode: '',
 };
+
+/** Resolve the effective approval mode for a run, honoring an explicit override. */
+export function resolveApprovalMode(settings) {
+  return settings.approvalMode || DEFAULT_APPROVAL_MODE_BY_PROVIDER[settings.provider] || APPROVAL_MODES.EVERY_STEP;
+}
 
 export const STORAGE_KEYS = {
   SETTINGS: 'settings',

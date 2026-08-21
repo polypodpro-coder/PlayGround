@@ -175,7 +175,23 @@
       }
     }
 
+    if (isFormSubmit(element)) item.formSubmit = true;
+
     return item;
+  }
+
+  /** True for a button/input that submits its enclosing form when clicked. */
+  function isFormSubmit(element) {
+    if (!element.form) return false;
+    const tag = element.tagName.toLowerCase();
+    if (tag === 'button') {
+      const type = (element.getAttribute('type') || 'submit').toLowerCase();
+      return type === 'submit';
+    }
+    if (tag === 'input') {
+      return (element.type || '').toLowerCase() === 'submit';
+    }
+    return false;
   }
 
   function textDigest() {

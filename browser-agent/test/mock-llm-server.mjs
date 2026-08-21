@@ -1,16 +1,22 @@
 /**
- * A stand-in for LM Studio, so the whole extension can be exercised without a
- * GPU. It speaks just enough of the OpenAI-compatible API for the client:
- * GET /v1/models and POST /v1/chat/completions.
+ * A stand-in for either backend's real server, so the whole extension can be
+ * exercised without a GPU or an API key.
  *
- * Each chat completion returns the next action from a script. Point the
- * extension's endpoint at http://localhost:1234/v1 in Options and it will
- * believe it is talking to a real model.
+ *   mode: 'local'  (default) — LM Studio's OpenAI-compatible API:
+ *                   GET /v1/models, POST /v1/chat/completions.
+ *   mode: 'gemini'            — Gemini's generateContent API:
+ *                   GET /v1beta/models, POST /v1beta/models/:model:generateContent.
+ *
+ * Each request returns the next action from a script, shaped for whichever
+ * mode is active. Point the extension's endpoint (local) or let it hit this
+ * server via a stubbed fetch (gemini, since the real Gemini host is fixed) and
+ * it will believe it is talking to the real thing.
  *
  *   node test/mock-llm-server.mjs [--port 1234] [--script path/to/script.json]
  *
- * The script is a JSON array of raw action objects. POST /__script replaces it
- * and rewinds, which is how the automated tests drive different scenarios.
+ * The script is a JSON array of raw action objects: {tool, reasoning, ...args}.
+ * POST /__script replaces it and rewinds, which is how the automated tests
+ * drive different scenarios without starting a new server per test.
  */
 
 import { createServer } from 'node:http';
@@ -30,18 +36,34 @@ const DEFAULT_SCRIPT = [
 ];
 
 function parseArgs(argv) {
-  const args = { port: 1234, script: null };
+  const args = { port: 1234, script: null, mode: 'local' };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--port') args.port = Number(argv[++i]);
     if (argv[i] === '--script') args.script = argv[++i];
+    if (argv[i] === '--mode') args.mode = argv[++i];
   }
   return args;
 }
 
-export async function startMockServer({ port = 1234, script = DEFAULT_SCRIPT } = {}) {
+export async function startMockServer({
+  port = 1234,
+  script = DEFAULT_SCRIPT,
+  mode = 'local',
+  failStatus = null,
+} = {}) {
   let actions = [...script];
   let cursor = 0;
   const requests = [];
+
+  const nextAction = () => {
+    const action = actions[cursor] ?? {
+      reasoning: 'The script ran out of actions.',
+      tool: 'done',
+      summary: 'mock script exhausted',
+    };
+    cursor += 1;
+    return action;
+  };
 
   const server = createServer(async (req, res) => {
     const json = (status, body) => {
@@ -83,18 +105,40 @@ export async function startMockServer({ port = 1234, script = DEFAULT_SCRIPT } =
 
     if (req.url === '/__requests') return json(200, requests);
 
+    if (failStatus) {
+      return json(failStatus, { error: { message: 'mock failure', status: failStatus } });
+    }
+
+    // ── Gemini-shaped routes ────────────────────────────────────────────
+    if (mode === 'gemini') {
+      if (/\/models$/.test(req.url) && req.method === 'GET') {
+        return json(200, { models: [{ name: 'models/gemini-test' }] });
+      }
+      const match = req.url.match(/\/models\/([^:]+):generateContent$/);
+      if (match && req.method === 'POST') {
+        requests.push({ gemini: [req.url, body, req.headers] });
+        const action = nextAction();
+        const { tool, reasoning, ...args } = action;
+        return json(200, {
+          candidates: [
+            {
+              content: { role: 'model', parts: [{ functionCall: { name: tool, args: { reasoning, ...args } } }] },
+            },
+          ],
+          usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0 },
+        });
+      }
+      return json(404, { error: `no mock gemini route for ${req.url}` });
+    }
+
+    // ── LM Studio / OpenAI-shaped routes ────────────────────────────────
     if (req.url.endsWith('/models')) {
       return json(200, { object: 'list', data: [{ id: 'mock-model', object: 'model' }] });
     }
 
     if (req.url.endsWith('/chat/completions')) {
       requests.push(body);
-      const action = actions[cursor] ?? {
-        reasoning: 'The script ran out of actions.',
-        tool: 'done',
-        summary: 'mock script exhausted',
-      };
-      cursor += 1;
+      const action = nextAction();
       return json(200, {
         id: `mock-${cursor}`,
         object: 'chat.completion',
@@ -136,7 +180,8 @@ if (isMain) {
   const script = args.script
     ? JSON.parse(await readFile(args.script, 'utf8'))
     : DEFAULT_SCRIPT;
-  const mock = await startMockServer({ port: args.port, script });
-  console.log(`Mock LM Studio listening on http://localhost:${mock.port}/v1`);
+  const mock = await startMockServer({ port: args.port, script, mode: args.mode });
+  const base = args.mode === 'gemini' ? `http://localhost:${mock.port}/v1beta` : `http://localhost:${mock.port}/v1`;
+  console.log(`Mock ${args.mode} server listening on ${base}`);
   console.log(`Scripted actions: ${script.length}`);
 }

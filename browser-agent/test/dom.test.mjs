@@ -221,6 +221,27 @@ test('scrolling reports where it ended up', async () => {
   await page.close();
 });
 
+test('a submit button inside a form is flagged formSubmit; a plain button is not', async () => {
+  const page = await browser.newPage();
+  await page.setContent(`
+    <form><button id="a" type="submit">Save</button></form>
+    <form><input id="b" type="submit" value="Go" /></form>
+    <form><button id="c" type="button">Cancel</button></form>
+    <button id="d">Outside any form</button>
+  `);
+  for (const content of sources) await page.addScriptTag({ content });
+  const snapshot = await observe(page);
+
+  const flagged = snapshot.elements.filter((e) => e.formSubmit);
+  assert.equal(flagged.length, 2);
+  assert.ok(flagged.some((e) => e.label === 'Save'));
+  // The value-as-label input has no text label, so check by absence of the others.
+  assert.ok(!snapshot.elements.find((e) => e.label === 'Cancel')?.formSubmit);
+  assert.ok(!snapshot.elements.find((e) => e.label === 'Outside any form')?.formSubmit);
+
+  await page.close();
+});
+
 test('the highlight ring lands over the element it names', async () => {
   const page = await openFixture();
   const snapshot = await observe(page);

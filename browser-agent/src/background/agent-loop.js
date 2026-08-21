@@ -9,12 +9,15 @@
  */
 
 import {
+  APPROVAL_MODES,
   CONTENT_MSG,
   STATUS,
   TERMINAL_STATUSES,
+  resolveApprovalMode,
 } from '../shared/protocol.js';
 import {
   describeAction,
+  isCheckpointAction,
   isHostAllowed,
   validateAction,
 } from '../shared/action-schema.js';
@@ -54,6 +57,8 @@ export function publicRun() {
     status: run.status,
     step: run.step,
     maxSteps: run.maxSteps,
+    provider: run.provider,
+    approvalMode: run.approvalMode,
     history: run.history,
     pending: run.pending,
     answer: run.answer,
@@ -188,6 +193,8 @@ export async function startRun(goal, tabId) {
     goal: String(goal || '').trim(),
     tabId,
     maxSteps: settings.maxSteps,
+    provider: settings.provider,
+    approvalMode: resolveApprovalMode(settings),
     startedAt: Date.now(),
   };
   invalidStreak = 0;
@@ -229,6 +236,7 @@ async function recordAndContinue(action, result) {
   run.history.push({
     n: run.step + 1,
     summary: describeAction(action),
+    reasoning: action.reasoning || '',
     tool: action.tool,
     result: { ok: !!result.ok, message: result.message || '' },
   });
@@ -270,6 +278,7 @@ async function tick() {
       history: run.history,
       snapshot: run.snapshot,
       lastError: lastValidationError,
+      approvalMode: run.approvalMode,
     });
     ({ raw } = await requestAction(messages, settings));
   } catch (error) {
@@ -304,33 +313,47 @@ async function tick() {
     return finish(STATUS.DONE, { answer: action.summary });
   }
 
-  // 5. Everything else waits for the human.
   const settings = await getSettings();
+  const offAllowlist =
+    action.tool === 'navigate' && !isHostAllowed(action.url, settings.allowlist);
+
+  // 5. A question always blocks — that one isn't about trust, it's about
+  // missing information the run cannot proceed without.
+  if (action.tool === 'ask_user') {
+    run.pending = { action, snapshotId: run.snapshot.snapshotId, description: describeAction(action) };
+    run.status = STATUS.AWAITING_ANSWER;
+    await commit();
+    return;
+  }
+
+  // 6. Everything else is gated by the run's approval mode. In checkpoint
+  // mode (Gemini's default — reliable enough to trust) only a form submit, an
+  // off-allowlist navigation, or something the model itself flagged sensitive
+  // pauses; the rest runs immediately. every-step and manual gate everything,
+  // which is what keeps a small local model safe.
+  const needsApproval =
+    run.approvalMode !== APPROVAL_MODES.CHECKPOINTS || isCheckpointAction(action, settings.allowlist);
+
+  if (!needsApproval) {
+    return runAction(action, run.snapshot.snapshotId);
+  }
+
   run.pending = {
     action,
     snapshotId: run.snapshot.snapshotId,
     description: describeAction(action),
-    offAllowlist:
-      action.tool === 'navigate' && !isHostAllowed(action.url, settings.allowlist),
+    offAllowlist,
   };
-  run.status = action.tool === 'ask_user' ? STATUS.AWAITING_ANSWER : STATUS.AWAITING_APPROVAL;
+  run.status = STATUS.AWAITING_APPROVAL;
   await commit();
   await highlightPending();
 }
 
 // ── user decisions ─────────────────────────────────────────────────────────
 
-/**
- * @param {object} [edits]  Optional field overrides from the panel, e.g. a
- *                          corrected `text` or `url` before running the action.
- */
-export async function approve(edits) {
-  await hydrate();
-  if (run.status !== STATUS.AWAITING_APPROVAL || !run.pending) return;
-
-  const action = { ...run.pending.action, ...(edits || {}) };
-  const { snapshotId } = run.pending;
-
+/** Run an action against the page and record what happened. Shared by the
+ * checkpoint auto-run path (tick) and the user-approved path (approve). */
+async function runAction(action, snapshotId) {
   run.status = STATUS.EXECUTING;
   await commit();
   await clearHighlight();
@@ -345,6 +368,19 @@ export async function approve(edits) {
   }
 
   return recordAndContinue(action, result);
+}
+
+/**
+ * @param {object} [edits]  Optional field overrides from the panel, e.g. a
+ *                          corrected `text` or `url` before running the action.
+ */
+export async function approve(edits) {
+  await hydrate();
+  if (run.status !== STATUS.AWAITING_APPROVAL || !run.pending) return;
+
+  const action = { ...run.pending.action, ...(edits || {}) };
+  const { snapshotId } = run.pending;
+  return runAction(action, snapshotId);
 }
 
 /** User rejected this action; tell the model so it tries something else. */

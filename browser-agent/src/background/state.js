@@ -33,6 +33,8 @@ export function emptyRun() {
     status: STATUS.IDLE,
     step: 0,
     maxSteps: DEFAULT_SETTINGS.maxSteps,
+    provider: DEFAULT_SETTINGS.provider,
+    approvalMode: DEFAULT_SETTINGS.approvalMode,
     history: [],
     pending: null,
     snapshot: null,

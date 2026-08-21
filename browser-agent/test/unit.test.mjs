@@ -18,8 +18,10 @@ import {
   validateAction,
 } from '../src/shared/action-schema.js';
 import { CONTENT_MSG } from '../src/shared/protocol.js';
-import { buildMessages, compactHistory, renderSnapshot } from '../src/background/prompt.js';
-import { LlmError, parseActionContent, requestAction } from '../src/background/llm-client.js';
+import { buildMessages, buildSystemPrompt, compactHistory, renderSnapshot } from '../src/background/prompt.js';
+import { LlmError, requestAction } from '../src/background/llm-client.js';
+import { parseActionContent } from '../src/background/providers/local.js';
+import { toolFunctionDeclarations, toRawAction } from '../src/background/providers/gemini.js';
 import { startMockServer } from './mock-llm-server.mjs';
 
 const snapshot = {
@@ -212,6 +214,7 @@ test('requestAction sends the grammar-constraining response_format', async () =>
   const mock = await startMockServer({ port: 0 });
   try {
     const settings = {
+      provider: 'local',
       endpoint: `http://127.0.0.1:${mock.port}/v1`,
       model: 'test-model',
       temperature: 0.2,
@@ -233,6 +236,7 @@ test('requestAction sends the grammar-constraining response_format', async () =>
 
 test('an unreachable server explains what to check', async () => {
   const settings = {
+    provider: 'local',
     endpoint: 'http://127.0.0.1:9/v1',
     model: 'x',
     temperature: 0,
@@ -242,6 +246,127 @@ test('an unreachable server explains what to check', async () => {
     () => requestAction([{ role: 'user', content: 'go' }], settings),
     (error) => error instanceof LlmError && /Is LM Studio running/.test(error.message),
   );
+});
+
+test('checkpoint mode asks for narration and the sensitive flag; every-step does not', () => {
+  const everyStep = buildSystemPrompt('every-step');
+  assert.match(everyStep, /read as a one-line label/);
+  assert.ok(!everyStep.includes('"sensitive": true'));
+
+  const checkpoint = buildSystemPrompt('checkpoints');
+  assert.match(checkpoint, /narrate what you're doing/);
+  assert.match(checkpoint, /"sensitive": true/);
+});
+
+test('buildMessages threads approvalMode into the system prompt', () => {
+  const messages = buildMessages({ goal: 'x', history: [], snapshot, approvalMode: 'checkpoints' });
+  assert.match(messages[0].content, /narrate what you're doing/);
+});
+
+// ── gemini adapter ─────────────────────────────────────────────────────────
+
+test('toolFunctionDeclarations covers every tool with no drift from TOOL_FIELDS', () => {
+  const decls = toolFunctionDeclarations();
+  assert.deepEqual(decls.map((d) => d.name), TOOLS);
+  const click = decls.find((d) => d.name === 'click');
+  assert.deepEqual(Object.keys(click.parameters.properties).sort(), ['ref', 'reasoning', 'sensitive'].sort());
+  assert.deepEqual(click.parameters.required, ['reasoning', 'ref']);
+  const type = decls.find((d) => d.name === 'type');
+  assert.deepEqual(type.parameters.required, ['reasoning', 'ref', 'text']);
+  assert.ok(!type.parameters.required.includes('submit'), 'submit is optional');
+});
+
+test('toRawAction reshapes a Gemini functionCall into the raw action shape', () => {
+  const raw = toRawAction({ name: 'click', args: { reasoning: 'go', ref: 3 } });
+  assert.deepEqual(raw, { tool: 'click', reasoning: 'go', ref: 3 });
+});
+
+test('toRawAction returns null for a missing or malformed functionCall', () => {
+  assert.equal(toRawAction(undefined), null);
+  assert.equal(toRawAction({ args: {} }), null);
+});
+
+test('gemini requestAction sends functionDeclarations and the api key header, not in the url', async () => {
+  const mock = await startMockServer({ port: 0, mode: 'gemini' });
+  try {
+    const settings = {
+      provider: 'gemini',
+      geminiApiBase: `http://127.0.0.1:${mock.port}/v1beta`,
+      geminiApiKey: 'test-key-123',
+      geminiModel: 'gemini-test',
+      temperature: 0.2,
+      requestTimeoutMs: 5000,
+    };
+    const { raw } = await requestAction([
+      { role: 'system', content: 'you are an agent' },
+      { role: 'user', content: 'go' },
+    ], settings);
+    assert.equal(raw.tool, 'scroll');
+
+    const [url, sent, headers] = mock.requests.at(-1).gemini;
+    assert.match(url, /models\/gemini-test:generateContent$/);
+    assert.ok(!url.includes('test-key-123'), 'api key must not appear in the url');
+    assert.equal(headers['x-goog-api-key'], 'test-key-123');
+    assert.equal(sent.systemInstruction.parts[0].text, 'you are an agent');
+    assert.equal(sent.tools[0].functionDeclarations.length, TOOLS.length);
+  } finally {
+    await mock.close();
+  }
+});
+
+test('a bad gemini api key produces a clear error, not a raw 401', async () => {
+  const mock = await startMockServer({ port: 0, mode: 'gemini', failStatus: 401 });
+  try {
+    const settings = {
+      provider: 'gemini',
+      geminiApiBase: `http://127.0.0.1:${mock.port}/v1beta`,
+      geminiApiKey: 'bad-key',
+      geminiModel: 'gemini-test',
+      temperature: 0,
+      requestTimeoutMs: 5000,
+    };
+    await assert.rejects(
+      () => requestAction([{ role: 'user', content: 'go' }], settings),
+      (error) => error instanceof LlmError && /rejected the request/.test(error.message),
+    );
+  } finally {
+    await mock.close();
+  }
+});
+
+test('an unknown provider fails loudly instead of silently doing nothing', async () => {
+  await assert.rejects(
+    () => requestAction([], { provider: 'carrier-pigeon' }),
+    (error) => error instanceof LlmError && /Unknown provider/.test(error.message),
+  );
+});
+
+// ── checkpoint gating ──────────────────────────────────────────────────────
+
+test('isCheckpointAction gates form submits, off-allowlist navigation, and model-flagged actions', async () => {
+  const { isCheckpointAction } = await import('../src/shared/action-schema.js');
+
+  assert.equal(isCheckpointAction({ tool: 'click' }, []), false);
+  assert.equal(isCheckpointAction({ tool: 'click', formSubmit: true }, []), true);
+  assert.equal(isCheckpointAction({ tool: 'type', submit: true, formSubmit: true }, []), true);
+  assert.equal(isCheckpointAction({ tool: 'click', sensitive: true }, []), true);
+  assert.equal(
+    isCheckpointAction({ tool: 'navigate', url: 'https://evil.test' }, ['good.test']),
+    true,
+  );
+  assert.equal(
+    isCheckpointAction({ tool: 'navigate', url: 'https://good.test' }, ['good.test']),
+    false,
+  );
+});
+
+test('a click on a form submit button is marked formSubmit by validateAction', () => {
+  const withSubmit = {
+    ...snapshot,
+    elements: [{ ref: 1, tag: 'button', label: 'Sign in', formSubmit: true, inViewport: true }],
+  };
+  const { action } = validateAction({ tool: 'click', ref: 1, reasoning: 'x' }, withSubmit);
+  assert.equal(action.formSubmit, true);
 });
 
 // ── content-script protocol drift ──────────────────────────────────────────

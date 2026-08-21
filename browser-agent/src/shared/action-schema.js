@@ -34,6 +34,53 @@ export const SCROLL_DIRECTIONS = ['up', 'down', 'top', 'bottom'];
 export const WAIT_MIN_MS = 100;
 export const WAIT_MAX_MS = 10000;
 
+/**
+ * Every field the action vocabulary can use, defined once. Both
+ * `ACTION_JSON_SCHEMA` (the flat object handed to the local backend) and
+ * `TOOL_FUNCTION_SPECS` (the per-tool function declarations handed to Gemini)
+ * are generated from this single source, so the two backends can never drift
+ * out of sync on what a tool accepts.
+ */
+export const FIELD_DEFS = {
+  ref: {
+    type: 'integer',
+    description: 'Element number from the snapshot. For click, type, select.',
+  },
+  text: { type: 'string', description: 'Text to type. For type.' },
+  url: { type: 'string', description: 'Absolute http(s) URL. For navigate.' },
+  value: { type: 'string', description: 'Option to choose. For select.' },
+  direction: { type: 'string', enum: SCROLL_DIRECTIONS, description: 'Scroll direction.' },
+  submit: {
+    type: 'boolean',
+    description: 'Press Enter after typing. For type.',
+  },
+  ms: { type: 'integer', description: 'Milliseconds to wait. For wait.' },
+  question: { type: 'string', description: 'What to ask the user. For ask_user.' },
+  summary: {
+    type: 'string',
+    description: 'The answer or result. For done.',
+  },
+  sensitive: {
+    type: 'boolean',
+    description:
+      'Set true if this action sends, pays, deletes, publishes, or otherwise has a ' +
+      'real-world effect that is hard to undo. In checkpoint approval mode, sensitive ' +
+      'actions pause for the user; everything else runs immediately.',
+  },
+};
+
+/** Fields each tool accepts, beyond the universal `reasoning` + `tool`. */
+export const TOOL_FIELDS = {
+  navigate: ['url', 'sensitive'],
+  click: ['ref', 'sensitive'],
+  type: ['ref', 'text', 'submit', 'sensitive'],
+  select: ['ref', 'value', 'sensitive'],
+  scroll: ['direction'],
+  wait: ['ms'],
+  ask_user: ['question'],
+  done: ['summary'],
+};
+
 export const ACTION_JSON_SCHEMA = {
   type: 'object',
   properties: {
@@ -42,24 +89,7 @@ export const ACTION_JSON_SCHEMA = {
       description: 'One short sentence: why this action moves the goal forward.',
     },
     tool: { type: 'string', enum: TOOLS },
-    ref: {
-      type: 'integer',
-      description: 'Element number from the snapshot. For click, type, select.',
-    },
-    text: { type: 'string', description: 'Text to type. For type.' },
-    url: { type: 'string', description: 'Absolute http(s) URL. For navigate.' },
-    value: { type: 'string', description: 'Option to choose. For select.' },
-    direction: { type: 'string', enum: SCROLL_DIRECTIONS },
-    submit: {
-      type: 'boolean',
-      description: 'Press Enter after typing. For type.',
-    },
-    ms: { type: 'integer', description: 'Milliseconds to wait. For wait.' },
-    question: { type: 'string', description: 'What to ask the user. For ask_user.' },
-    summary: {
-      type: 'string',
-      description: 'The answer or result. For done.',
-    },
+    ...FIELD_DEFS,
   },
   required: ['reasoning', 'tool'],
   additionalProperties: false,
@@ -67,6 +97,9 @@ export const ACTION_JSON_SCHEMA = {
 
 /** Tools whose `ref` must resolve against the current snapshot. */
 const REF_TOOLS = new Set(['click', 'type', 'select']);
+
+/** Tools that touch the page or leave it, as opposed to purely informational ones. */
+export const PAGE_TOOLS = new Set(['navigate', 'click', 'type', 'select', 'scroll', 'wait']);
 
 function fail(error) {
   return { ok: false, error };
@@ -91,6 +124,9 @@ export function validateAction(raw, snapshot) {
   }
 
   const action = { tool, reasoning: str(raw.reasoning) };
+  if (TOOL_FIELDS[tool]?.includes('sensitive') && raw.sensitive === true) {
+    action.sensitive = true;
+  }
 
   if (REF_TOOLS.has(tool)) {
     const ref = Number(raw.ref);
@@ -112,6 +148,7 @@ export function validateAction(raw, snapshot) {
     }
     action.ref = ref;
     action.target = describeElement(element);
+    if (element.formSubmit) action.formSubmit = true;
   }
 
   switch (tool) {
@@ -135,6 +172,7 @@ export function validateAction(raw, snapshot) {
       if (!text) return fail('Tool "type" needs "text".');
       action.text = text;
       action.submit = raw.submit === true;
+      if (action.submit) action.formSubmit = true;
       break;
     }
     case 'select': {
@@ -204,6 +242,20 @@ export function describeAction(action) {
     default:
       return action.tool;
   }
+}
+
+/**
+ * In checkpoint approval mode (reliable backends like Gemini), most actions
+ * run unattended and only these pause for the user: form submissions, an
+ * off-allowlist navigation, and anything the model itself flagged sensitive.
+ * `ask_user` and `done` are handled separately by the caller — they are never
+ * gated by this check (the former always blocks, the latter never does).
+ */
+export function isCheckpointAction(action, allowlist) {
+  if (action.sensitive) return true;
+  if (action.formSubmit) return true;
+  if (action.tool === 'navigate' && !isHostAllowed(action.url, allowlist)) return true;
+  return false;
 }
 
 /** True when `url`'s host is permitted by the settings allowlist. */

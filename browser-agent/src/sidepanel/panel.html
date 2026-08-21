@@ -3,72 +3,44 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local Browser Agent</title>
+    <title>Local Agent</title>
     <link rel="stylesheet" href="panel.css" />
   </head>
   <body>
     <header class="bar">
-      <h1>Local Agent</h1>
-      <button id="open-options" class="link" type="button">Settings</button>
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <h1>Local Agent</h1>
+      </div>
+      <button id="open-options" class="icon-btn" type="button" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </header>
 
-    <form id="goal-form" class="goal">
+    <div id="thread" class="thread">
+      <div class="empty-state" id="empty-state">
+        <p>Give the agent a goal for this tab and it will work through it here.</p>
+      </div>
+    </div>
+
+    <form id="composer-form" class="composer">
       <textarea
-        id="goal-input"
-        rows="3"
-        placeholder="What should the agent do on this page?&#10;e.g. Find the support email address"
+        id="composer-input"
+        rows="1"
+        placeholder="What should the agent do on this page?"
       ></textarea>
-      <div class="goal-actions">
-        <button id="start" type="submit" class="primary">Start</button>
-        <button id="abort" type="button" class="ghost" hidden>Stop</button>
-      </div>
+      <button id="stop-btn" class="icon-btn stop" type="button" title="Stop" aria-label="Stop" hidden>
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+      </button>
+      <button id="send-btn" class="icon-btn send" type="submit" title="Send" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19V5M5 12l7-7 7 7"></path>
+        </svg>
+      </button>
     </form>
-
-    <p id="status" class="status"></p>
-
-    <section id="pending" class="card pending" hidden>
-      <div class="card-head">
-        <span class="badge" id="pending-tool"></span>
-        <span class="step" id="pending-step"></span>
-      </div>
-      <p class="action" id="pending-description"></p>
-      <p class="reasoning" id="pending-reasoning"></p>
-      <p class="warn" id="pending-warning" hidden></p>
-
-      <label class="edit" id="edit-wrap" hidden>
-        <span id="edit-label">Text</span>
-        <input id="edit-input" type="text" />
-      </label>
-
-      <div class="card-actions">
-        <button id="approve" class="primary" type="button">Approve</button>
-        <button id="skip" class="ghost" type="button">Reject</button>
-      </div>
-    </section>
-
-    <section id="question" class="card question" hidden>
-      <div class="card-head"><span class="badge ask">question</span></div>
-      <p class="action" id="question-text"></p>
-      <form id="answer-form">
-        <input id="answer-input" type="text" placeholder="Your answer" />
-        <button class="primary" type="submit">Send</button>
-      </form>
-    </section>
-
-    <section id="result" class="card result" hidden>
-      <div class="card-head"><span class="badge done">done</span></div>
-      <p class="action" id="result-text"></p>
-      <button id="reset" class="ghost" type="button">New goal</button>
-    </section>
-
-    <section id="failure" class="card failure" hidden>
-      <div class="card-head"><span class="badge error">stopped</span></div>
-      <p class="action" id="failure-text"></p>
-      <button id="reset-error" class="ghost" type="button">New goal</button>
-    </section>
-
-    <h2 class="history-title" id="history-title" hidden>Steps</h2>
-    <ol id="history" class="history"></ol>
 
     <script type="module" src="panel.js"></script>
   </body>
