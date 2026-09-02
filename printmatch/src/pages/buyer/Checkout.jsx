@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Wallet } from "lucide-react";
+import { CreditCard, Package, Store, Wallet } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useApp } from "../../context/AppContext";
 
@@ -8,12 +8,17 @@ const PAYMENT_METHODS = [
   { id: "visa", label: "Visa •••• 4242", icon: CreditCard },
   { id: "wallet", label: "PrintMatch Wallet ($42.10)", icon: Wallet },
 ];
+const DELIVERY_METHODS = [
+  { id: "pickup", label: "Pick up from shop", icon: Store, fee: 0 },
+  { id: "ship", label: "Ship to me", icon: Package, fee: 5 },
+];
 const SERVICE_FEE = 2.5;
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { selectedQuote, placeOrder, printers } = useApp();
   const [method, setMethod] = useState("visa");
+  const [delivery, setDelivery] = useState("pickup");
 
   const quote = selectedQuote ?? {
     printerId: printers[0].id,
@@ -23,10 +28,11 @@ export default function Checkout() {
   };
   const printer = printers.find((p) => p.id === quote.printerId) ?? printers[0];
   const serviceFee = SERVICE_FEE;
-  const total = quote.price + serviceFee;
+  const shippingFee = DELIVERY_METHODS.find((d) => d.id === delivery)?.fee ?? 0;
+  const total = quote.price + serviceFee + shippingFee;
 
   const handlePlaceOrder = () => {
-    const orderId = placeOrder();
+    const orderId = placeOrder({ deliveryMethod: delivery, shippingFee, serviceFee });
     navigate(`/orders/${orderId}`);
   };
 
@@ -50,10 +56,43 @@ export default function Checkout() {
               <span>Service fee</span>
               <span>${serviceFee.toFixed(2)}</span>
             </div>
+            {shippingFee > 0 && (
+              <div className="flex justify-between text-navy/70">
+                <span>Shipping</span>
+                <span>${shippingFee.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-dashed border-navy/10 pt-2 text-base font-bold text-navy">
               <span>Total</span>
               <span>${total.toFixed(2)}</span>
             </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-sm font-semibold text-navy">Delivery method</h2>
+          <div className="space-y-2">
+            {DELIVERY_METHODS.map(({ id, label, icon: Icon, fee }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setDelivery(id)}
+                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors ${
+                  delivery === id
+                    ? "border-accent bg-accent/5 text-navy"
+                    : "border-black/5 bg-white text-navy/70"
+                }`}
+              >
+                <Icon size={18} className={delivery === id ? "text-accent" : "text-navy/40"} />
+                <span className="flex-1">{label}</span>
+                <span className="text-xs text-navy/40">{fee > 0 ? `+$${fee.toFixed(2)}` : "Free"}</span>
+                <span
+                  className={`h-4 w-4 shrink-0 rounded-full border-2 ${
+                    delivery === id ? "border-accent bg-accent" : "border-navy/20"
+                  }`}
+                />
+              </button>
+            ))}
           </div>
         </div>
 

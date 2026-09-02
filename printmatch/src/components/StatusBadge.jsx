@@ -7,6 +7,7 @@ const STYLES = {
   pending: "bg-amber-100 text-amber-700",
   completed: "bg-emerald-100 text-emerald-700",
   paused: "bg-amber-100 text-amber-700",
+  cancelled: "bg-red-100 text-red-600",
 };
 
 const LABELS = {
@@ -18,6 +19,7 @@ const LABELS = {
   pending: "Pending",
   completed: "Completed",
   paused: "Paused",
+  cancelled: "Cancelled",
 };
 
 export default function StatusBadge({ status, label }) {

@@ -27,9 +27,10 @@ export function AppProvider({ children }) {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
   }, []);
 
-  // Builds a fresh order from the accepted quote and returns its id, so
+  // Builds a fresh order from the accepted quote (plus whatever checkout
+  // options are passed in, e.g. delivery method) and returns its id, so
   // Checkout can route straight to that order's tracking screen.
-  const placeOrder = useCallback(() => {
+  const placeOrder = useCallback((extra = {}) => {
     const id = `o${Date.now()}`;
     const newOrder = {
       id,
@@ -43,13 +44,15 @@ export function AppProvider({ children }) {
       color: selectedQuote?.color ?? "Black",
       createdAt: new Date().toISOString(),
       messages: [],
+      viewed: false,
+      ...extra,
     };
     setOrders((prev) => [newOrder, ...prev]);
     return id;
   }, [selectedQuote]);
 
   const activeOrderCount = useMemo(
-    () => orders.filter((o) => o.status !== "completed").length,
+    () => orders.filter((o) => o.status !== "completed" && o.status !== "cancelled").length,
     [orders]
   );
 

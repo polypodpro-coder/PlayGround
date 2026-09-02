@@ -21,8 +21,8 @@ export default function OrderHistory() {
       <header className="bg-navy px-4 pb-5 pt-5 text-white">
         <h1 className="text-lg font-semibold">Your orders</h1>
         <p className="text-xs text-white/60">
-          {orders.filter((o) => o.status !== "completed").length} in progress ·{" "}
-          {orders.filter((o) => o.status === "completed").length} completed
+          {orders.filter((o) => !["completed", "cancelled"].includes(o.status)).length} in
+          progress · {orders.filter((o) => o.status === "completed").length} completed
         </p>
       </header>
 
@@ -43,7 +43,12 @@ export default function OrderHistory() {
                 onClick={() => navigate(`/orders/${order.id}`)}
                 className="flex w-full items-center gap-3 text-left active:scale-[0.98]"
               >
-                <ShopLogo src={printer.logoUrl} alt={`${printer.name} logo`} />
+                <div className="relative shrink-0">
+                  <ShopLogo src={printer.logoUrl} alt={`${printer.name} logo`} />
+                  {order.viewed === false && (
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white" />
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-navy">{printer.name}</p>
                   <p className="text-xs text-navy/50">

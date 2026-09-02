@@ -333,6 +333,7 @@ export const orders = [
     color: "Black",
     createdAt: "2026-09-02T08:50:00",
     messages: chatMessages,
+    viewed: false,
   },
   {
     id: "o2",
@@ -346,6 +347,7 @@ export const orders = [
     color: "Gray",
     createdAt: "2026-08-20T14:00:00",
     messages: [],
+    viewed: true,
   },
   {
     id: "o3",
@@ -359,6 +361,7 @@ export const orders = [
     color: "White",
     createdAt: "2026-08-05T10:30:00",
     messages: [],
+    viewed: true,
   },
 ];
 

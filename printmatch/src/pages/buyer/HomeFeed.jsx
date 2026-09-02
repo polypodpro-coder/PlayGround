@@ -4,7 +4,18 @@ import { Heart, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import PrinterCard from "../../components/PrinterCard";
 import PrinterMapView from "../../components/PrinterMapView";
 import RoleToggle from "../../components/RoleToggle";
+import MaterialChipSelector from "../../components/MaterialChipSelector";
 import { useApp } from "../../context/AppContext";
+
+const SORT_OPTIONS = [
+  { id: "distance", label: "Nearest" },
+  { id: "rating", label: "Top rated" },
+  { id: "turnaround", label: "Fastest" },
+];
+
+// Rough hours-equivalent for sorting by turnaround label, since it's free
+// text rather than a number.
+const TURNAROUND_HOURS = { "Same day": 8, "24hr": 24, "48hr": 48 };
 
 export default function HomeFeed() {
   const navigate = useNavigate();
@@ -12,11 +23,17 @@ export default function HomeFeed() {
   const [query, setQuery] = useState("");
   const [view, setView] = useState("list"); // 'list' | 'map'
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [materialFilter, setMaterialFilter] = useState([]);
+  const [sortBy, setSortBy] = useState("distance");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = printers;
     if (favoritesOnly) list = list.filter((p) => favorites.has(p.id));
+    if (materialFilter.length > 0) {
+      list = list.filter((p) => materialFilter.every((m) => p.materials.includes(m)));
+    }
     if (q) {
       list = list.filter(
         (p) =>
@@ -24,8 +41,22 @@ export default function HomeFeed() {
           p.materials.some((m) => m.toLowerCase().includes(q))
       );
     }
-    return list;
-  }, [printers, query, favoritesOnly, favorites]);
+    const sorted = [...list];
+    if (sortBy === "rating") {
+      sorted.sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === "turnaround") {
+      sorted.sort(
+        (a, b) =>
+          (TURNAROUND_HOURS[a.turnaroundLabel] ?? 99) -
+          (TURNAROUND_HOURS[b.turnaroundLabel] ?? 99)
+      );
+    } else {
+      sorted.sort((a, b) => a.distanceMi - b.distanceMi);
+    }
+    return sorted;
+  }, [printers, query, favoritesOnly, favorites, materialFilter, sortBy]);
+
+  const activeFilterCount = materialFilter.length + (sortBy !== "distance" ? 1 : 0);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -50,7 +81,23 @@ export default function HomeFeed() {
               placeholder="Search shops or materials"
               className="flex-1 text-sm text-navy outline-none placeholder:text-navy/35"
             />
-            <SlidersHorizontal size={17} className="text-navy/40" />
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className="relative"
+              aria-label="Filters and sort"
+              aria-pressed={showFilters}
+            >
+              <SlidersHorizontal
+                size={17}
+                className={showFilters ? "text-accent" : "text-navy/40"}
+              />
+              {activeFilterCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[8px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
           </div>
           <button
             type="button"
@@ -64,6 +111,38 @@ export default function HomeFeed() {
             <Heart size={18} className={favoritesOnly ? "fill-white" : ""} />
           </button>
         </div>
+
+        {showFilters && (
+          <div className="mt-3 space-y-3 rounded-2xl bg-white/10 p-3.5">
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-white/70">Materials</p>
+              <MaterialChipSelector
+                selected={materialFilter}
+                onChange={setMaterialFilter}
+                multi
+              />
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-white/70">Sort by</p>
+              <div className="flex flex-wrap gap-1.5">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSortBy(opt.id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      sortBy === opt.id
+                        ? "border-accent bg-accent text-white"
+                        : "border-white/20 text-white/70"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <button
@@ -113,7 +192,11 @@ export default function HomeFeed() {
         )}
         {filtered.length === 0 && (
           <p className="py-10 text-center text-sm text-navy/40">
-            {favoritesOnly ? "No favorites yet — tap the heart on a shop to save it." : `No printers match "${query}"`}
+            {favoritesOnly
+              ? "No favorites yet — tap the heart on a shop to save it."
+              : materialFilter.length > 0
+              ? "No printers match this material filter."
+              : `No printers match "${query}"`}
           </p>
         )}
       </div>
