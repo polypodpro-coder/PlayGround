@@ -2,10 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ChevronRight, TrendingUp } from "lucide-react";
 import RoleToggle from "../../components/RoleToggle";
 import StatusBadge from "../../components/StatusBadge";
+import ShopLogo from "../../components/ShopLogo";
 import { earnings, jobs, ownerPrinters } from "../../data/mockData";
+import { useApp } from "../../context/AppContext";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { myShop } = useApp();
   const primaryPrinter = ownerPrinters[0];
   const pendingJobs = jobs.filter((j) => j.status === "pending");
 
@@ -13,9 +16,12 @@ export default function Dashboard() {
     <div className="flex flex-1 flex-col">
       <header className="bg-navy px-4 pb-6 pt-5 text-white">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-white/60">Welcome back</p>
-            <h1 className="text-lg font-semibold">Dana's Print Shop</h1>
+          <div className="flex items-center gap-3">
+            <ShopLogo src={myShop.logoUrl} alt={`${myShop.name} logo`} />
+            <div>
+              <p className="text-xs text-white/60">Welcome back</p>
+              <h1 className="text-lg font-semibold">Dana's Print Shop</h1>
+            </div>
           </div>
           <RoleToggle />
         </div>

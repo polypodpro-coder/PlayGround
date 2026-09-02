@@ -2,12 +2,11 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ScreenHeader from "../../components/ScreenHeader";
 import QuoteCard from "../../components/QuoteCard";
-import { printers } from "../../data/mockData";
 import { useApp } from "../../context/AppContext";
 
 export default function Quotes() {
   const navigate = useNavigate();
-  const { quotes, acceptQuote } = useApp();
+  const { quotes, acceptQuote, printers } = useApp();
 
   const bestMatchId = useMemo(() => {
     if (quotes.length === 0) return null;

@@ -2,12 +2,15 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Search, SlidersHorizontal } from "lucide-react";
 import PrinterCard from "../../components/PrinterCard";
+import PrinterMapView from "../../components/PrinterMapView";
 import RoleToggle from "../../components/RoleToggle";
-import { printers } from "../../data/mockData";
+import { useApp } from "../../context/AppContext";
 
 export default function HomeFeed() {
   const navigate = useNavigate();
+  const { printers } = useApp();
   const [query, setQuery] = useState("");
+  const [view, setView] = useState("list"); // 'list' | 'map'
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -17,7 +20,7 @@ export default function HomeFeed() {
         p.name.toLowerCase().includes(q) ||
         p.materials.some((m) => m.toLowerCase().includes(q))
     );
-  }, [query]);
+  }, [printers, query]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -54,16 +57,42 @@ export default function HomeFeed() {
       </button>
 
       <div className="flex-1 space-y-3 px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-navy/40">
-          {filtered.length} printers nearby
-        </p>
-        {filtered.map((printer) => (
-          <PrinterCard
-            key={printer.id}
-            printer={printer}
-            onClick={() => navigate("/request")}
-          />
-        ))}
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-navy/40">
+            {filtered.length} printers nearby
+          </p>
+          <div className="flex rounded-full bg-navy/5 p-0.5">
+            {["list", "map"].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors ${
+                  view === v ? "bg-white text-navy shadow-sm" : "text-navy/40"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {view === "map" ? (
+          <>
+            <PrinterMapView printers={filtered} />
+            <p className="text-center text-xs text-navy/40">
+              Tap a pin to see shop details and its service radius.
+            </p>
+          </>
+        ) : (
+          filtered.map((printer) => (
+            <PrinterCard
+              key={printer.id}
+              printer={printer}
+              onClick={() => navigate("/request")}
+            />
+          ))
+        )}
         {filtered.length === 0 && (
           <p className="py-10 text-center text-sm text-navy/40">
             No printers match "{query}"

@@ -1,8 +1,9 @@
 import { MapPin, Star, Timer } from "lucide-react";
 import StatusBadge from "./StatusBadge";
+import ShopLogo from "./ShopLogo";
 
 export default function PrinterCard({ printer, onClick }) {
-  const { name, distanceMi, buildVolume, materials, turnaroundLabel, status, rating } =
+  const { name, distanceMi, buildVolume, materials, turnaroundLabel, status, rating, logoUrl } =
     printer;
 
   return (
@@ -12,14 +13,17 @@ export default function PrinterCard({ printer, onClick }) {
       className="w-full rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-black/5 transition-transform active:scale-[0.98]"
     >
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="text-base font-semibold text-navy">{name}</h3>
-          <div className="mt-0.5 flex items-center gap-1 text-xs text-navy/50">
-            <MapPin size={13} />
-            <span>{distanceMi} mi away</span>
-            <span className="mx-1">·</span>
-            <Star size={13} className="fill-accent text-accent" />
-            <span>{rating}</span>
+        <div className="flex items-start gap-3">
+          <ShopLogo src={logoUrl} alt={`${name} logo`} />
+          <div>
+            <h3 className="text-base font-semibold text-navy">{name}</h3>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-navy/50">
+              <MapPin size={13} />
+              <span>{distanceMi} mi away</span>
+              <span className="mx-1">·</span>
+              <Star size={13} className="fill-accent text-accent" />
+              <span>{rating}</span>
+            </div>
           </div>
         </div>
         <StatusBadge status={status} />

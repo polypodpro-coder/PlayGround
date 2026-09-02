@@ -3,12 +3,60 @@
 
 export const MATERIALS = ["PLA", "PETG", "ABS", "TPU", "Nylon"];
 
+// Self-contained SVG shop-logo marks — no network dependency, so the app
+// (and any static preview of it) never depends on an image host being
+// reachable. Each shop gets a distinct icon + color so pins are easy to
+// tell apart on the map. Base64-encoded (rather than percent-encoded) so
+// the single-quoted attributes inside the SVG never collide with the
+// quoting used when this URL is embedded in a CSS url(...) value, e.g. in
+// the Leaflet marker HTML.
+function shopLogo(inner) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>${inner}</svg>`;
+  return "data:image/svg+xml;base64," + btoa(svg);
+}
+
+const LOGO_RIVERSIDE = shopLogo(`
+  <circle cx='32' cy='32' r='32' fill='#1F6F63'/>
+  <path d='M24 16 H40 L34 30 H30 Z' fill='white'/>
+  <circle cx='32' cy='40' r='5' fill='white'/>
+  <path d='M12 24 L18 22 M10 30 L17 29' stroke='white' stroke-width='2.5' stroke-linecap='round'/>
+`);
+
+const LOGO_OAKHILL = shopLogo(`
+  <circle cx='32' cy='32' r='32' fill='#6B5B95'/>
+  <path d='M32 14 L46 22 V38 L32 46 L18 38 V22 Z' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'/>
+  <circle cx='32' cy='30' r='6' fill='white'/>
+`);
+
+const LOGO_CUBE_COIL = shopLogo(`
+  <circle cx='32' cy='32' r='32' fill='#B4562B'/>
+  <circle cx='32' cy='32' r='14' fill='none' stroke='white' stroke-width='3'/>
+  <circle cx='32' cy='32' r='5' fill='white'/>
+  <path d='M32 18 V14 M32 50 V46 M18 32 H14 M50 32 H46' stroke='white' stroke-width='3' stroke-linecap='round'/>
+`);
+
+const LOGO_GARAGE = shopLogo(`
+  <circle cx='32' cy='32' r='32' fill='#4A5568'/>
+  <path d='M18 40 L32 46 L46 40' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>
+  <path d='M18 32 L32 38 L46 32' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>
+  <path d='M18 24 L32 30 L46 24 L32 18 Z' fill='white'/>
+`);
+
+const LOGO_NORTH_END = shopLogo(`
+  <circle cx='32' cy='32' r='32' fill='#2E5C8A'/>
+  <path d='M32 14 L48 23 V41 L32 50 L16 41 V23 Z' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'/>
+  <path d='M32 14 V32 M32 32 L48 23 M32 32 L16 23' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>
+`);
+
 export const printers = [
   {
     id: "p1",
     name: "Riverside Rapid Prints",
     ownerName: "Dana K.",
     distanceMi: 0.8,
+    location: [39.786, -89.644], // [lat, lng]
+    serviceRadiusMi: 10,
+    logoUrl: LOGO_RIVERSIDE,
     buildVolume: { x: 220, y: 220, z: 250 },
     materials: ["PLA", "PETG", "TPU"],
     turnaroundLabel: "Same day",
@@ -21,6 +69,9 @@ export const printers = [
     name: "Oakhill Fab Lab",
     ownerName: "Marcus T.",
     distanceMi: 1.4,
+    location: [39.791, -89.66],
+    serviceRadiusMi: 6,
+    logoUrl: LOGO_OAKHILL,
     buildVolume: { x: 300, y: 300, z: 400 },
     materials: ["PLA", "ABS", "Nylon"],
     turnaroundLabel: "24hr",
@@ -33,6 +84,9 @@ export const printers = [
     name: "Cube & Coil Studio",
     ownerName: "Priya S.",
     distanceMi: 2.1,
+    location: [39.765, -89.625],
+    serviceRadiusMi: 12,
+    logoUrl: LOGO_CUBE_COIL,
     buildVolume: { x: 250, y: 210, z: 210 },
     materials: ["PLA", "PETG", "ABS", "TPU"],
     turnaroundLabel: "48hr",
@@ -45,6 +99,9 @@ export const printers = [
     name: "Garage Layer Works",
     ownerName: "Leo F.",
     distanceMi: 3.5,
+    location: [39.81, -89.61],
+    serviceRadiusMi: 5,
+    logoUrl: LOGO_GARAGE,
     buildVolume: { x: 180, y: 180, z: 200 },
     materials: ["PLA", "PETG"],
     turnaroundLabel: "24hr",
@@ -57,6 +114,9 @@ export const printers = [
     name: "North End Print Co.",
     ownerName: "Sam R.",
     distanceMi: 4.2,
+    location: [39.825, -89.67],
+    serviceRadiusMi: 15,
+    logoUrl: LOGO_NORTH_END,
     buildVolume: { x: 350, y: 350, z: 400 },
     materials: ["PLA", "PETG", "ABS", "Nylon", "TPU"],
     turnaroundLabel: "Same day",
@@ -199,10 +259,10 @@ export const earnings = {
   weeklyTrend: [30, 42, 18, 55, 25, 44.5, 0],
 };
 
-export const serviceArea = {
-  center: [39.7817, -89.6501], // Downtown, Springfield
-  radiusMi: 8,
-};
+// The signed-in printer owner in this demo is Dana K. (printers[0]) —
+// "my shop" fields (location, serviceRadiusMi, logoUrl, status) live on
+// that printer record and are edited via AppContext's updateMyShop.
+export const MY_PRINTER_ID = "p1";
 
 export const ownerPrinters = [
   {

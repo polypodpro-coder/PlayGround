@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreditCard, Wallet } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
-import { printers, order as mockOrder } from "../../data/mockData";
+import { order as mockOrder } from "../../data/mockData";
 import { useApp } from "../../context/AppContext";
 
 const PAYMENT_METHODS = [
@@ -12,7 +12,7 @@ const PAYMENT_METHODS = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { selectedQuote, placeOrder } = useApp();
+  const { selectedQuote, placeOrder, printers } = useApp();
   const [method, setMethod] = useState("visa");
 
   const quote = selectedQuote ?? {

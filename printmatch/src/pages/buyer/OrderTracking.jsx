@@ -3,11 +3,10 @@ import ScreenHeader from "../../components/ScreenHeader";
 import ProgressStepper from "../../components/ProgressStepper";
 import ChatThread from "../../components/ChatThread";
 import StatusBadge from "../../components/StatusBadge";
-import { printers } from "../../data/mockData";
 import { useApp } from "../../context/AppContext";
 
 export default function OrderTracking() {
-  const { order } = useApp();
+  const { order, printers } = useApp();
   const printer = printers.find((p) => p.id === order.printerId) ?? printers[0];
   const [messages, setMessages] = useState(order.messages);
 
