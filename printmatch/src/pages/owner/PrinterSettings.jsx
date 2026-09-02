@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, MapPin, Printer, Search, Upload } from "lucide-react";
+import { Loader2, MapPin, Moon, Plus, Printer, Search, Upload, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import StatusBadge from "../../components/StatusBadge";
 import ShopLogo from "../../components/ShopLogo";
@@ -22,6 +22,7 @@ export default function PrinterSettings() {
   const [latText, setLatText] = useState(myShop.location[0].toFixed(5));
   const [lngText, setLngText] = useState(myShop.location[1].toFixed(5));
   const fileInputRef = useRef(null);
+  const portfolioInputRef = useRef(null);
 
   // Keep the lat/lng text fields in sync when the location changes from
   // elsewhere (dragging the pin, or a successful address lookup).
@@ -90,6 +91,28 @@ export default function PrinterSettings() {
     reader.readAsDataURL(file);
   };
 
+  const handlePortfolioFile = (fileList) => {
+    const file = fileList?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const photo = { id: `photo-${Date.now()}`, imageUrl: reader.result, caption: file.name };
+      updateMyShop({ portfolio: [...(myShop.portfolio ?? []), photo] });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePortfolioPhoto = (id) => {
+    updateMyShop({ portfolio: myShop.portfolio.filter((p) => p.id !== id) });
+  };
+
+  const setPricingRate = (material, value) => {
+    const rate = Number(value);
+    updateMyShop({
+      pricingRates: { ...myShop.pricingRates, [material]: Number.isFinite(rate) ? rate : 0 },
+    });
+  };
+
   return (
     <div className="flex flex-1 flex-col">
       <ScreenHeader title="Settings" subtitle="Shop, service area & printers" />
@@ -128,6 +151,43 @@ export default function PrinterSettings() {
           </div>
           <p className="mt-3 text-xs text-navy/40">
             Shown to buyers on your listing and on the service-area map.
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <h2 className="mb-3 text-sm font-semibold text-navy">Portfolio</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {(myShop.portfolio ?? []).map((photo) => (
+              <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-xl">
+                <img src={photo.imageUrl} alt={photo.caption} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removePortfolioPhoto(photo.id)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-navy/70 text-white"
+                  aria-label="Remove photo"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => portfolioInputRef.current?.click()}
+              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-navy/15 text-navy/40 active:scale-95"
+            >
+              <Plus size={18} />
+              <span className="text-[10px] font-medium">Add photo</span>
+              <input
+                ref={portfolioInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handlePortfolioFile(e.target.files)}
+              />
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-navy/40">
+            Shown on your shop profile so buyers can see finished work before requesting a quote.
           </p>
         </div>
 
@@ -230,6 +290,77 @@ export default function PrinterSettings() {
             <span className="font-semibold text-navy">{myShop.serviceRadiusMi} miles</span> of
             your pin.
           </p>
+        </div>
+
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <h2 className="mb-1 text-sm font-semibold text-navy">Pricing</h2>
+          <p className="mb-3 text-xs text-navy/40">
+            Set your rate per material so quoting a job is one tap instead of guesswork.
+          </p>
+          <div className="space-y-2.5">
+            {myShop.materials.map((material) => (
+              <div key={material} className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-navy">{material}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-navy/40">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={myShop.pricingRates?.[material] ?? 0}
+                    onChange={(e) => setPricingRate(material, e.target.value)}
+                    className="w-20 rounded-lg bg-gray-50 px-2.5 py-1.5 text-right text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                  />
+                  <span className="text-xs text-navy/40">/g</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy/5 text-navy/50">
+                <Moon size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-navy">Pause my shop</h2>
+                <p className="text-xs text-navy/40">Stop new requests while you're away</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={myShop.shopPaused}
+              onClick={() =>
+                updateMyShop({
+                  shopPaused: !myShop.shopPaused,
+                  pausedUntil: myShop.shopPaused ? null : myShop.pausedUntil,
+                })
+              }
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                myShop.shopPaused ? "bg-accent" : "bg-navy/15"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  myShop.shopPaused ? "translate-x-[22px]" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+          {myShop.shopPaused && (
+            <div className="mt-3.5">
+              <label className="mb-1.5 block text-xs font-medium text-navy/50">Until</label>
+              <input
+                type="date"
+                value={myShop.pausedUntil ?? ""}
+                onChange={(e) => updateMyShop({ pausedUntil: e.target.value })}
+                className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+              />
+            </div>
+          )}
         </div>
 
         <div>

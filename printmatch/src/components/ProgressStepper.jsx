@@ -7,7 +7,9 @@ const STEPS = [
 ];
 
 export default function ProgressStepper({ status }) {
-  const activeIndex = STEPS.findIndex((s) => s.key === status);
+  // A completed order has moved past all three tracked steps.
+  const activeIndex =
+    status === "completed" ? STEPS.length : STEPS.findIndex((s) => s.key === status);
 
   return (
     <div className="flex items-center">

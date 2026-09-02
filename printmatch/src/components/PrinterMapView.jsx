@@ -11,10 +11,16 @@ const STATUS_COLORS = {
   available: "#10b981",
   printing: "#e8752d",
   offline: "#94a3b8",
+  paused: "#d4a017",
 };
 
+function pinColor(printer) {
+  if (printer.shopPaused) return STATUS_COLORS.paused;
+  return STATUS_COLORS[printer.status] ?? STATUS_COLORS.offline;
+}
+
 function printerIcon(printer) {
-  const color = STATUS_COLORS[printer.status] ?? STATUS_COLORS.offline;
+  const color = pinColor(printer);
   const fill = printer.logoUrl
     ? `background-image:url('${printer.logoUrl}');background-size:cover;background-position:center;`
     : `background:#0f2a4a;`;
@@ -60,9 +66,9 @@ export default function PrinterMapView({ printers }) {
               center={printer.location}
               radius={printer.serviceRadiusMi * MILES_TO_METERS}
               pathOptions={{
-                color: STATUS_COLORS[printer.status] ?? STATUS_COLORS.offline,
+                color: pinColor(printer),
                 weight: 1.5,
-                fillColor: STATUS_COLORS[printer.status] ?? STATUS_COLORS.offline,
+                fillColor: pinColor(printer),
                 fillOpacity: 0.08,
               }}
             />
@@ -85,10 +91,10 @@ export default function PrinterMapView({ printers }) {
                   </p>
                   <button
                     type="button"
-                    onClick={() => navigate("/request")}
+                    onClick={() => navigate(`/shop/${printer.id}`)}
                     className="mt-2 w-full rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white active:scale-95"
                   >
-                    Get a quote
+                    View shop
                   </button>
                 </div>
               </Popup>

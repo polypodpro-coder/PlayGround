@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useParams } from "react-router-dom";
 import ScreenHeader from "../../components/ScreenHeader";
 import ProgressStepper from "../../components/ProgressStepper";
 import ChatThread from "../../components/ChatThread";
@@ -6,20 +6,23 @@ import StatusBadge from "../../components/StatusBadge";
 import { useApp } from "../../context/AppContext";
 
 export default function OrderTracking() {
-  const { order, printers } = useApp();
+  const { orderId } = useParams();
+  const { orders, updateOrder, printers } = useApp();
+  const order = orders.find((o) => o.id === orderId) ?? orders[0];
   const printer = printers.find((p) => p.id === order.printerId) ?? printers[0];
-  const [messages, setMessages] = useState(order.messages);
 
   const handleSend = (text) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `local-${Date.now()}`,
-        senderRole: "buyer",
-        text,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    updateOrder(order.id, {
+      messages: [
+        ...order.messages,
+        {
+          id: `local-${Date.now()}`,
+          senderRole: "buyer",
+          text,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    });
   };
 
   return (
@@ -45,7 +48,7 @@ export default function OrderTracking() {
       </div>
 
       <div className="min-h-0 flex-1 bg-gray-50">
-        <ChatThread messages={messages} currentRole="buyer" onSend={handleSend} />
+        <ChatThread messages={order.messages} currentRole="buyer" onSend={handleSend} />
       </div>
     </div>
   );

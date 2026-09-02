@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, File as FileIcon, Image as ImageIcon, UploadCloud, X } from "lucide-react";
+import { Calendar, Calculator, File as FileIcon, Image as ImageIcon, UploadCloud, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import MaterialChipSelector from "../../components/MaterialChipSelector";
 import { useApp } from "../../context/AppContext";
+
+// Rough average $/gram across nearby shops, used only to give buyers a
+// ballpark before quotes come in — the printer they pick sets the real
+// price.
+const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon: 0.15 };
 
 export default function RequestUpload() {
   const navigate = useNavigate();
@@ -16,6 +21,19 @@ export default function RequestUpload() {
   const [dragOver, setDragOver] = useState(false);
 
   const isModel = file && /\.(stl|obj)$/i.test(file.name);
+
+  // A deterministic ballpark from the file's actual size — not a real
+  // slicer estimate, but grounded in something real about the upload
+  // rather than a random number.
+  const estimate = useMemo(() => {
+    if (!file) return null;
+    const grams = Math.min(420, Math.max(8, Math.round(file.size / 350)));
+    const rate = AVG_MATERIAL_RATE[material] ?? 0.08;
+    // Floor the base cost (not the low/high bounds separately) so a tiny
+    // estimated part can never produce an inverted range like "$4–$1".
+    const base = Math.max(5, grams * rate);
+    return { grams, low: base * 0.85, high: base * 1.3 };
+  }, [file, material]);
 
   const handleFiles = (fileList) => {
     const f = fileList?.[0];
@@ -98,6 +116,22 @@ export default function RequestUpload() {
           </label>
           <MaterialChipSelector selected={material} onChange={setMaterial} />
         </div>
+
+        {estimate && (
+          <div className="flex items-center gap-3 rounded-2xl bg-navy/5 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-accent">
+              <Calculator size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-navy">
+                Est. ${estimate.low.toFixed(0)}–${estimate.high.toFixed(0)}
+              </p>
+              <p className="text-xs text-navy/50">
+                ~{estimate.grams}g of {material}, based on your file · printers set the final price
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="mb-2 block text-sm font-semibold text-navy">

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ChevronRight, TrendingUp } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Moon, TrendingUp } from "lucide-react";
 import RoleToggle from "../../components/RoleToggle";
 import StatusBadge from "../../components/StatusBadge";
 import ShopLogo from "../../components/ShopLogo";
@@ -39,6 +39,23 @@ export default function Dashboard() {
       </header>
 
       <div className="flex-1 space-y-5 px-4 py-5">
+        {myShop.shopPaused && (
+          <div className="flex items-center gap-2.5 rounded-2xl bg-amber-50 p-3.5 text-amber-800 ring-1 ring-amber-200">
+            <Moon size={16} className="shrink-0" />
+            <p className="text-xs">
+              Your shop is paused
+              {myShop.pausedUntil && ` until ${new Date(myShop.pausedUntil).toLocaleDateString()}`} —
+              buyers can't send new requests.{" "}
+              <button
+                onClick={() => navigate("/owner/settings")}
+                className="font-semibold underline underline-offset-2"
+              >
+                Manage
+              </button>
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
           <div>
             <p className="text-sm font-semibold text-navy">{primaryPrinter.name}</p>

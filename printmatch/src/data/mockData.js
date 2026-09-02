@@ -48,6 +48,24 @@ const LOGO_NORTH_END = shopLogo(`
   <path d='M32 14 V32 M32 32 L48 23 M32 32 L16 23' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>
 `);
 
+// Self-contained placeholder "finished print" photos for shop portfolios —
+// same rationale as the logos: no network dependency. Each is a simple
+// layered-print silhouette tinted to the shop's brand color, with a
+// slightly different profile per index so a gallery of 3 doesn't look
+// like 3 copies of the same image.
+function portfolioImage(bg, seed) {
+  const bars = Array.from({ length: 10 }, (_, i) => {
+    const width = 70 + ((seed * 7 + i * 13) % 50);
+    const x = 100 - width / 2 + ((seed * 3 + i) % 10) - 5;
+    return `<rect x='${x}' y='${150 - i * 12}' width='${width}' height='9' rx='2'/>`;
+  }).join("");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 160'>
+    <rect width='200' height='160' fill='${bg}'/>
+    <g stroke='white' stroke-width='1.5' fill='none' opacity='0.9'>${bars}</g>
+  </svg>`;
+  return "data:image/svg+xml;base64," + btoa(svg);
+}
+
 export const printers = [
   {
     id: "p1",
@@ -63,6 +81,19 @@ export const printers = [
     status: "available",
     rating: 4.9,
     completedJobs: 312,
+    pricingRates: { PLA: 0.06, PETG: 0.08, TPU: 0.14 },
+    shopPaused: false,
+    pausedUntil: null,
+    portfolio: [
+      { id: "p1-1", imageUrl: portfolioImage("#1F6F63", 1), caption: "Articulated robot arm, PETG" },
+      { id: "p1-2", imageUrl: portfolioImage("#1F6F63", 2), caption: "Custom drone mount, TPU" },
+      { id: "p1-3", imageUrl: portfolioImage("#1F6F63", 3), caption: "Cable organizer set, PLA" },
+    ],
+    reviews: [
+      { id: "p1-r1", buyerName: "Jamie L.", rating: 5, text: "Fast turnaround and the bracket fit perfectly. Would order again.", date: "2026-08-22" },
+      { id: "p1-r2", buyerName: "Priya N.", rating: 5, text: "Dana kept me updated the whole time with photos. Great communication.", date: "2026-08-10" },
+      { id: "p1-r3", buyerName: "Tom R.", rating: 4, text: "Solid print quality, arrived a few hours later than quoted.", date: "2026-07-30" },
+    ],
   },
   {
     id: "p2",
@@ -78,6 +109,17 @@ export const printers = [
     status: "printing",
     rating: 4.7,
     completedJobs: 189,
+    pricingRates: { PLA: 0.07, ABS: 0.09, Nylon: 0.16 },
+    shopPaused: false,
+    pausedUntil: null,
+    portfolio: [
+      { id: "p2-1", imageUrl: portfolioImage("#6B5B95", 1), caption: "Enclosure prototype, ABS" },
+      { id: "p2-2", imageUrl: portfolioImage("#6B5B95", 2), caption: "Gear train test set, Nylon" },
+    ],
+    reviews: [
+      { id: "p2-r1", buyerName: "Alex C.", rating: 5, text: "Nailed the tolerances on a tricky gear part on the first try.", date: "2026-08-15" },
+      { id: "p2-r2", buyerName: "Devon W.", rating: 4, text: "Good quality, queue was a bit longer than the 24hr estimate.", date: "2026-07-28" },
+    ],
   },
   {
     id: "p3",
@@ -93,6 +135,19 @@ export const printers = [
     status: "available",
     rating: 4.8,
     completedJobs: 421,
+    pricingRates: { PLA: 0.06, PETG: 0.08, ABS: 0.09, TPU: 0.13 },
+    shopPaused: false,
+    pausedUntil: null,
+    portfolio: [
+      { id: "p3-1", imageUrl: portfolioImage("#B4562B", 1), caption: "Miniature terrain set, PLA" },
+      { id: "p3-2", imageUrl: portfolioImage("#B4562B", 2), caption: "Phone stand batch, PETG" },
+      { id: "p3-3", imageUrl: portfolioImage("#B4562B", 3), caption: "Flexible phone case, TPU" },
+    ],
+    reviews: [
+      { id: "p3-r1", buyerName: "Morgan P.", rating: 5, text: "Incredible detail on a mini terrain piece. Will be back.", date: "2026-08-25" },
+      { id: "p3-r2", buyerName: "Sasha K.", rating: 5, text: "Priya double-checked my file and caught a wall-thickness issue before printing.", date: "2026-08-01" },
+      { id: "p3-r3", buyerName: "Chris B.", rating: 4, text: "Great print, 48hr estimate ran closer to 60.", date: "2026-07-12" },
+    ],
   },
   {
     id: "p4",
@@ -108,6 +163,15 @@ export const printers = [
     status: "offline",
     rating: 4.5,
     completedJobs: 76,
+    pricingRates: { PLA: 0.05, PETG: 0.07 },
+    shopPaused: true,
+    pausedUntil: "2026-09-09",
+    portfolio: [
+      { id: "p4-1", imageUrl: portfolioImage("#4A5568", 1), caption: "Tool organizer tray, PLA" },
+    ],
+    reviews: [
+      { id: "p4-r1", buyerName: "Riley H.", rating: 4, text: "Good value, straightforward garage-shop print job.", date: "2026-07-18" },
+    ],
   },
   {
     id: "p5",
@@ -123,6 +187,19 @@ export const printers = [
     status: "available",
     rating: 5.0,
     completedJobs: 540,
+    pricingRates: { PLA: 0.05, PETG: 0.07, ABS: 0.08, Nylon: 0.14, TPU: 0.12 },
+    shopPaused: false,
+    pausedUntil: null,
+    portfolio: [
+      { id: "p5-1", imageUrl: portfolioImage("#2E5C8A", 1), caption: "Multi-color sign lettering, PLA" },
+      { id: "p5-2", imageUrl: portfolioImage("#2E5C8A", 2), caption: "Structural bracket batch, Nylon" },
+      { id: "p5-3", imageUrl: portfolioImage("#2E5C8A", 3), caption: "Gasket prototype run, TPU" },
+    ],
+    reviews: [
+      { id: "p5-r1", buyerName: "Nina V.", rating: 5, text: "Best turnaround of any shop I've used on here. Same-day, as promised.", date: "2026-08-27" },
+      { id: "p5-r2", buyerName: "Owen T.", rating: 5, text: "Five for five on quality across multiple orders now.", date: "2026-08-19" },
+      { id: "p5-r3", buyerName: "Faith A.", rating: 5, text: "Handles big build volumes well, printed an oversized part no one else could.", date: "2026-08-02" },
+    ],
   },
 ];
 
@@ -241,22 +318,58 @@ export const chatMessages = [
   },
 ];
 
-export const order = {
-  id: "o1",
-  quoteId: "q1",
-  printerId: "p1",
-  status: "printing",
-  progressPct: 62,
-  etaLabel: "2h 10m remaining",
-  serviceFee: 2.5,
-  messages: chatMessages,
-};
+// A buyer's order history — one active order plus a couple of past ones,
+// so the Orders tab has something to list besides a single in-flight job.
+export const orders = [
+  {
+    id: "o1",
+    printerId: "p1",
+    status: "printing",
+    progressPct: 62,
+    etaLabel: "2h 10m remaining",
+    printCost: 18.5,
+    serviceFee: 2.5,
+    material: "PETG",
+    color: "Black",
+    createdAt: "2026-09-02T08:50:00",
+    messages: chatMessages,
+  },
+  {
+    id: "o2",
+    printerId: "p3",
+    status: "completed",
+    progressPct: 100,
+    etaLabel: "Delivered",
+    printCost: 24.0,
+    serviceFee: 3.0,
+    material: "ABS",
+    color: "Gray",
+    createdAt: "2026-08-20T14:00:00",
+    messages: [],
+  },
+  {
+    id: "o3",
+    printerId: "p5",
+    status: "completed",
+    progressPct: 100,
+    etaLabel: "Delivered",
+    printCost: 12.0,
+    serviceFee: 2.0,
+    material: "PLA",
+    color: "White",
+    createdAt: "2026-08-05T10:30:00",
+    messages: [],
+  },
+];
 
 export const earnings = {
   weekTotal: 214.5,
   monthTotal: 892.0,
   jobsCompletedMonth: 47,
   weeklyTrend: [30, 42, 18, 55, 25, 44.5, 0],
+  topMaterial: "PETG",
+  busiestDay: "Thursday",
+  repeatCustomerPct: 38,
 };
 
 // The signed-in printer owner in this demo is Dana K. (printers[0]) —

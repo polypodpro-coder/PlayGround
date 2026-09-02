@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
-  order as mockOrder,
+  orders as mockOrders,
   quotes as mockQuotes,
   printers as mockPrinters,
   MY_PRINTER_ID,
@@ -12,8 +12,9 @@ export function AppProvider({ children }) {
   const [role, setRole] = useState("buyer"); // 'buyer' | 'owner'
   const [request, setRequest] = useState(null); // in-progress buyer request
   const [selectedQuote, setSelectedQuote] = useState(null);
-  const [order, setOrder] = useState(mockOrder);
+  const [orders, setOrders] = useState(mockOrders);
   const [printers, setPrinters] = useState(mockPrinters);
+  const [favorites, setFavorites] = useState(() => new Set());
 
   const toggleRole = () =>
     setRole((r) => (r === "buyer" ? "owner" : "buyer"));
@@ -22,9 +23,44 @@ export function AppProvider({ children }) {
     setSelectedQuote(quote);
   };
 
-  const placeOrder = () => {
-    setOrder({ ...mockOrder, status: "queued", progressPct: 4 });
-  };
+  const updateOrder = useCallback((id, patch) => {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
+  }, []);
+
+  // Builds a fresh order from the accepted quote and returns its id, so
+  // Checkout can route straight to that order's tracking screen.
+  const placeOrder = useCallback(() => {
+    const id = `o${Date.now()}`;
+    const newOrder = {
+      id,
+      printerId: selectedQuote?.printerId ?? MY_PRINTER_ID,
+      status: "queued",
+      progressPct: 4,
+      etaLabel: "Just placed",
+      printCost: selectedQuote?.price ?? 18.5,
+      serviceFee: 2.5,
+      material: selectedQuote?.material ?? "PLA",
+      color: selectedQuote?.color ?? "Black",
+      createdAt: new Date().toISOString(),
+      messages: [],
+    };
+    setOrders((prev) => [newOrder, ...prev]);
+    return id;
+  }, [selectedQuote]);
+
+  const activeOrderCount = useMemo(
+    () => orders.filter((o) => o.status !== "completed").length,
+    [orders]
+  );
+
+  const toggleFavorite = useCallback((printerId) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(printerId)) next.delete(printerId);
+      else next.add(printerId);
+      return next;
+    });
+  }, []);
 
   const updatePrinter = useCallback((id, patch) => {
     setPrinters((prev) =>
@@ -54,14 +90,32 @@ export function AppProvider({ children }) {
       quotes: mockQuotes,
       selectedQuote,
       acceptQuote,
-      order,
+      orders,
+      updateOrder,
       placeOrder,
+      activeOrderCount,
       printers,
       updatePrinter,
       myShop,
       updateMyShop,
+      favorites,
+      toggleFavorite,
     }),
-    [role, request, selectedQuote, order, printers, updatePrinter, myShop, updateMyShop]
+    [
+      role,
+      request,
+      selectedQuote,
+      orders,
+      updateOrder,
+      placeOrder,
+      activeOrderCount,
+      printers,
+      updatePrinter,
+      myShop,
+      updateMyShop,
+      favorites,
+      toggleFavorite,
+    ]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -5,6 +5,8 @@ const STYLES = {
   offline: "bg-gray-200 text-gray-500",
   queued: "bg-gray-200 text-gray-600",
   pending: "bg-amber-100 text-amber-700",
+  completed: "bg-emerald-100 text-emerald-700",
+  paused: "bg-amber-100 text-amber-700",
 };
 
 const LABELS = {
@@ -14,6 +16,8 @@ const LABELS = {
   offline: "Offline",
   queued: "Queued",
   pending: "Pending",
+  completed: "Completed",
+  paused: "Paused",
 };
 
 export default function StatusBadge({ status, label }) {

@@ -1,3 +1,4 @@
+import { Layers, Repeat2, TrendingUp } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import { earnings } from "../../data/mockData";
 
@@ -47,6 +48,39 @@ export default function Earnings() {
                 {label}
               </span>
             ))}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-2.5 text-sm font-semibold text-navy">Insights</h2>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy/5 text-navy/50">
+                <Layers size={17} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-navy">{earnings.topMaterial}</p>
+                <p className="text-xs text-navy/50">Your most-requested material</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy/5 text-navy/50">
+                <TrendingUp size={17} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-navy">{earnings.busiestDay}</p>
+                <p className="text-xs text-navy/50">Your busiest day this month</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy/5 text-navy/50">
+                <Repeat2 size={17} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-navy">{earnings.repeatCustomerPct}% repeat</p>
+                <p className="text-xs text-navy/50">Customers who've ordered more than once</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

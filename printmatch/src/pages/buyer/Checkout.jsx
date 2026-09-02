@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreditCard, Wallet } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
-import { order as mockOrder } from "../../data/mockData";
 import { useApp } from "../../context/AppContext";
 
 const PAYMENT_METHODS = [
   { id: "visa", label: "Visa •••• 4242", icon: CreditCard },
   { id: "wallet", label: "PrintMatch Wallet ($42.10)", icon: Wallet },
 ];
+const SERVICE_FEE = 2.5;
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -22,12 +22,12 @@ export default function Checkout() {
     color: "Black",
   };
   const printer = printers.find((p) => p.id === quote.printerId) ?? printers[0];
-  const serviceFee = mockOrder.serviceFee;
+  const serviceFee = SERVICE_FEE;
   const total = quote.price + serviceFee;
 
   const handlePlaceOrder = () => {
-    placeOrder();
-    navigate("/orders");
+    const orderId = placeOrder();
+    navigate(`/orders/${orderId}`);
   };
 
   return (

@@ -1,15 +1,27 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, File as FileIcon, Hash, Image as ImageIcon } from "lucide-react";
+import { Box, Calculator, File as FileIcon, Hash, Image as ImageIcon } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import { jobs } from "../../data/mockData";
+import { useApp } from "../../context/AppContext";
 
 export default function JobDetail() {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const { myShop } = useApp();
   const job = jobs.find((j) => j.id === jobId) ?? jobs[0];
 
-  const [price, setPrice] = useState("");
+  // A rough per-material auto-price from the owner's own $/g rate and the
+  // job's bounding-box volume — a starting point, not a final number.
+  const suggested = useMemo(() => {
+    const rate = myShop.pricingRates?.[job.material];
+    if (!rate) return null;
+    const volumeCm3 = (job.dimensions.x * job.dimensions.y * job.dimensions.z) / 1000;
+    const grams = Math.round(volumeCm3 * 0.25 * job.quantity);
+    return { grams, price: Math.max(4, grams * rate) };
+  }, [myShop.pricingRates, job]);
+
+  const [price, setPrice] = useState(suggested ? suggested.price.toFixed(2) : "");
   const [turnaround, setTurnaround] = useState("");
   const [sent, setSent] = useState(false);
 
@@ -73,6 +85,23 @@ export default function JobDetail() {
 
         <form onSubmit={sendQuote} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Your quote</h2>
+
+          {suggested && (
+            <div className="mb-3 flex items-center gap-2.5 rounded-xl bg-navy/5 px-3.5 py-2.5">
+              <Calculator size={15} className="shrink-0 text-accent" />
+              <p className="text-xs text-navy/60">
+                Suggested from your {job.material} rate: ~{suggested.grams}g ·{" "}
+                <button
+                  type="button"
+                  onClick={() => setPrice(suggested.price.toFixed(2))}
+                  className="font-semibold text-accent underline underline-offset-2"
+                >
+                  use ${suggested.price.toFixed(2)}
+                </button>
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-navy/50">
