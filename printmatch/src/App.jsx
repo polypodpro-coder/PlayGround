@@ -1,5 +1,9 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
+import { useApp } from "./context/AppContext";
+
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
 
 import HomeFeed from "./pages/buyer/HomeFeed";
 import ShopProfile from "./pages/buyer/ShopProfile";
@@ -8,6 +12,7 @@ import Quotes from "./pages/buyer/Quotes";
 import Checkout from "./pages/buyer/Checkout";
 import OrderHistory from "./pages/buyer/OrderHistory";
 import OrderTracking from "./pages/buyer/OrderTracking";
+import Account from "./pages/buyer/Account";
 
 import Dashboard from "./pages/owner/Dashboard";
 import Requests from "./pages/owner/Requests";
@@ -20,10 +25,26 @@ import PrinterSettings from "./pages/owner/PrinterSettings";
 // focus. Bottom-nav destinations themselves (/orders list, /shop profile)
 // keep the nav visible since they're browse screens, not task flows.
 const HIDE_NAV_PREFIXES = ["/request", "/quotes", "/checkout", "/owner/requests/"];
+const AUTH_PATHS = ["/login", "/signup"];
 
 export default function App() {
   const { pathname } = useLocation();
+  const { isAuthenticated, role } = useApp();
+
+  const isAuthPath = AUTH_PATHS.includes(pathname);
+  if (!isAuthenticated && !isAuthPath) {
+    return <Navigate to="/login" replace />;
+  }
+  // Redirect target depends on role (not a hardcoded "/") so this stays
+  // correct even if it wins a race against an explicit navigate() call
+  // made right after login/signup — e.g. quick-logging in as the owner
+  // must not strand the URL on the buyer home feed.
+  if (isAuthenticated && isAuthPath) {
+    return <Navigate to={role === "owner" ? "/owner" : "/"} replace />;
+  }
+
   const hideNav =
+    isAuthPath ||
     HIDE_NAV_PREFIXES.some((p) => pathname.startsWith(p)) ||
     /^\/orders\/.+/.test(pathname);
 
@@ -31,6 +52,10 @@ export default function App() {
     <div className="app-shell">
       <div className="flex min-h-0 flex-1 flex-col">
         <Routes>
+          {/* Auth */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
           {/* Buyer flow */}
           <Route path="/" element={<HomeFeed />} />
           <Route path="/shop/:printerId" element={<ShopProfile />} />
@@ -39,6 +64,7 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<OrderHistory />} />
           <Route path="/orders/:orderId" element={<OrderTracking />} />
+          <Route path="/account" element={<Account />} />
 
           {/* Printer owner flow */}
           <Route path="/owner" element={<Dashboard />} />

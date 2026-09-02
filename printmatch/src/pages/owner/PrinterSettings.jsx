@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, MapPin, Moon, Plus, Printer, Search, Upload, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Loader2, LogOut, MapPin, Moon, Plus, Printer, Search, Upload, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import StatusBadge from "../../components/StatusBadge";
 import ShopLogo from "../../components/ShopLogo";
@@ -12,7 +13,8 @@ const MIN_RADIUS = 1;
 const MAX_RADIUS = 25;
 
 export default function PrinterSettings() {
-  const { myShop, updateMyShop } = useApp();
+  const navigate = useNavigate();
+  const { myShop, updateMyShop, currentUser, logout } = useApp();
   const [printers, setPrinters] = useState(initialPrinters);
 
   const [address, setAddress] = useState("");
@@ -118,6 +120,26 @@ export default function PrinterSettings() {
       <ScreenHeader title="Settings" subtitle="Shop, service area & printers" />
 
       <div className="flex-1 space-y-5 px-4 py-5">
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-navy">{currentUser?.name}</p>
+              <p className="text-xs text-navy/50">{currentUser?.email}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className="flex items-center gap-1.5 rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-500 active:scale-95"
+            >
+              <LogOut size={13} />
+              Log out
+            </button>
+          </div>
+        </div>
+
         <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Shop logo</h2>
           <div className="flex items-center gap-4">

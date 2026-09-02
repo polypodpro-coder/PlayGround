@@ -1,23 +1,98 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   orders as mockOrders,
   quotes as mockQuotes,
   printers as mockPrinters,
+  users as mockUsers,
+  savedAddresses as mockAddresses,
+  savedPaymentMethods as mockPaymentMethods,
   MY_PRINTER_ID,
 } from "../data/mockData";
 
 const AppContext = createContext(null);
+const SESSION_KEY = "printmatch.session";
+
+function titleCaseFromEmail(email) {
+  const local = email.split("@")[0] ?? "there";
+  return local
+    .replace(/[._-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// A refresh shouldn't sign the user out — persist just enough of the
+// session (who's logged in, which role they were viewing) to a local
+// browser-only session, separate from the rest of the mock data.
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session) {
+  try {
+    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Storage unavailable (private browsing, disabled) — session just
+    // won't survive a refresh this time, which is fine.
+  }
+}
 
 export function AppProvider({ children }) {
-  const [role, setRole] = useState("buyer"); // 'buyer' | 'owner'
+  const [session] = useState(loadSession); // read once, at mount
+  const [role, setRole] = useState(session?.role ?? "buyer"); // 'buyer' | 'owner'
+  const [currentUser, setCurrentUser] = useState(session?.currentUser ?? null);
   const [request, setRequest] = useState(null); // in-progress buyer request
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [orders, setOrders] = useState(mockOrders);
   const [printers, setPrinters] = useState(mockPrinters);
   const [favorites, setFavorites] = useState(() => new Set());
+  const [addresses, setAddresses] = useState(mockAddresses);
+  const [paymentMethods, setPaymentMethods] = useState(mockPaymentMethods);
 
   const toggleRole = () =>
     setRole((r) => (r === "buyer" ? "owner" : "buyer"));
+
+  // Keep the persisted session in sync so a page refresh doesn't sign
+  // the user back out.
+  useEffect(() => {
+    saveSession(currentUser ? { currentUser, role } : null);
+  }, [currentUser, role]);
+
+  // Mock auth: no real backend, so this just matches (or creates) a local
+  // user record — any password "works." Matching a known mock account
+  // also switches into that account's role so login lands on the right
+  // experience.
+  const login = useCallback((email) => {
+    const match = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const user = match ?? { id: `u${Date.now()}`, name: titleCaseFromEmail(email), email, role: "buyer" };
+    setCurrentUser(user);
+    setRole(user.role);
+  }, []);
+
+  const signup = useCallback(({ name, email, role: signupRole }) => {
+    const user = { id: `u${Date.now()}`, name, email, role: signupRole };
+    setCurrentUser(user);
+    setRole(signupRole);
+  }, []);
+
+  const quickLogin = useCallback((asRole) => {
+    const user = mockUsers.find((u) => u.role === asRole) ?? mockUsers[0];
+    setCurrentUser(user);
+    setRole(user.role);
+  }, []);
+
+  const logout = useCallback(() => setCurrentUser(null), []);
+
+  const updateCurrentUser = useCallback((patch) => {
+    setCurrentUser((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
 
   const acceptQuote = (quote) => {
     setSelectedQuote(quote);
@@ -83,11 +158,32 @@ export function AppProvider({ children }) {
     [updatePrinter]
   );
 
+  const addAddress = useCallback((label, line) => {
+    setAddresses((prev) => [...prev, { id: `addr${Date.now()}`, label, line }]);
+  }, []);
+  const removeAddress = useCallback((id) => {
+    setAddresses((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const addPaymentMethod = useCallback((label) => {
+    setPaymentMethods((prev) => [...prev, { id: `pm${Date.now()}`, label }]);
+  }, []);
+  const removePaymentMethod = useCallback((id) => {
+    setPaymentMethods((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
   const value = useMemo(
     () => ({
       role,
       setRole,
       toggleRole,
+      currentUser,
+      isAuthenticated: !!currentUser,
+      login,
+      signup,
+      quickLogin,
+      logout,
+      updateCurrentUser,
       request,
       setRequest,
       quotes: mockQuotes,
@@ -103,9 +199,21 @@ export function AppProvider({ children }) {
       updateMyShop,
       favorites,
       toggleFavorite,
+      addresses,
+      addAddress,
+      removeAddress,
+      paymentMethods,
+      addPaymentMethod,
+      removePaymentMethod,
     }),
     [
       role,
+      currentUser,
+      login,
+      signup,
+      quickLogin,
+      logout,
+      updateCurrentUser,
       request,
       selectedQuote,
       orders,
@@ -118,6 +226,12 @@ export function AppProvider({ children }) {
       updateMyShop,
       favorites,
       toggleFavorite,
+      addresses,
+      addAddress,
+      removeAddress,
+      paymentMethods,
+      addPaymentMethod,
+      removePaymentMethod,
     ]
   );
 

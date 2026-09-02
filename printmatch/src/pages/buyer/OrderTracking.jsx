@@ -62,6 +62,13 @@ export default function OrderTracking() {
           </div>
         </div>
 
+        {order.shipAddress && (
+          <p className="text-xs text-navy/50">
+            Shipping to <span className="font-medium text-navy">{order.shipAddress.label}</span> ·{" "}
+            {order.shipAddress.line}
+          </p>
+        )}
+
         {canCancel && !confirmingCancel && (
           <button
             type="button"

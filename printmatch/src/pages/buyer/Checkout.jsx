@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Package, Store, Wallet } from "lucide-react";
+import { CreditCard, MapPin, Package, Plus, Store } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useApp } from "../../context/AppContext";
 
-const PAYMENT_METHODS = [
-  { id: "visa", label: "Visa •••• 4242", icon: CreditCard },
-  { id: "wallet", label: "PrintMatch Wallet ($42.10)", icon: Wallet },
-];
 const DELIVERY_METHODS = [
   { id: "pickup", label: "Pick up from shop", icon: Store, fee: 0 },
   { id: "ship", label: "Ship to me", icon: Package, fee: 5 },
@@ -16,9 +12,10 @@ const SERVICE_FEE = 2.5;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { selectedQuote, placeOrder, printers } = useApp();
-  const [method, setMethod] = useState("visa");
+  const { selectedQuote, placeOrder, printers, paymentMethods, addresses } = useApp();
+  const [method, setMethod] = useState(paymentMethods[0]?.id);
   const [delivery, setDelivery] = useState("pickup");
+  const [addressId, setAddressId] = useState(addresses[0]?.id);
 
   const quote = selectedQuote ?? {
     printerId: printers[0].id,
@@ -30,9 +27,15 @@ export default function Checkout() {
   const serviceFee = SERVICE_FEE;
   const shippingFee = DELIVERY_METHODS.find((d) => d.id === delivery)?.fee ?? 0;
   const total = quote.price + serviceFee + shippingFee;
+  const shipAddress = addresses.find((a) => a.id === addressId);
 
   const handlePlaceOrder = () => {
-    const orderId = placeOrder({ deliveryMethod: delivery, shippingFee, serviceFee });
+    const orderId = placeOrder({
+      deliveryMethod: delivery,
+      shippingFee,
+      serviceFee,
+      shipAddress: delivery === "ship" ? shipAddress : null,
+    });
     navigate(`/orders/${orderId}`);
   };
 
@@ -96,10 +99,54 @@ export default function Checkout() {
           </div>
         </div>
 
+        {delivery === "ship" && (
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-navy">Ship to</h2>
+            {addresses.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => navigate("/account")}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-navy/20 py-3 text-xs font-semibold text-navy/60"
+              >
+                <Plus size={13} /> Add an address in Account
+              </button>
+            ) : (
+              <div className="space-y-2">
+                {addresses.map((addr) => (
+                  <button
+                    key={addr.id}
+                    type="button"
+                    onClick={() => setAddressId(addr.id)}
+                    className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                      addressId === addr.id
+                        ? "border-accent bg-accent/5"
+                        : "border-black/5 bg-white"
+                    }`}
+                  >
+                    <MapPin
+                      size={16}
+                      className={`mt-0.5 shrink-0 ${addressId === addr.id ? "text-accent" : "text-navy/40"}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-navy">{addr.label}</p>
+                      <p className="text-xs text-navy/50">{addr.line}</p>
+                    </div>
+                    <span
+                      className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 ${
+                        addressId === addr.id ? "border-accent bg-accent" : "border-navy/20"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div>
           <h2 className="mb-2 text-sm font-semibold text-navy">Payment method</h2>
           <div className="space-y-2">
-            {PAYMENT_METHODS.map(({ id, label, icon: Icon }) => (
+            {paymentMethods.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
@@ -110,7 +157,7 @@ export default function Checkout() {
                     : "border-black/5 bg-white text-navy/70"
                 }`}
               >
-                <Icon size={18} className={method === id ? "text-accent" : "text-navy/40"} />
+                <CreditCard size={18} className={method === id ? "text-accent" : "text-navy/40"} />
                 {label}
                 <span
                   className={`ml-auto h-4 w-4 rounded-full border-2 ${

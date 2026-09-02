@@ -4,6 +4,7 @@ import {
   ListChecks,
   MessageCircle,
   Settings,
+  User,
   Wallet,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
@@ -17,6 +18,7 @@ export default function BottomNav() {
   const BUYER_TABS = [
     { to: "/", label: "Home", icon: Home, end: true },
     { to: "/orders", label: "Orders", icon: MessageCircle, badge: activeOrderCount },
+    { to: "/account", label: "Account", icon: User },
   ];
 
   const OWNER_TABS = [

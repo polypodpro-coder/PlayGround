@@ -400,3 +400,21 @@ export const ownerPrinters = [
     status: "offline",
   },
 ];
+
+// Mock accounts for the demo login screen — no real backend, so signing
+// in just matches (or creates) one of these locally. The two "quick
+// login" shortcuts point at these exact records.
+export const users = [
+  { id: "u1", name: "Alex Morgan", email: "alex@example.com", role: "buyer", phone: "(555) 019-2231" },
+  { id: "u2", name: "Dana K.", email: "dana@riversiderapid.com", role: "owner", phone: "(555) 044-8871" },
+];
+
+export const savedAddresses = [
+  { id: "addr1", label: "Home", line: "482 Birchwood Ave, Springfield, IL 62704" },
+  { id: "addr2", label: "Work", line: "110 E Monroe St, Suite 300, Springfield, IL 62701" },
+];
+
+export const savedPaymentMethods = [
+  { id: "visa", label: "Visa •••• 4242" },
+  { id: "wallet", label: "PrintMatch Wallet ($42.10)" },
+];
