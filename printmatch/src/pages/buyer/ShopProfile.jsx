@@ -12,7 +12,7 @@ function formatDate(iso) {
 export default function ShopProfile() {
   const { printerId } = useParams();
   const navigate = useNavigate();
-  const { printers, favorites, toggleFavorite } = useApp();
+  const { printers, favorites, toggleFavorite, setDirectRequestPrinterId } = useApp();
 
   const printer = printers.find((p) => p.id === printerId);
   const isFavorite = favorites.has(printerId);
@@ -41,7 +41,13 @@ export default function ShopProfile() {
     portfolio = [],
     reviews = [],
     logoUrl,
+    bio,
   } = printer;
+
+  const handleRequestQuote = () => {
+    setDirectRequestPrinterId(printer.id);
+    navigate("/request");
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -81,6 +87,8 @@ export default function ShopProfile() {
             </div>
           </div>
         </div>
+
+        {bio && <p className="text-sm leading-relaxed text-navy/70">{bio}</p>}
 
         <div>
           <h2 className="mb-2 text-sm font-semibold text-navy">Materials</h2>
@@ -155,11 +163,11 @@ export default function ShopProfile() {
       <div className="border-t border-black/5 bg-white px-4 py-3.5">
         <button
           type="button"
-          onClick={() => navigate("/request")}
+          onClick={handleRequestQuote}
           disabled={shopPaused}
           className="w-full rounded-2xl bg-accent py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/30 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
         >
-          {shopPaused ? "Currently paused" : "Request a quote"}
+          {shopPaused ? "Currently paused" : `Request a quote from ${name}`}
         </button>
       </div>
     </div>

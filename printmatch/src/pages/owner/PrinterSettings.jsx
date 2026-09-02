@@ -174,6 +174,17 @@ export default function PrinterSettings() {
           <p className="mt-3 text-xs text-navy/40">
             Shown to buyers on your listing and on the service-area map.
           </p>
+
+          <label className="mb-1.5 mt-4 block text-xs font-medium text-navy/50">
+            Shop bio
+          </label>
+          <textarea
+            value={myShop.bio ?? ""}
+            onChange={(e) => updateMyShop({ bio: e.target.value })}
+            rows={3}
+            placeholder="Tell buyers about your setup, specialties, or turnaround..."
+            className="w-full resize-none rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
+          />
         </div>
 
         <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">

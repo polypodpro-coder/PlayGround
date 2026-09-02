@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Lock, Mail, User } from "lucide-react";
+import { Box, Gift, Lock, Mail, User } from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { REFERRAL_BONUS } from "../../data/mockData";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("buyer");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState("");
 
   const submit = (e) => {
@@ -18,7 +20,7 @@ export default function Signup() {
       setError("Fill in your name, email, and password to continue.");
       return;
     }
-    signup({ name: name.trim(), email: email.trim(), role });
+    signup({ name: name.trim(), email: email.trim(), role, referralCode: referralCode.trim() });
     navigate(role === "owner" ? "/owner" : "/");
   };
 
@@ -87,6 +89,20 @@ export default function Signup() {
             className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
           />
         </div>
+        <div className="flex items-center gap-2.5 rounded-xl bg-white/10 px-4 py-3">
+          <Gift size={17} className="text-white/50" />
+          <input
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value)}
+            placeholder="Referral code (optional)"
+            className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
+          />
+        </div>
+        {referralCode.trim() && (
+          <p className="text-xs text-accent">
+            You'll get ${REFERRAL_BONUS} in PrintMatch credit on signup.
+          </p>
+        )}
         {error && <p className="text-xs text-red-300">{error}</p>}
 
         <button

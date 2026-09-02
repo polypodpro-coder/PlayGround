@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, MapPin, Package, Plus, Store } from "lucide-react";
+import { CreditCard, MapPin, Package, Plus, Sparkles, Store } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useApp } from "../../context/AppContext";
 
@@ -8,14 +8,17 @@ const DELIVERY_METHODS = [
   { id: "pickup", label: "Pick up from shop", icon: Store, fee: 0 },
   { id: "ship", label: "Ship to me", icon: Package, fee: 5 },
 ];
+const TIP_PRESETS = [0, 10, 15, 20];
 const SERVICE_FEE = 2.5;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { selectedQuote, placeOrder, printers, paymentMethods, addresses } = useApp();
+  const { selectedQuote, placeOrder, printers, paymentMethods, addresses, currentUser } = useApp();
   const [method, setMethod] = useState(paymentMethods[0]?.id);
   const [delivery, setDelivery] = useState("pickup");
   const [addressId, setAddressId] = useState(addresses[0]?.id);
+  const [tipPercent, setTipPercent] = useState(15);
+  const [useCredit, setUseCredit] = useState(true);
 
   const quote = selectedQuote ?? {
     printerId: printers[0].id,
@@ -26,7 +29,11 @@ export default function Checkout() {
   const printer = printers.find((p) => p.id === quote.printerId) ?? printers[0];
   const serviceFee = SERVICE_FEE;
   const shippingFee = DELIVERY_METHODS.find((d) => d.id === delivery)?.fee ?? 0;
-  const total = quote.price + serviceFee + shippingFee;
+  const tip = Math.round(quote.price * (tipPercent / 100) * 100) / 100;
+  const subtotal = quote.price + tip + serviceFee + shippingFee;
+  const availableCredit = currentUser?.credits ?? 0;
+  const creditsUsed = useCredit ? Math.min(availableCredit, subtotal) : 0;
+  const total = subtotal - creditsUsed;
   const shipAddress = addresses.find((a) => a.id === addressId);
 
   const handlePlaceOrder = () => {
@@ -34,6 +41,8 @@ export default function Checkout() {
       deliveryMethod: delivery,
       shippingFee,
       serviceFee,
+      tip,
+      creditsUsed,
       shipAddress: delivery === "ship" ? shipAddress : null,
     });
     navigate(`/orders/${orderId}`);
@@ -65,10 +74,60 @@ export default function Checkout() {
                 <span>${shippingFee.toFixed(2)}</span>
               </div>
             )}
+            {tip > 0 && (
+              <div className="flex justify-between text-navy/70">
+                <span>Tip</span>
+                <span>${tip.toFixed(2)}</span>
+              </div>
+            )}
+            {creditsUsed > 0 && (
+              <div className="flex justify-between text-accent">
+                <span>PrintMatch credit</span>
+                <span>-${creditsUsed.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-dashed border-navy/10 pt-2 text-base font-bold text-navy">
               <span>Total</span>
               <span>${total.toFixed(2)}</span>
             </div>
+          </div>
+        </div>
+
+        {availableCredit > 0 && (
+          <button
+            type="button"
+            onClick={() => setUseCredit((v) => !v)}
+            className="flex w-full items-center gap-3 rounded-2xl bg-accent/5 px-4 py-3 text-left"
+          >
+            <Sparkles size={18} className="shrink-0 text-accent" />
+            <span className="flex-1 text-sm font-medium text-navy">
+              Use ${availableCredit.toFixed(2)} PrintMatch credit
+            </span>
+            <span
+              className={`h-4 w-4 shrink-0 rounded-full border-2 ${
+                useCredit ? "border-accent bg-accent" : "border-navy/20"
+              }`}
+            />
+          </button>
+        )}
+
+        <div>
+          <h2 className="mb-2 text-sm font-semibold text-navy">Tip your printer</h2>
+          <div className="flex gap-2">
+            {TIP_PRESETS.map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => setTipPercent(pct)}
+                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${
+                  tipPercent === pct
+                    ? "border-accent bg-accent text-white"
+                    : "border-black/5 bg-white text-navy/70"
+                }`}
+              >
+                {pct === 0 ? "No tip" : `${pct}%`}
+              </button>
+            ))}
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Star } from "lucide-react";
 import ShopLogo from "../../components/ShopLogo";
 import StatusBadge from "../../components/StatusBadge";
 import { useApp } from "../../context/AppContext";
@@ -30,7 +30,12 @@ export default function OrderHistory() {
         {sorted.map((order) => {
           const printer = printers.find((p) => p.id === order.printerId);
           if (!printer) return null;
-          const total = order.printCost + order.serviceFee;
+          const total =
+            order.printCost +
+            order.serviceFee +
+            (order.shippingFee ?? 0) +
+            (order.tip ?? 0) -
+            (order.creditsUsed ?? 0);
           const isCompleted = order.status === "completed";
 
           return (
@@ -65,13 +70,24 @@ export default function OrderHistory() {
               </button>
 
               {isCompleted && (
-                <button
-                  type="button"
-                  onClick={() => navigate("/request")}
-                  className="mt-3 w-full rounded-full border border-navy/15 py-2 text-xs font-semibold text-navy active:scale-[0.98]"
-                >
-                  Reorder
-                </button>
+                <div className="mt-3 flex gap-2">
+                  {order.rated === false && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/orders/${order.id}`)}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-accent/10 py-2 text-xs font-semibold text-accent active:scale-[0.98]"
+                    >
+                      <Star size={13} /> Rate this order
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/request")}
+                    className="flex-1 rounded-full border border-navy/15 py-2 text-xs font-semibold text-navy active:scale-[0.98]"
+                  >
+                    Reorder
+                  </button>
+                </div>
               )}
             </div>
           );

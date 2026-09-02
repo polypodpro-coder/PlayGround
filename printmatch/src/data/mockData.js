@@ -81,6 +81,7 @@ export const printers = [
     status: "available",
     rating: 4.9,
     completedJobs: 312,
+    bio: "Two Bambu X1Cs running most days, specializing in fast-turnaround functional parts. I'll flag any print issues before starting, not after.",
     pricingRates: { PLA: 0.06, PETG: 0.08, TPU: 0.14 },
     shopPaused: false,
     pausedUntil: null,
@@ -109,6 +110,7 @@ export const printers = [
     status: "printing",
     rating: 4.7,
     completedJobs: 189,
+    bio: "Community fab lab open evenings and weekends. Good for engineering parts that need tighter tolerances — happy to talk through fit and function before you order.",
     pricingRates: { PLA: 0.07, ABS: 0.09, Nylon: 0.16 },
     shopPaused: false,
     pausedUntil: null,
@@ -135,6 +137,7 @@ export const printers = [
     status: "available",
     rating: 4.8,
     completedJobs: 421,
+    bio: "Small studio focused on detail work — minis, props, and anything with fine features. I always send a first-layer photo before committing to the full print.",
     pricingRates: { PLA: 0.06, PETG: 0.08, ABS: 0.09, TPU: 0.13 },
     shopPaused: false,
     pausedUntil: null,
@@ -163,6 +166,7 @@ export const printers = [
     status: "offline",
     rating: 4.5,
     completedJobs: 76,
+    bio: "One-printer garage shop — I do this on the side, so turnaround depends on my day job schedule. Budget-friendly for straightforward PLA/PETG parts.",
     pricingRates: { PLA: 0.05, PETG: 0.07 },
     shopPaused: true,
     pausedUntil: "2026-09-09",
@@ -187,6 +191,7 @@ export const printers = [
     status: "available",
     rating: 5.0,
     completedJobs: 540,
+    bio: "Full production farm — a dozen printers running around the clock. If you need it fast and in volume, this is the shop for it.",
     pricingRates: { PLA: 0.05, PETG: 0.07, ABS: 0.08, Nylon: 0.14, TPU: 0.12 },
     shopPaused: false,
     pausedUntil: null,
@@ -348,6 +353,7 @@ export const orders = [
     createdAt: "2026-08-20T14:00:00",
     messages: [],
     viewed: true,
+    rated: true,
   },
   {
     id: "o3",
@@ -362,6 +368,7 @@ export const orders = [
     createdAt: "2026-08-05T10:30:00",
     messages: [],
     viewed: true,
+    rated: false,
   },
 ];
 
@@ -405,9 +412,27 @@ export const ownerPrinters = [
 // in just matches (or creates) one of these locally. The two "quick
 // login" shortcuts point at these exact records.
 export const users = [
-  { id: "u1", name: "Alex Morgan", email: "alex@example.com", role: "buyer", phone: "(555) 019-2231" },
-  { id: "u2", name: "Dana K.", email: "dana@riversiderapid.com", role: "owner", phone: "(555) 044-8871" },
+  {
+    id: "u1",
+    name: "Alex Morgan",
+    email: "alex@example.com",
+    role: "buyer",
+    phone: "(555) 019-2231",
+    referralCode: "ALEX4471",
+    credits: 0,
+  },
+  {
+    id: "u2",
+    name: "Dana K.",
+    email: "dana@riversiderapid.com",
+    role: "owner",
+    phone: "(555) 044-8871",
+    referralCode: "DANA8820",
+    credits: 0,
+  },
 ];
+
+export const REFERRAL_BONUS = 10;
 
 export const savedAddresses = [
   { id: "addr1", label: "Home", line: "482 Birchwood Ave, Springfield, IL 62704" },

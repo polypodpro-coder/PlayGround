@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { CreditCard, LogOut, MapPin, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, CreditCard, Gift, LogOut, MapPin, Plus, Trash2 } from "lucide-react";
 import RoleToggle from "../../components/RoleToggle";
 import { useApp } from "../../context/AppContext";
+import { REFERRAL_BONUS } from "../../data/mockData";
 
 function initials(name) {
   return name
@@ -31,6 +32,18 @@ export default function Account() {
   const [phoneDraft, setPhoneDraft] = useState(currentUser?.phone ?? "");
   const [newAddressLabel, setNewAddressLabel] = useState("");
   const [newAddressLine, setNewAddressLine] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const copyReferralCode = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUser?.referralCode ?? "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard access can be blocked (permissions, insecure context) —
+      // the code is still shown on screen to copy manually.
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -101,6 +114,41 @@ export default function Account() {
               </button>
             )}
           </div>
+        </div>
+
+        <div className="rounded-2xl bg-navy p-4 text-white shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent">
+              <Gift size={16} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold">Give ${REFERRAL_BONUS}, get ${REFERRAL_BONUS}</h2>
+              <p className="text-xs text-white/60">
+                Friends get ${REFERRAL_BONUS} off their first order with your code — you'll both earn credit.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex-1 rounded-xl bg-white/10 px-3.5 py-2.5 text-center font-mono text-sm font-semibold tracking-wide">
+              {currentUser?.referralCode}
+            </div>
+            <button
+              type="button"
+              onClick={copyReferralCode}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 active:scale-95"
+              aria-label="Copy referral code"
+            >
+              {copied ? <Check size={16} className="text-emerald-300" /> : <Copy size={16} />}
+            </button>
+          </div>
+
+          {(currentUser?.credits ?? 0) > 0 && (
+            <p className="mt-3 text-xs text-white/70">
+              PrintMatch credit:{" "}
+              <span className="font-semibold text-white">${(currentUser.credits ?? 0).toFixed(2)}</span>
+            </p>
+          )}
         </div>
 
         <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">

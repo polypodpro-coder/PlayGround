@@ -19,7 +19,7 @@ const TURNAROUND_HOURS = { "Same day": 8, "24hr": 24, "48hr": 48 };
 
 export default function HomeFeed() {
   const navigate = useNavigate();
-  const { printers, favorites } = useApp();
+  const { printers, favorites, setDirectRequestPrinterId } = useApp();
   const [query, setQuery] = useState("");
   const [view, setView] = useState("list"); // 'list' | 'map'
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -147,7 +147,10 @@ export default function HomeFeed() {
 
       <button
         type="button"
-        onClick={() => navigate("/request")}
+        onClick={() => {
+          setDirectRequestPrinterId(null);
+          navigate("/request");
+        }}
         className="mx-4 -mt-2.5 mb-1 flex items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/30 active:scale-[0.98]"
       >
         Upload a part &amp; get quotes

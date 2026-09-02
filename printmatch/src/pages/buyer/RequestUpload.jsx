@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Calculator, File as FileIcon, Image as ImageIcon, UploadCloud, X } from "lucide-react";
+import { Calendar, Calculator, File as FileIcon, Image as ImageIcon, Store, UploadCloud, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import MaterialChipSelector from "../../components/MaterialChipSelector";
+import ShopLogo from "../../components/ShopLogo";
 import { useApp } from "../../context/AppContext";
 
 // Rough average $/gram across nearby shops, used only to give buyers a
@@ -12,10 +13,11 @@ const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon:
 
 export default function RequestUpload() {
   const navigate = useNavigate();
-  const { setRequest } = useApp();
+  const { setRequest, directRequestPrinterId, setDirectRequestPrinterId, printers } = useApp();
+  const targetShop = printers.find((p) => p.id === directRequestPrinterId);
 
   const [file, setFile] = useState(null);
-  const [material, setMaterial] = useState("PLA");
+  const [material, setMaterial] = useState(targetShop?.materials[0] ?? "PLA");
   const [neededBy, setNeededBy] = useState("");
   const [notes, setNotes] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -56,6 +58,25 @@ export default function RequestUpload() {
       <ScreenHeader title="Request a print" subtitle="Step 1 of 2" onBack={() => navigate("/")} />
 
       <form onSubmit={submit} className="flex-1 space-y-6 px-4 py-5">
+        {targetShop && (
+          <div className="flex items-center gap-3 rounded-2xl bg-navy/5 p-3.5">
+            <ShopLogo src={targetShop.logoUrl} alt={`${targetShop.name} logo`} size="sm" />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1 text-xs text-navy/50">
+                <Store size={11} /> Requesting directly from
+              </p>
+              <p className="truncate text-sm font-semibold text-navy">{targetShop.name}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDirectRequestPrinterId(null)}
+              className="shrink-0 text-xs font-semibold text-accent underline underline-offset-2"
+            >
+              Change
+            </button>
+          </div>
+        )}
+
         <div>
           <label className="mb-2 block text-sm font-semibold text-navy">
             Upload file or photo
@@ -114,7 +135,11 @@ export default function RequestUpload() {
           <label className="mb-2 block text-sm font-semibold text-navy">
             Material
           </label>
-          <MaterialChipSelector selected={material} onChange={setMaterial} />
+          <MaterialChipSelector
+            materials={targetShop?.materials}
+            selected={material}
+            onChange={setMaterial}
+          />
         </div>
 
         {estimate && (

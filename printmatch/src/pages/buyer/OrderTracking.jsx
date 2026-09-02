@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { X } from "lucide-react";
+import { Star, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import ProgressStepper from "../../components/ProgressStepper";
 import ChatThread from "../../components/ChatThread";
@@ -9,10 +9,12 @@ import { useApp } from "../../context/AppContext";
 
 export default function OrderTracking() {
   const { orderId } = useParams();
-  const { orders, updateOrder, printers } = useApp();
+  const { orders, updateOrder, printers, rateOrder } = useApp();
   const order = orders.find((o) => o.id === orderId) ?? orders[0];
   const printer = printers.find((p) => p.id === order.printerId) ?? printers[0];
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingText, setRatingText] = useState("");
 
   // Opening the order clears its "new" indicator in the order history list.
   useEffect(() => {
@@ -40,6 +42,12 @@ export default function OrderTracking() {
   };
 
   const canCancel = order.status === "queued";
+  const needsRating = order.status === "completed" && order.rated === false;
+
+  const submitRating = () => {
+    if (ratingValue === 0) return;
+    rateOrder(order.id, order.printerId, { rating: ratingValue, text: ratingText.trim() });
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -67,6 +75,49 @@ export default function OrderTracking() {
             Shipping to <span className="font-medium text-navy">{order.shipAddress.label}</span> ·{" "}
             {order.shipAddress.line}
           </p>
+        )}
+
+        {needsRating && (
+          <div className="rounded-2xl bg-navy/5 p-4">
+            <h2 className="text-sm font-semibold text-navy">How was your print?</h2>
+            <p className="mt-0.5 text-xs text-navy/50">Rate {printer.name} to help other buyers.</p>
+            <div className="mt-2.5 flex gap-1">
+              {Array.from({ length: 5 }, (_, i) => {
+                const value = i + 1;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRatingValue(value)}
+                    aria-label={`Rate ${value} star${value > 1 ? "s" : ""}`}
+                  >
+                    <Star
+                      size={26}
+                      className={value <= ratingValue ? "fill-accent text-accent" : "text-navy/20"}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+            {ratingValue > 0 && (
+              <>
+                <textarea
+                  value={ratingText}
+                  onChange={(e) => setRatingText(e.target.value)}
+                  rows={2}
+                  placeholder="Optional — what stood out?"
+                  className="mt-3 w-full resize-none rounded-xl bg-white px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
+                />
+                <button
+                  type="button"
+                  onClick={submitRating}
+                  className="mt-2.5 w-full rounded-xl bg-accent py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+                >
+                  Submit rating
+                </button>
+              </>
+            )}
+          </div>
         )}
 
         {canCancel && !confirmingCancel && (
