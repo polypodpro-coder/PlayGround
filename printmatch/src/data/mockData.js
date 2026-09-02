@@ -199,6 +199,11 @@ export const earnings = {
   weeklyTrend: [30, 42, 18, 55, 25, 44.5, 0],
 };
 
+export const serviceArea = {
+  center: [39.7817, -89.6501], // Downtown, Springfield
+  radiusMi: 8,
+};
+
 export const ownerPrinters = [
   {
     id: "op1",
