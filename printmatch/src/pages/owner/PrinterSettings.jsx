@@ -126,7 +126,7 @@ export default function PrinterSettings() {
       <ScreenHeader title="Settings" subtitle="Shop, service area & printers" />
 
       <div className="flex-1 space-y-5 px-4 py-5">
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-navy">{currentUser?.name}</p>
@@ -146,7 +146,7 @@ export default function PrinterSettings() {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Shop logo</h2>
           <div className="flex items-center gap-4">
             <ShopLogo src={myShop.logoUrl} alt="Your shop logo" size="lg" />
@@ -189,11 +189,11 @@ export default function PrinterSettings() {
             onChange={(e) => updateMyShop({ bio: e.target.value })}
             rows={3}
             placeholder="Tell buyers about your setup, specialties, or turnaround..."
-            className="w-full resize-none rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
+            className="w-full resize-none rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
           />
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Portfolio</h2>
           <div className="grid grid-cols-3 gap-2">
             {(myShop.portfolio ?? []).map((photo) => (
@@ -230,7 +230,7 @@ export default function PrinterSettings() {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-navy">Service area</h2>
             <span className="flex items-center gap-1 text-xs font-semibold text-accent">
@@ -259,7 +259,7 @@ export default function PrinterSettings() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="123 Main St, Springfield, IL"
-                className="min-w-0 flex-1 rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="min-w-0 flex-1 rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
               <button
                 type="submit"
@@ -290,7 +290,7 @@ export default function PrinterSettings() {
                 value={latText}
                 onChange={(e) => setLatText(e.target.value)}
                 onBlur={commitLatLng}
-                className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="w-full rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
             </div>
             <div>
@@ -303,7 +303,7 @@ export default function PrinterSettings() {
                 value={lngText}
                 onChange={(e) => setLngText(e.target.value)}
                 onBlur={commitLatLng}
-                className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="w-full rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
             </div>
           </div>
@@ -331,7 +331,7 @@ export default function PrinterSettings() {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-1 text-sm font-semibold text-navy">Pricing</h2>
           <p className="mb-3 text-xs text-navy/40">
             Set your rate per material so quoting a job is one tap instead of guesswork.
@@ -348,7 +348,7 @@ export default function PrinterSettings() {
                     step="0.01"
                     value={myShop.pricingRates?.[material] ?? 0}
                     onChange={(e) => setPricingRate(material, e.target.value)}
-                    className="w-20 rounded-lg bg-gray-50 px-2.5 py-1.5 text-right text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                    className="w-20 rounded-lg bg-surface-alt px-2.5 py-1.5 text-right text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
                   />
                   <span className="text-xs text-navy/40">/g</span>
                 </div>
@@ -357,7 +357,7 @@ export default function PrinterSettings() {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy/5 text-navy/50">
@@ -383,7 +383,7 @@ export default function PrinterSettings() {
               }`}
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${
                   myShop.shopPaused ? "translate-x-[22px]" : "translate-x-0.5"
                 }`}
               />
@@ -396,13 +396,13 @@ export default function PrinterSettings() {
                 type="date"
                 value={myShop.pausedUntil ?? ""}
                 onChange={(e) => updateMyShop({ pausedUntil: e.target.value })}
-                className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="w-full rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
             </div>
           )}
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/5 text-navy/50">
               <Link2 size={16} />
@@ -467,7 +467,7 @@ export default function PrinterSettings() {
             {printers.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
+                className="flex items-center justify-between rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-navy/5 text-navy/50">

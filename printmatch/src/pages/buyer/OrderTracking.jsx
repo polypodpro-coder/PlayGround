@@ -57,7 +57,7 @@ export default function OrderTracking() {
         right={<StatusBadge status={order.status} />}
       />
 
-      <div className="space-y-4 bg-white px-4 py-5">
+      <div className="space-y-4 bg-surface px-4 py-5">
         <ProgressStepper status={order.status} />
         <div className="flex items-center justify-between rounded-xl bg-navy/5 px-4 py-3">
           <div>
@@ -106,7 +106,7 @@ export default function OrderTracking() {
                   onChange={(e) => setRatingText(e.target.value)}
                   rows={2}
                   placeholder="Optional — what stood out?"
-                  className="mt-3 w-full resize-none rounded-xl bg-white px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
+                  className="mt-3 w-full resize-none rounded-xl bg-surface px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
                 />
                 <button
                   type="button"
@@ -152,7 +152,7 @@ export default function OrderTracking() {
         )}
       </div>
 
-      <div className="min-h-0 flex-1 bg-gray-50">
+      <div className="min-h-0 flex-1 bg-surface-alt">
         <ChatThread messages={order.messages} currentRole="buyer" onSend={handleSend} />
       </div>
     </div>

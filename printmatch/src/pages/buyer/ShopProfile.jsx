@@ -67,7 +67,7 @@ export default function ShopProfile() {
       />
 
       <div className="flex-1 space-y-5 px-4 py-5">
-        <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <ShopLogo src={logoUrl} alt={`${name} logo`} size="lg" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1 text-xs text-navy/50">
@@ -105,13 +105,13 @@ export default function ShopProfile() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
             <p className="text-xs text-navy/50">Build volume</p>
             <p className="mt-0.5 text-sm font-semibold text-navy">
               {buildVolume.x}×{buildVolume.y}×{buildVolume.z}mm
             </p>
           </div>
-          <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
             <p className="flex items-center gap-1 text-xs text-navy/50">
               <Timer size={12} /> Turnaround
             </p>
@@ -124,7 +124,7 @@ export default function ShopProfile() {
             <h2 className="mb-2 text-sm font-semibold text-navy">Portfolio</h2>
             <div className="grid grid-cols-2 gap-2.5">
               {portfolio.map((item) => (
-                <div key={item.id} className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+                <div key={item.id} className="overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-black/5">
                   <img src={item.imageUrl} alt={item.caption} className="h-28 w-full object-cover" />
                   <p className="px-2 py-1.5 text-[11px] leading-tight text-navy/60">{item.caption}</p>
                 </div>
@@ -138,7 +138,7 @@ export default function ShopProfile() {
             <h2 className="mb-2 text-sm font-semibold text-navy">Reviews</h2>
             <div className="space-y-2.5">
               {reviews.map((review) => (
-                <div key={review.id} className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+                <div key={review.id} className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-navy">{review.buyerName}</p>
                     <div className="flex items-center gap-0.5">
@@ -160,7 +160,7 @@ export default function ShopProfile() {
         )}
       </div>
 
-      <div className="border-t border-black/5 bg-white px-4 py-3.5">
+      <div className="border-t border-black/5 bg-surface px-4 py-3.5">
         <button
           type="button"
           onClick={handleRequestQuote}

@@ -32,7 +32,7 @@ export default function ChatThread({ messages, currentRole, onSend }) {
                 className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm ${
                   mine
                     ? "rounded-br-sm bg-navy text-white"
-                    : "rounded-bl-sm bg-white text-navy ring-1 ring-black/5"
+                    : "rounded-bl-sm bg-surface text-navy ring-1 ring-black/5"
                 }`}
               >
                 {m.imageUrl && (
@@ -54,7 +54,7 @@ export default function ChatThread({ messages, currentRole, onSend }) {
 
       <form
         onSubmit={submit}
-        className="flex items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5"
+        className="flex items-center gap-2 border-t border-black/5 bg-surface px-3 py-2.5"
       >
         <button
           type="button"
@@ -67,7 +67,7 @@ export default function ChatThread({ messages, currentRole, onSend }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Message..."
-          className="min-w-0 flex-1 rounded-full bg-gray-100 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/40"
+          className="min-w-0 flex-1 rounded-full bg-surface-alt px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/40"
         />
         <button
           type="submit"

@@ -95,7 +95,7 @@ export default function RequestUpload() {
             {selectedDesign ? "Design" : "Upload file or photo"}
           </label>
           {selectedDesign ? (
-            <div className="flex items-center gap-3 rounded-2xl border-2 border-navy/15 bg-white p-3">
+            <div className="flex items-center gap-3 rounded-2xl border-2 border-navy/15 bg-surface p-3">
               <img
                 src={selectedDesign.imageUrl}
                 alt={selectedDesign.name}
@@ -127,7 +127,7 @@ export default function RequestUpload() {
                 handleFiles(e.dataTransfer.files);
               }}
               className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
-                dragOver ? "border-accent bg-accent/5" : "border-navy/15 bg-white"
+                dragOver ? "border-accent bg-accent/5" : "border-navy/15 bg-surface"
               }`}
             >
               {file ? (
@@ -179,7 +179,7 @@ export default function RequestUpload() {
 
         {estimate && (
           <div className="flex items-center gap-3 rounded-2xl bg-navy/5 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-accent">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-accent">
               <Calculator size={18} />
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function RequestUpload() {
           <label className="mb-2 block text-sm font-semibold text-navy">
             Needed by <span className="font-normal text-navy/40">(optional)</span>
           </label>
-          <div className="flex items-center gap-2 rounded-xl bg-white px-3.5 py-3 ring-1 ring-black/5">
+          <div className="flex items-center gap-2 rounded-xl bg-surface px-3.5 py-3 ring-1 ring-black/5">
             <Calendar size={17} className="text-navy/40" />
             <input
               type="date"
@@ -219,12 +219,12 @@ export default function RequestUpload() {
             onChange={(e) => setNotes(e.target.value)}
             rows={4}
             placeholder="Color preference, tolerances, infill, anything the printer should know..."
-            className="w-full resize-none rounded-xl bg-white px-3.5 py-3 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35"
+            className="w-full resize-none rounded-xl bg-surface px-3.5 py-3 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35"
           />
         </div>
       </form>
 
-      <div className="border-t border-black/5 bg-white px-4 py-3.5">
+      <div className="border-t border-black/5 bg-surface px-4 py-3.5">
         <button
           onClick={submit}
           type="submit"

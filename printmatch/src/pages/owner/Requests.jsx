@@ -15,7 +15,7 @@ export default function Requests() {
           <button
             key={job.id}
             onClick={() => navigate(`/owner/requests/${job.id}`)}
-            className="flex w-full items-center justify-between rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"
+            className="flex w-full items-center justify-between rounded-2xl bg-surface p-4 text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-navy">{job.buyerName}</p>

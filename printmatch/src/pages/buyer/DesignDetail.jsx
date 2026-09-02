@@ -46,25 +46,25 @@ export default function DesignDetail() {
         <p className="text-sm leading-relaxed text-navy/70">{design.description}</p>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
             <p className="flex items-center gap-1 text-xs text-navy/50">
               <User size={12} /> Designer
             </p>
             <p className="mt-0.5 text-sm font-semibold text-navy">{design.designer}</p>
           </div>
-          <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
             <p className="flex items-center gap-1 text-xs text-navy/50">
               <Tag size={12} /> License
             </p>
             <p className="mt-0.5 text-sm font-semibold text-navy">{design.license}</p>
           </div>
-          <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
             <p className="flex items-center gap-1 text-xs text-navy/50">
               <Sparkles size={12} /> Suggested material
             </p>
             <p className="mt-0.5 text-sm font-semibold text-accent">{design.defaultMaterial}</p>
           </div>
-          <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-surface p-3.5 shadow-sm ring-1 ring-black/5">
             <p className="flex items-center gap-1 text-xs text-navy/50">
               <Scale size={12} /> Est. weight
             </p>
@@ -73,7 +73,7 @@ export default function DesignDetail() {
         </div>
       </div>
 
-      <div className="border-t border-black/5 bg-white px-4 py-3.5">
+      <div className="border-t border-black/5 bg-surface px-4 py-3.5">
         <button
           type="button"
           onClick={handlePrintThis}

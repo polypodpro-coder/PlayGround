@@ -16,7 +16,7 @@ export default function RoleToggle() {
         type="button"
         onClick={() => switchTo("buyer")}
         className={`rounded-full px-3 py-1.5 transition-colors ${
-          role === "buyer" ? "bg-white text-navy" : "text-white/70"
+          role === "buyer" ? "bg-surface text-navy" : "text-white/70"
         }`}
       >
         Buyer
@@ -25,7 +25,7 @@ export default function RoleToggle() {
         type="button"
         onClick={() => switchTo("owner")}
         className={`rounded-full px-3 py-1.5 transition-colors ${
-          role === "owner" ? "bg-white text-navy" : "text-white/70"
+          role === "owner" ? "bg-surface text-navy" : "text-white/70"
         }`}
       >
         Printer owner

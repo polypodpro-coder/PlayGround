@@ -53,7 +53,7 @@ export default function Checkout() {
       <ScreenHeader title="Checkout" />
 
       <div className="flex-1 space-y-5 px-4 py-5">
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="text-sm font-semibold text-navy">Order summary</h2>
           <p className="mt-1 text-xs text-navy/50">
             {printer.name} · {quote.material} · {quote.color}
@@ -122,7 +122,7 @@ export default function Checkout() {
                 className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${
                   tipPercent === pct
                     ? "border-accent bg-accent text-white"
-                    : "border-black/5 bg-white text-navy/70"
+                    : "border-black/5 bg-surface text-navy/70"
                 }`}
               >
                 {pct === 0 ? "No tip" : `${pct}%`}
@@ -142,7 +142,7 @@ export default function Checkout() {
                 className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors ${
                   delivery === id
                     ? "border-accent bg-accent/5 text-navy"
-                    : "border-black/5 bg-white text-navy/70"
+                    : "border-black/5 bg-surface text-navy/70"
                 }`}
               >
                 <Icon size={18} className={delivery === id ? "text-accent" : "text-navy/40"} />
@@ -179,7 +179,7 @@ export default function Checkout() {
                     className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
                       addressId === addr.id
                         ? "border-accent bg-accent/5"
-                        : "border-black/5 bg-white"
+                        : "border-black/5 bg-surface"
                     }`}
                   >
                     <MapPin
@@ -213,7 +213,7 @@ export default function Checkout() {
                 className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors ${
                   method === id
                     ? "border-accent bg-accent/5 text-navy"
-                    : "border-black/5 bg-white text-navy/70"
+                    : "border-black/5 bg-surface text-navy/70"
                 }`}
               >
                 <CreditCard size={18} className={method === id ? "text-accent" : "text-navy/40"} />
@@ -229,7 +229,7 @@ export default function Checkout() {
         </div>
       </div>
 
-      <div className="border-t border-black/5 bg-white px-4 py-3.5">
+      <div className="border-t border-black/5 bg-surface px-4 py-3.5">
         <button
           type="button"
           onClick={handlePlaceOrder}

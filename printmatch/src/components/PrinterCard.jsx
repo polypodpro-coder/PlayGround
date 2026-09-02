@@ -10,11 +10,11 @@ export default function PrinterCard({ printer, onClick }) {
   const isFavorite = favorites.has(id);
 
   return (
-    <div className="relative w-full rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 transition-transform active:scale-[0.98]">
+    <div className="relative w-full rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5 transition-transform active:scale-[0.98]">
       <button type="button" onClick={onClick} className="block w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-3">
-            <ShopLogo src={logoUrl} alt={`${name} logo`} />
+            <ShopLogo src={logoUrl} alt={`${name} logo`} size="lg" />
             <div>
               <h3 className="text-base font-semibold text-navy">{name}</h3>
               <div className="mt-0.5 flex items-center gap-1 text-xs text-navy/50">

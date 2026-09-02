@@ -41,7 +41,7 @@ export default function OrderHistory() {
           return (
             <div
               key={order.id}
-              className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
+              className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5"
             >
               <button
                 type="button"

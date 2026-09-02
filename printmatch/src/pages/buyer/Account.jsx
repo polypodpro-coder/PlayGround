@@ -88,7 +88,7 @@ export default function Account() {
       </header>
 
       <div className="flex-1 space-y-5 px-4 py-5">
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Profile</h2>
           <div className="flex items-center justify-between text-sm">
             <span className="text-navy/50">Phone</span>
@@ -101,7 +101,7 @@ export default function Account() {
                   onBlur={savePhone}
                   onKeyDown={(e) => e.key === "Enter" && savePhone()}
                   placeholder="(555) 000-0000"
-                  className="w-36 rounded-lg bg-gray-50 px-2.5 py-1.5 text-right text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                  className="w-36 rounded-lg bg-surface-alt px-2.5 py-1.5 text-right text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
                 />
               </div>
             ) : (
@@ -151,7 +151,7 @@ export default function Account() {
           )}
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Saved addresses</h2>
           <div className="space-y-2">
             {addresses.map((addr) => (
@@ -182,13 +182,13 @@ export default function Account() {
                 value={newAddressLabel}
                 onChange={(e) => setNewAddressLabel(e.target.value)}
                 placeholder="Label (e.g. Home)"
-                className="w-28 rounded-lg bg-gray-50 px-2.5 py-2 text-xs text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="w-28 rounded-lg bg-surface-alt px-2.5 py-2 text-xs text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
               <input
                 value={newAddressLine}
                 onChange={(e) => setNewAddressLine(e.target.value)}
                 placeholder="Street, city, state, ZIP"
-                className="min-w-0 flex-1 rounded-lg bg-gray-50 px-2.5 py-2 text-xs text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="min-w-0 flex-1 rounded-lg bg-surface-alt px-2.5 py-2 text-xs text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
             </div>
             <button
@@ -200,7 +200,7 @@ export default function Account() {
           </form>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Payment methods</h2>
           <div className="space-y-2">
             {paymentMethods.map((pm) => (

@@ -74,7 +74,7 @@ export default function HomeFeed() {
         </div>
 
         <div className="mt-4 flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-full bg-white px-4 py-2.5">
+          <div className="flex flex-1 items-center gap-2 rounded-full bg-surface px-4 py-2.5">
             <Search size={17} className="text-navy/40" />
             <input
               value={query}
@@ -171,7 +171,7 @@ export default function HomeFeed() {
               key={design.id}
               type="button"
               onClick={() => navigate(`/design/${design.id}`)}
-              className="w-32 shrink-0 overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"
+              className="w-32 shrink-0 overflow-hidden rounded-2xl bg-surface text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"
             >
               <img src={design.imageUrl} alt={design.name} className="h-24 w-full object-cover" />
               <div className="p-2">
@@ -195,7 +195,7 @@ export default function HomeFeed() {
                 type="button"
                 onClick={() => setView(v)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors ${
-                  view === v ? "bg-white text-navy shadow-sm" : "text-navy/40"
+                  view === v ? "bg-surface text-navy shadow-sm" : "text-navy/40"
                 }`}
               >
                 {v}

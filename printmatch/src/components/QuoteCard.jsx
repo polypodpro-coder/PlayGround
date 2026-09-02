@@ -3,7 +3,7 @@ import { Award, Clock3 } from "lucide-react";
 export default function QuoteCard({ quote, printer, isBestMatch, onAccept }) {
   return (
     <div
-      className={`rounded-2xl bg-white p-4 shadow-sm ring-1 transition-shadow ${
+      className={`rounded-2xl bg-surface p-4 shadow-sm ring-1 transition-shadow ${
         isBestMatch ? "ring-2 ring-accent" : "ring-black/5"
       }`}
     >

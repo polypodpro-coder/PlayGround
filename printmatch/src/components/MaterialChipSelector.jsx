@@ -41,7 +41,7 @@ export default function MaterialChipSelector({
             className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
               active
                 ? "border-accent bg-accent text-white"
-                : "border-gray-200 bg-white text-navy/70"
+                : "border-gray-200 bg-surface text-navy/70"
             } ${isSelectable ? "active:scale-95" : ""}`}
           >
             {m}

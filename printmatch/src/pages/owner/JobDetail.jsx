@@ -38,7 +38,7 @@ export default function JobDetail() {
       <ScreenHeader title="Job request" subtitle={job.buyerName} />
 
       <div className="flex-1 space-y-5 px-4 py-5">
-        <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-navy/5 text-navy/50">
             {isModel ? <FileIcon size={22} /> : <ImageIcon size={22} />}
           </div>
@@ -50,7 +50,7 @@ export default function JobDetail() {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Part specs</h2>
           <dl className="grid grid-cols-2 gap-y-3 text-sm">
             <div>
@@ -78,12 +78,12 @@ export default function JobDetail() {
           </dl>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-2 text-sm font-semibold text-navy">Customer notes</h2>
           <p className="text-sm text-navy/70">{job.buyerNotes}</p>
         </div>
 
-        <form onSubmit={sendQuote} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <form onSubmit={sendQuote} className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 text-sm font-semibold text-navy">Your quote</h2>
 
           {suggested && (
@@ -115,7 +115,7 @@ export default function JobDetail() {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="18.50"
-                className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="w-full rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
             </div>
             <div>
@@ -129,7 +129,7 @@ export default function JobDetail() {
                 value={turnaround}
                 onChange={(e) => setTurnaround(e.target.value)}
                 placeholder="6"
-                className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
+                className="w-full rounded-xl bg-surface-alt px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
             </div>
           </div>
