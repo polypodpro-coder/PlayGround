@@ -38,7 +38,7 @@ export default function ServiceAreaMap({ center, radiusMi, onCenterChange }) {
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-black/5">
+    <div className="isolate overflow-hidden rounded-2xl ring-1 ring-black/5">
       <MapContainer
         center={center}
         zoom={10}

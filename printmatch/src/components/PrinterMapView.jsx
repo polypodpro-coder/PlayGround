@@ -50,7 +50,7 @@ export default function PrinterMapView({ printers }) {
     : { center: FALLBACK_CENTER, zoom: 11 };
 
   return (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-black/5">
+    <div className="isolate overflow-hidden rounded-2xl ring-1 ring-black/5">
       <MapContainer
         {...viewProps}
         scrollWheelZoom={false}
