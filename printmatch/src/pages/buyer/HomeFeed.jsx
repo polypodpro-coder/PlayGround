@@ -6,6 +6,7 @@ import PrinterMapView from "../../components/PrinterMapView";
 import RoleToggle from "../../components/RoleToggle";
 import MaterialChipSelector from "../../components/MaterialChipSelector";
 import { useApp } from "../../context/AppContext";
+import { featuredDesigns } from "../../data/mockData";
 
 const SORT_OPTIONS = [
   { id: "distance", label: "Nearest" },
@@ -19,7 +20,7 @@ const TURNAROUND_HOURS = { "Same day": 8, "24hr": 24, "48hr": 48 };
 
 export default function HomeFeed() {
   const navigate = useNavigate();
-  const { printers, favorites, setDirectRequestPrinterId } = useApp();
+  const { printers, favorites, setDirectRequestPrinterId, setSelectedDesign } = useApp();
   const [query, setQuery] = useState("");
   const [view, setView] = useState("list"); // 'list' | 'map'
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -149,12 +150,38 @@ export default function HomeFeed() {
         type="button"
         onClick={() => {
           setDirectRequestPrinterId(null);
+          setSelectedDesign(null);
           navigate("/request");
         }}
         className="mx-4 -mt-2.5 mb-1 flex items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/30 active:scale-[0.98]"
       >
         Upload a part &amp; get quotes
       </button>
+
+      <div className="pt-4">
+        <div className="mb-2 flex items-center gap-2 px-4">
+          <h2 className="text-sm font-semibold text-navy">Featured designs</h2>
+          <span className="rounded-full bg-navy/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy/50">
+            Concept
+          </span>
+        </div>
+        <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
+          {featuredDesigns.map((design) => (
+            <button
+              key={design.id}
+              type="button"
+              onClick={() => navigate(`/design/${design.id}`)}
+              className="w-32 shrink-0 overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"
+            >
+              <img src={design.imageUrl} alt={design.name} className="h-24 w-full object-cover" />
+              <div className="p-2">
+                <p className="truncate text-xs font-semibold text-navy">{design.name}</p>
+                <p className="truncate text-[10px] text-navy/40">{design.category}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex-1 space-y-3 px-4 py-4">
         <div className="flex items-center justify-between">

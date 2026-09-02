@@ -13,29 +13,41 @@ const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon:
 
 export default function RequestUpload() {
   const navigate = useNavigate();
-  const { setRequest, directRequestPrinterId, setDirectRequestPrinterId, printers } = useApp();
+  const {
+    setRequest,
+    directRequestPrinterId,
+    setDirectRequestPrinterId,
+    selectedDesign,
+    setSelectedDesign,
+    printers,
+  } = useApp();
   const targetShop = printers.find((p) => p.id === directRequestPrinterId);
 
   const [file, setFile] = useState(null);
-  const [material, setMaterial] = useState(targetShop?.materials[0] ?? "PLA");
+  const [material, setMaterial] = useState(
+    selectedDesign?.defaultMaterial ?? targetShop?.materials[0] ?? "PLA"
+  );
   const [neededBy, setNeededBy] = useState("");
   const [notes, setNotes] = useState("");
   const [dragOver, setDragOver] = useState(false);
 
   const isModel = file && /\.(stl|obj)$/i.test(file.name);
 
-  // A deterministic ballpark from the file's actual size — not a real
-  // slicer estimate, but grounded in something real about the upload
-  // rather than a random number.
+  // A deterministic ballpark — from the file's actual size for an
+  // upload, or the catalog design's known weight when one is attached.
+  // Not a real slicer estimate either way, but grounded in something
+  // real rather than a random number.
   const estimate = useMemo(() => {
-    if (!file) return null;
-    const grams = Math.min(420, Math.max(8, Math.round(file.size / 350)));
     const rate = AVG_MATERIAL_RATE[material] ?? 0.08;
+    let grams = null;
+    if (selectedDesign) grams = selectedDesign.estimatedGrams;
+    else if (file) grams = Math.min(420, Math.max(8, Math.round(file.size / 350)));
+    if (!grams) return null;
     // Floor the base cost (not the low/high bounds separately) so a tiny
     // estimated part can never produce an inverted range like "$4–$1".
     const base = Math.max(5, grams * rate);
     return { grams, low: base * 0.85, high: base * 1.3 };
-  }, [file, material]);
+  }, [file, selectedDesign, material]);
 
   const handleFiles = (fileList) => {
     const f = fileList?.[0];
@@ -45,7 +57,8 @@ export default function RequestUpload() {
   const submit = (e) => {
     e.preventDefault();
     setRequest({
-      fileName: file?.name ?? "part.stl",
+      fileName: selectedDesign ? selectedDesign.name : file?.name ?? "part.stl",
+      designId: selectedDesign?.id ?? null,
       material,
       neededBy,
       notes,
@@ -79,56 +92,78 @@ export default function RequestUpload() {
 
         <div>
           <label className="mb-2 block text-sm font-semibold text-navy">
-            Upload file or photo
+            {selectedDesign ? "Design" : "Upload file or photo"}
           </label>
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              handleFiles(e.dataTransfer.files);
-            }}
-            className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
-              dragOver ? "border-accent bg-accent/5" : "border-navy/15 bg-white"
-            }`}
-          >
-            {file ? (
-              <div className="flex w-full items-center justify-between rounded-xl bg-navy/5 px-3 py-2.5">
-                <div className="flex items-center gap-2 text-sm text-navy">
-                  {isModel ? <FileIcon size={16} /> : <ImageIcon size={16} />}
-                  <span className="truncate">{file.name}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFile(null)}
-                  className="text-navy/40 hover:text-navy"
-                >
-                  <X size={16} />
-                </button>
+          {selectedDesign ? (
+            <div className="flex items-center gap-3 rounded-2xl border-2 border-navy/15 bg-white p-3">
+              <img
+                src={selectedDesign.imageUrl}
+                alt={selectedDesign.name}
+                className="h-14 w-14 shrink-0 rounded-xl object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-navy">{selectedDesign.name}</p>
+                <p className="text-xs text-navy/40">From featured designs · Concept</p>
               </div>
-            ) : (
-              <>
-                <UploadCloud size={28} className="text-navy/30" />
-                <p className="text-sm font-medium text-navy/70">
-                  Drag &amp; drop an STL/OBJ file
-                </p>
-                <p className="text-xs text-navy/40">or a photo of the part</p>
-                <label className="mt-2 cursor-pointer rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white">
-                  Browse files
-                  <input
-                    type="file"
-                    accept=".stl,.obj,image/*"
-                    className="hidden"
-                    onChange={(e) => handleFiles(e.target.files)}
-                  />
-                </label>
-              </>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDesign(null)}
+                className="shrink-0 text-navy/40 hover:text-navy"
+                aria-label="Remove design"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                handleFiles(e.dataTransfer.files);
+              }}
+              className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
+                dragOver ? "border-accent bg-accent/5" : "border-navy/15 bg-white"
+              }`}
+            >
+              {file ? (
+                <div className="flex w-full items-center justify-between rounded-xl bg-navy/5 px-3 py-2.5">
+                  <div className="flex items-center gap-2 text-sm text-navy">
+                    {isModel ? <FileIcon size={16} /> : <ImageIcon size={16} />}
+                    <span className="truncate">{file.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    className="text-navy/40 hover:text-navy"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <UploadCloud size={28} className="text-navy/30" />
+                  <p className="text-sm font-medium text-navy/70">
+                    Drag &amp; drop an STL/OBJ file
+                  </p>
+                  <p className="text-xs text-navy/40">or a photo of the part</p>
+                  <label className="mt-2 cursor-pointer rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white">
+                    Browse files
+                    <input
+                      type="file"
+                      accept=".stl,.obj,image/*"
+                      className="hidden"
+                      onChange={(e) => handleFiles(e.target.files)}
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div>
@@ -152,7 +187,9 @@ export default function RequestUpload() {
                 Est. ${estimate.low.toFixed(0)}–${estimate.high.toFixed(0)}
               </p>
               <p className="text-xs text-navy/50">
-                ~{estimate.grams}g of {material}, based on your file · printers set the final price
+                ~{estimate.grams}g of {material},{" "}
+                {selectedDesign ? "based on this design" : "based on your file"} · printers set the
+                final price
               </p>
             </div>
           </div>

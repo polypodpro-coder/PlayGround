@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogOut, MapPin, Moon, Plus, Printer, Search, Upload, X } from "lucide-react";
+import { Info, Link2, Loader2, LogOut, MapPin, Moon, Plus, Printer, Search, Upload, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import StatusBadge from "../../components/StatusBadge";
 import ShopLogo from "../../components/ShopLogo";
@@ -25,6 +25,12 @@ export default function PrinterSettings() {
   const [lngText, setLngText] = useState(myShop.location[1].toFixed(5));
   const fileInputRef = useRef(null);
   const portfolioInputRef = useRef(null);
+  const [printerLinkStatus, setPrinterLinkStatus] = useState("disconnected"); // 'disconnected' | 'connecting' | 'connected'
+
+  const handleConnectPrinter = () => {
+    setPrinterLinkStatus("connecting");
+    setTimeout(() => setPrinterLinkStatus("connected"), 1200);
+  };
 
   // Keep the lat/lng text fields in sync when the location changes from
   // elsewhere (dragging the pin, or a successful address lookup).
@@ -392,6 +398,65 @@ export default function PrinterSettings() {
                 onChange={(e) => updateMyShop({ pausedUntil: e.target.value })}
                 className="w-full rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 focus:ring-accent"
               />
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/5 text-navy/50">
+              <Link2 size={16} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-sm font-semibold text-navy">Connect a printer</h2>
+                <span className="rounded-full bg-navy/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy/50">
+                  Concept
+                </span>
+              </div>
+              <p className="text-xs text-navy/40">Sync live status from a manufacturer cloud</p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-start gap-2 rounded-xl bg-navy/5 p-3">
+            <Info size={14} className="mt-0.5 shrink-0 text-navy/40" />
+            <p className="text-xs leading-relaxed text-navy/50">
+              Preview only — not a real device connection. A future manufacturer partnership could
+              pull queue and status here automatically instead of the manual toggles below.
+            </p>
+          </div>
+
+          {printerLinkStatus === "disconnected" && (
+            <button
+              type="button"
+              onClick={handleConnectPrinter}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-navy px-4 py-2.5 text-xs font-semibold text-white active:scale-95"
+            >
+              <Link2 size={13} />
+              Connect a Bambu printer
+            </button>
+          )}
+          {printerLinkStatus === "connecting" && (
+            <div className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-navy/10 px-4 py-2.5 text-xs font-semibold text-navy/50">
+              <Loader2 size={13} className="animate-spin" />
+              Connecting...
+            </div>
+          )}
+          {printerLinkStatus === "connected" && (
+            <div className="mt-3 space-y-2.5">
+              <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-3.5 py-2.5">
+                <div>
+                  <p className="text-xs font-semibold text-emerald-700">Bambu X1 Carbon — linked</p>
+                  <p className="text-[11px] text-emerald-600">Queue: 2 jobs · 68% capacity (simulated)</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPrinterLinkStatus("disconnected")}
+                  className="shrink-0 text-[11px] font-semibold text-emerald-700 underline underline-offset-2"
+                >
+                  Disconnect
+                </button>
+              </div>
             </div>
           )}
         </div>

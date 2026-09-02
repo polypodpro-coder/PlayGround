@@ -7,6 +7,7 @@ import Signup from "./pages/auth/Signup";
 
 import HomeFeed from "./pages/buyer/HomeFeed";
 import ShopProfile from "./pages/buyer/ShopProfile";
+import DesignDetail from "./pages/buyer/DesignDetail";
 import RequestUpload from "./pages/buyer/RequestUpload";
 import Quotes from "./pages/buyer/Quotes";
 import Checkout from "./pages/buyer/Checkout";
@@ -59,6 +60,7 @@ export default function App() {
           {/* Buyer flow */}
           <Route path="/" element={<HomeFeed />} />
           <Route path="/shop/:printerId" element={<ShopProfile />} />
+          <Route path="/design/:designId" element={<DesignDetail />} />
           <Route path="/request" element={<RequestUpload />} />
           <Route path="/quotes" element={<Quotes />} />
           <Route path="/checkout" element={<Checkout />} />

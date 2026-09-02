@@ -57,6 +57,7 @@ export function AppProvider({ children }) {
   const [request, setRequest] = useState(null); // in-progress buyer request
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [directRequestPrinterId, setDirectRequestPrinterId] = useState(null);
+  const [selectedDesign, setSelectedDesign] = useState(null); // catalog design attached to the current request
   const [orders, setOrders] = useState(mockOrders);
   const [printers, setPrinters] = useState(mockPrinters);
   const [favorites, setFavorites] = useState(() => new Set());
@@ -157,6 +158,7 @@ export function AppProvider({ children }) {
       setCurrentUser((prev) => (prev ? { ...prev, credits: Math.max(0, (prev.credits ?? 0) - creditsUsed) } : prev));
     }
     setDirectRequestPrinterId(null);
+    setSelectedDesign(null);
     return id;
   }, [selectedQuote]);
 
@@ -273,6 +275,8 @@ export function AppProvider({ children }) {
       setRequest,
       directRequestPrinterId,
       setDirectRequestPrinterId,
+      selectedDesign,
+      setSelectedDesign,
       quotes,
       selectedQuote,
       acceptQuote,
@@ -304,6 +308,7 @@ export function AppProvider({ children }) {
       updateCurrentUser,
       request,
       directRequestPrinterId,
+      selectedDesign,
       quotes,
       selectedQuote,
       orders,

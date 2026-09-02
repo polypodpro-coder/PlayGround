@@ -434,6 +434,81 @@ export const users = [
 
 export const REFERRAL_BONUS = 10;
 
+// Concept-only: a browsable design catalog, standing in for what a real
+// partnership with a model-sharing platform (à la MakerWorld) could feed
+// into the app. Names, designers, and images here are entirely invented
+// placeholders — not real listings or real designers — so this reads
+// honestly as a mockup rather than an actual integration.
+export const featuredDesigns = [
+  {
+    id: "d1",
+    name: "Articulated Fox",
+    category: "Toys & Props",
+    designer: "Community Maker",
+    license: "Free · personal use",
+    imageUrl: portfolioImage("#8A5A44", 4),
+    defaultMaterial: "PLA",
+    estimatedGrams: 45,
+    description:
+      "Print-in-place articulated toy — no supports, no assembly. Joints are printed fully connected and move right off the plate.",
+  },
+  {
+    id: "d2",
+    name: "Modular Desk Organizer",
+    category: "Home & Office",
+    designer: "Community Maker",
+    license: "Free · personal use",
+    imageUrl: portfolioImage("#3E6B8A", 2),
+    defaultMaterial: "PETG",
+    estimatedGrams: 120,
+    description: "Stackable trays that click together in any layout — pen holder, phone slot, and catch-all bin.",
+  },
+  {
+    id: "d3",
+    name: "Cable Clip 5-Pack",
+    category: "Home & Office",
+    designer: "Community Maker",
+    license: "Free · personal use",
+    imageUrl: portfolioImage("#5A7A3E", 6),
+    defaultMaterial: "PLA",
+    estimatedGrams: 18,
+    description: "Adhesive-back cable clips in five widths, for desk and wall cable management.",
+  },
+  {
+    id: "d4",
+    name: "Articulating Phone Stand",
+    category: "Home & Office",
+    designer: "Community Maker",
+    license: "Free · personal use",
+    imageUrl: portfolioImage("#7A4A8A", 3),
+    defaultMaterial: "PETG",
+    estimatedGrams: 65,
+    description: "Adjustable-angle stand with a friction hinge — holds phones and small tablets in portrait or landscape.",
+  },
+  {
+    id: "d5",
+    name: "Geometric Planter Set",
+    category: "Home & Garden",
+    designer: "Community Maker",
+    license: "Free · personal use",
+    imageUrl: portfolioImage("#4A8A5E", 5),
+    defaultMaterial: "PLA",
+    estimatedGrams: 90,
+    description: "Faceted low-poly planters in three sizes, with a drainage layer built into the base.",
+  },
+  {
+    id: "d6",
+    name: "Voronoi Vase",
+    category: "Decor",
+    designer: "Community Maker",
+    license: "Free · personal use",
+    imageUrl: portfolioImage("#B4562B", 7),
+    defaultMaterial: "PLA",
+    estimatedGrams: 110,
+    description: "Vase-mode single-wall print with an organic voronoi lattice pattern — lights up nicely with an LED tealight.",
+  },
+];
+
 export const savedAddresses = [
   { id: "addr1", label: "Home", line: "482 Birchwood Ave, Springfield, IL 62704" },
   { id: "addr2", label: "Work", line: "110 E Monroe St, Suite 300, Springfield, IL 62701" },
