@@ -145,7 +145,7 @@ export default function Account() {
 
           {(currentUser?.credits ?? 0) > 0 && (
             <p className="mt-3 text-xs text-white/70">
-              PrintMatch credit:{" "}
+              Poly POD credit:{" "}
               <span className="font-semibold text-white">${(currentUser.credits ?? 0).toFixed(2)}</span>
             </p>
           )}

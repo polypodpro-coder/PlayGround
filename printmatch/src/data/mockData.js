@@ -1,4 +1,4 @@
-// Mock data model for PrintMatch. No backend — everything lives here and in
+// Mock data model for Poly POD. No backend — everything lives here and in
 // AppContext at runtime.
 
 export const MATERIALS = ["PLA", "PETG", "ABS", "TPU", "Nylon"];
@@ -516,5 +516,5 @@ export const savedAddresses = [
 
 export const savedPaymentMethods = [
   { id: "visa", label: "Visa •••• 4242" },
-  { id: "wallet", label: "PrintMatch Wallet ($42.10)" },
+  { id: "wallet", label: "Poly POD Wallet ($42.10)" },
 ];

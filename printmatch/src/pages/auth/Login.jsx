@@ -32,8 +32,8 @@ export default function Login() {
           <Box size={28} />
         </div>
         <div className="text-center">
-          <h1 className="text-xl font-bold">PrintMatch</h1>
-          <p className="text-sm text-white/60">Local 3D printing, on demand</p>
+          <h1 className="text-xl font-bold">Poly POD</h1>
+          <p className="text-sm text-white/60">Production On Demand</p>
         </div>
       </div>
 

@@ -1,4 +1,6 @@
-# PrintMatch
+# Poly POD
+
+_Production On Demand_
 
 A mobile-first peer-to-peer marketplace connecting local 3D printer owners
 with customers who need custom parts printed nearby.

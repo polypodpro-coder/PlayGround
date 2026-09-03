@@ -11,7 +11,7 @@ import {
 } from "../data/mockData";
 
 const AppContext = createContext(null);
-const SESSION_KEY = "printmatch.session";
+const SESSION_KEY = "polypod.session";
 
 function titleCaseFromEmail(email) {
   const local = email.split("@")[0] ?? "there";

@@ -32,7 +32,7 @@ export default function Signup() {
         </div>
         <div className="text-center">
           <h1 className="text-xl font-bold">Create your account</h1>
-          <p className="text-sm text-white/60">Join PrintMatch in seconds</p>
+          <p className="text-sm text-white/60">Join Poly POD in seconds</p>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ export default function Signup() {
         </div>
         {referralCode.trim() && (
           <p className="text-xs text-accent">
-            You'll get ${REFERRAL_BONUS} in PrintMatch credit on signup.
+            You'll get ${REFERRAL_BONUS} in Poly POD credit on signup.
           </p>
         )}
         {error && <p className="text-xs text-red-300">{error}</p>}

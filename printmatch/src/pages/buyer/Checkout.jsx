@@ -82,7 +82,7 @@ export default function Checkout() {
             )}
             {creditsUsed > 0 && (
               <div className="flex justify-between text-accent">
-                <span>PrintMatch credit</span>
+                <span>Poly POD credit</span>
                 <span>-${creditsUsed.toFixed(2)}</span>
               </div>
             )}
@@ -101,7 +101,7 @@ export default function Checkout() {
           >
             <Sparkles size={18} className="shrink-0 text-accent" />
             <span className="flex-1 text-sm font-medium text-navy">
-              Use ${availableCredit.toFixed(2)} PrintMatch credit
+              Use ${availableCredit.toFixed(2)} Poly POD credit
             </span>
             <span
               className={`h-4 w-4 shrink-0 rounded-full border-2 ${
