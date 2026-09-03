@@ -7,10 +7,8 @@ import {
   UploadCloud,
   X,
   Sparkles,
-  Bot,
-  Send,
   RefreshCw,
-  Cpu,
+  Send,
 } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import MaterialChipSelector from "../../components/MaterialChipSelector";
@@ -33,20 +31,20 @@ export default function RequestUpload() {
     setSelectedDesign,
     printers,
     showToast,
+    selectedMaterial,
+    setSelectedMaterial,
+    selectedMachineId,
+    setSelectedMachineId,
+    selectedAddons,
+    toggleAddon,
   } = useApp();
+
   const targetShop = printers.find((p) => p.id === directRequestPrinterId);
 
   const [file, setFile] = useState(null);
-  const [material, setMaterial] = useState(
-    selectedDesign?.defaultMaterial ?? targetShop?.materials[0] ?? "PETG"
-  );
   const [neededBy, setNeededBy] = useState("");
   const [notes, setNotes] = useState("");
   const [dragOver, setDragOver] = useState(false);
-
-  // New Intake Features: Fleet selection & Post-Processing Addons
-  const [selectedMachineId, setSelectedMachineId] = useState("bambu-x1c");
-  const [selectedAddons, setSelectedAddons] = useState([]);
 
   // Meshy AI Image-to-3D State
   const [meshyModel, setMeshyModel] = useState(null);
@@ -57,15 +55,9 @@ export default function RequestUpload() {
 
   const isModel = file && /\.(stl|obj)$/i.test(file.name);
 
-  const handleToggleAddon = (id) => {
-    setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
   // Ballpark estimate grounded in actual 3D mesh volume when available
   const estimate = useMemo(() => {
-    const matRate = MATERIAL_MULTIPLIERS[material]?.rate ?? 0.08;
+    const matRate = MATERIAL_MULTIPLIERS[selectedMaterial]?.rate ?? 0.08;
     let grams = null;
     if (meshyModel) grams = meshyModel.estimatedGrams;
     else if (selectedDesign) grams = selectedDesign.estimatedGrams;
@@ -74,7 +66,7 @@ export default function RequestUpload() {
 
     const base = Math.max(5, grams * matRate);
     return { grams, low: base * 0.85, high: base * 1.3 };
-  }, [file, selectedDesign, material, meshyModel]);
+  }, [file, selectedDesign, selectedMaterial, meshyModel]);
 
   const handleFiles = async (fileList) => {
     const f = fileList?.[0];
@@ -100,44 +92,38 @@ export default function RequestUpload() {
         setGenerationStage(status);
       });
 
-      setIsGenerating(false);
-      const newModel = {
-        id: `custom_${Date.now()}`,
-        name: f.name.replace(/\.[^/.]+$/, "") || "Custom 3D Part",
-        type: "bracket",
+      setMeshyModel({
+        name: f.name.replace(/\.[^/.]+$/, ""),
         photoUrl: imgUrl,
+        modelUrl: task.modelUrl,
         dimensions: { x: 52, y: 38, z: 24 },
         estimatedGrams: 42,
         recommendedMaterial: "PETG",
-        infillRecommendation: "40% gyroid",
-        agentSummary: `AI analyzed "${f.name}". Detected structural geometry with mounting surfaces. Synthesized manifold 3D mesh ready for printing.`,
-      };
-      setMeshyModel(newModel);
-      setMaterial(newModel.recommendedMaterial);
-      if (showToast) showToast("3D model synthesized successfully from reference photo!", "success");
-    } else {
-      setMeshyModel(null);
-      if (showToast) showToast(`CAD file "${f.name}" loaded for quoting`, "info");
+        infillRecommendation: "35% gyroid",
+        agentSummary:
+          "Synthesized manifold 3D polygon mesh from user 2D reference photo. Reconstructed watertight solid geometry.",
+      });
+      setSelectedMaterial("PETG");
+      setIsGenerating(false);
+      if (showToast) showToast("3D model synthesized successfully!", "success");
     }
   };
 
-  const handleSelectPreset = async (preset) => {
+  const handleSelectPreset = (preset) => {
     setFile(null);
     setSelectedDesign(null);
-    setIsGenerating(true);
-    setGenerationStage("Initializing Meshy.ai Image-to-3D pipeline...");
-    setGenerationProgress(15);
-
-    const task = await createImageTo3DTask({ presetId: preset.id });
-    await pollTaskStatus(task.taskId, (progress, status) => {
-      setGenerationProgress(progress);
-      setGenerationStage(status);
+    setMeshyModel({
+      name: preset.name,
+      photoUrl: preset.photoUrl,
+      modelUrl: null,
+      dimensions: preset.dimensions,
+      estimatedGrams: preset.estimatedGrams,
+      recommendedMaterial: preset.recommendedMaterial,
+      infillRecommendation: preset.infillRecommendation,
+      agentSummary: preset.agentSummary,
     });
-
-    setIsGenerating(false);
-    setMeshyModel({ ...preset });
-    setMaterial(preset.recommendedMaterial);
-    if (showToast) showToast(`Loaded "${preset.name}" preset`, "info");
+    setSelectedMaterial(preset.recommendedMaterial);
+    if (showToast) showToast(`Loaded sample part: ${preset.name}`, "info");
   };
 
   const handleRefine = (instruction) => {
@@ -148,7 +134,8 @@ export default function RequestUpload() {
         ...prev,
         dimensions: { ...prev.dimensions, z: prev.dimensions.z + 4 },
         estimatedGrams: Math.round(prev.estimatedGrams * 1.15),
-        agentSummary: "Reinforced wall thickness by +2mm (+15% structural strength). Recalculated mesh volume.",
+        agentSummary:
+          "Reinforced wall thickness by +2mm (+15% structural strength). Recalculated mesh volume.",
       }));
     } else if (lower.includes("rib") || lower.includes("gusset")) {
       setMeshyModel((prev) => ({
@@ -189,7 +176,7 @@ export default function RequestUpload() {
         ? selectedDesign.name
         : file?.name ?? "part.stl",
       designId: selectedDesign?.id ?? null,
-      material,
+      material: selectedMaterial,
       neededBy,
       selectedMachineId,
       selectedAddons,
@@ -308,25 +295,29 @@ export default function RequestUpload() {
 
               {/* Embedded Three.js 3D Viewport */}
               <ModelPreviewer
-                modelType={meshyModel.type}
+                modelUrl={meshyModel.modelUrl}
+                material={selectedMaterial}
                 dimensions={meshyModel.dimensions}
-                materialName={material}
-                estimatedGrams={meshyModel.estimatedGrams}
               />
 
-              {/* AI Co-Pilot Assistance Card */}
-              <div className="rounded-xl bg-navy/5 p-3 text-xs text-navy/80">
+              {/* AI Co-Pilot Summary */}
+              <div className="rounded-xl bg-navy/5 p-3 text-xs text-navy">
                 <div className="flex items-start gap-2">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-white">
-                    <Bot size={12} />
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-white text-[10px] font-bold">
+                    AI
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-navy">AI Co-pilot</p>
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold">AI Co-pilot</p>
+                      <span className="text-[9px] text-navy/40 font-mono">
+                        Infill: {meshyModel.infillRecommendation}
+                      </span>
+                    </div>
                     <p className="mt-0.5 leading-relaxed text-navy/70">{meshyModel.agentSummary}</p>
                   </div>
                 </div>
 
-                {/* Quick refinement action chips */}
+                {/* Refinement Quick Chips */}
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
                   <button
                     type="button"
@@ -477,25 +468,25 @@ export default function RequestUpload() {
           </div>
           <MaterialChipSelector
             materials={targetShop?.materials}
-            selected={material}
-            onChange={setMaterial}
+            selected={selectedMaterial}
+            onChange={setSelectedMaterial}
           />
         </div>
 
-        {/* Feature 1: Instant Quoting Component with Multiplier Variables */}
+        {/* Track 2 Feature 1: Instant Quoting Component with Multiplier Variables */}
         <InstantQuoteCalculator
           grams={estimate?.grams || (meshyModel?.estimatedGrams ?? 42)}
-          material={material}
+          material={selectedMaterial}
           selectedAddons={selectedAddons}
         />
 
-        {/* Feature 2: Post-Processing Toggles */}
+        {/* Track 2 Feature 2: Post-Processing Toggles */}
         <PostProcessingToggles
           selectedAddons={selectedAddons}
-          onToggleAddon={handleToggleAddon}
+          onToggleAddon={toggleAddon}
         />
 
-        {/* Feature 3: Machine Capabilities Section */}
+        {/* Track 2 Feature 3: Machine Capabilities Section */}
         <MachineCapabilities
           selectedMachineId={selectedMachineId}
           onSelectMachine={setSelectedMachineId}
@@ -531,7 +522,7 @@ export default function RequestUpload() {
 
         <button
           type="submit"
-          className="w-full rounded-2xl bg-accent py-4 text-center text-sm font-semibold text-white shadow-md shadow-accent/25 transition active:scale-[0.98]"
+          className="w-full rounded-2xl bg-accent py-4 text-center text-sm font-semibold text-white shadow-md shadow-accent/25 transition active:scale-[0.98] cursor-pointer"
         >
           Get quotes (Step 2 of 2)
         </button>

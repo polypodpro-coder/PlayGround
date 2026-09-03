@@ -1,4 +1,4 @@
-﻿import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   orders as mockOrders,
   quotes as mockQuotes,
@@ -6,6 +6,9 @@ import {
   users as mockUsers,
   savedAddresses as mockAddresses,
   savedPaymentMethods as mockPaymentMethods,
+  MATERIAL_MULTIPLIERS,
+  FLEET_MACHINES,
+  POST_PROCESSING_ADDONS,
   MY_PRINTER_ID,
   REFERRAL_BONUS,
 } from "../data/mockData";
@@ -28,9 +31,6 @@ function generateReferralCode(name) {
   return `${base}${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
-// A refresh shouldn't sign the user out — persist just enough of the
-// session (who's logged in, which role they were viewing) to a local
-// browser-only session, separate from the rest of the mock data.
 function loadSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -45,8 +45,7 @@ function saveSession(session) {
     if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     else localStorage.removeItem(SESSION_KEY);
   } catch {
-    // Storage unavailable (private browsing, disabled) — session just
-    // won't survive a refresh this time, which is fine.
+    // Storage unavailable
   }
 }
 
@@ -65,10 +64,15 @@ export function AppProvider({ children }) {
   const [paymentMethods, setPaymentMethods] = useState(mockPaymentMethods);
   const [toast, setToast] = useState(null);
 
+  // Track 2: Quoting Engine State
+  const [selectedMaterial, setSelectedMaterial] = useState("PETG");
+  const [selectedMachineId, setSelectedMachineId] = useState("bambu-x1c");
+  const [selectedAddons, setSelectedAddons] = useState([]); // array of addon IDs (e.g. ['splitAndBond', 'hardwareInstall'])
+
   const showToast = useCallback((message, type = "info", duration = 3500) => {
     setToast({ message, type });
     setTimeout(() => {
-      setToast((curr) => (curr?.message === message ? null : curr));
+      setToast((curr) => (curr && curr.message === message ? null : curr));
     }, duration);
   }, []);
 
@@ -76,24 +80,60 @@ export function AppProvider({ children }) {
     setToast(null);
   }, []);
 
-  const toggleRole = () =>
-    setRole((r) => (r === "buyer" ? "owner" : "buyer"));
-
-  // Keep the persisted session in sync so a page refresh doesn't sign
-  // the user back out.
   useEffect(() => {
-    saveSession(currentUser ? { currentUser, role } : null);
+    saveSession({ currentUser, role });
   }, [currentUser, role]);
 
-  // Mock auth: no real backend, so this just matches (or creates) a local
-  // user record — any password "works." Matching a known mock account
-  // also switches into that account's role so login lands on the right
-  // experience.
+  const toggleRole = useCallback(() => {
+    setRole((r) => (r === "buyer" ? "owner" : "buyer"));
+  }, []);
+
+  const toggleAddon = useCallback((addonId) => {
+    setSelectedAddons((prev) =>
+      prev.includes(addonId) ? prev.filter((id) => id !== addonId) : [...prev, addonId]
+    );
+  }, []);
+
+  // Dynamic Quote Calculation Breakdown
+  const quoteBreakdown = useMemo(() => {
+    const grams = request?.estimatedGrams || 40;
+    const mat = selectedMaterial || request?.material || "PETG";
+    const matInfo = MATERIAL_MULTIPLIERS[mat] || { multiplier: 1.0, rate: 0.08, category: "Standard" };
+    const baseCost = grams * matInfo.rate;
+    let addonCost = 0;
+    const activeAddonsList = [];
+    selectedAddons.forEach((id) => {
+      const found = POST_PROCESSING_ADDONS.find((addon) => addon.id === id);
+      if (found) {
+        addonCost += found.cost;
+        activeAddonsList.push(found);
+      }
+    });
+    const subtotal = baseCost + addonCost;
+    const low = Math.max(7, Math.round(subtotal * 0.9));
+    const high = Math.max(10, Math.round(subtotal * 1.25));
+
+    return {
+      grams,
+      material: mat,
+      materialMultiplier: matInfo.multiplier,
+      materialRate: matInfo.rate,
+      materialCategory: matInfo.category,
+      baseCost,
+      addonCost,
+      activeAddons: activeAddonsList,
+      subtotal,
+      low,
+      high,
+      machineId: selectedMachineId,
+    };
+  }, [request, selectedMaterial, selectedAddons, selectedMachineId]);
+
   const login = useCallback((email) => {
-    const match = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    const name = match?.name ?? titleCaseFromEmail(email);
+    const existing = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const name = titleCaseFromEmail(email);
     const user =
-      match ?? {
+      existing ?? {
         id: `u${Date.now()}`,
         name,
         email,
@@ -105,10 +145,6 @@ export function AppProvider({ children }) {
     setRole(user.role);
   }, []);
 
-  // A referral code entered at signup grants the new signee a one-time
-  // credit — mirrors the "give $10, get $10" copy real referral programs
-  // show the invitee, even though (same as those apps) crediting the
-  // referrer back happens on a side this single-session demo can't reach.
   const signup = useCallback(({ name, email, role: signupRole, referralCode }) => {
     const user = {
       id: `u${Date.now()}`,
@@ -142,40 +178,41 @@ export function AppProvider({ children }) {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
   }, []);
 
-  // Builds a fresh order from the accepted quote (plus whatever checkout
-  // options are passed in, e.g. delivery method, tip, credit applied) and
-  // returns its id, so Checkout can route straight to that order's
-  // tracking screen.
-  const placeOrder = useCallback((extra = {}) => {
-    const { creditsUsed = 0, ...orderFields } = extra;
-    const id = `o${Date.now()}`;
-    const newOrder = {
-      id,
-      printerId: selectedQuote?.printerId ?? MY_PRINTER_ID,
-      status: "queued",
-      progressPct: 4,
-      etaLabel: "Just placed",
-      printCost: selectedQuote?.price ?? 18.5,
-      serviceFee: 2.5,
-      material: selectedQuote?.material ?? "PLA",
-      color: selectedQuote?.color ?? "Black",
-      createdAt: new Date().toISOString(),
-      messages: [],
-      viewed: false,
-      rated: false,
-      ...orderFields,
-    };
-    setOrders((prev) => [newOrder, ...prev]);
-    if (creditsUsed > 0) {
-      setCurrentUser((prev) => (prev ? { ...prev, credits: Math.max(0, (prev.credits ?? 0) - creditsUsed) } : prev));
-    }
-    setDirectRequestPrinterId(null);
-    setSelectedDesign(null);
-    return id;
-  }, [selectedQuote]);
+  const placeOrder = useCallback(
+    (extra = {}) => {
+      const { creditsUsed = 0, ...orderFields } = extra;
+      const id = `o${Date.now()}`;
+      const newOrder = {
+        id,
+        printerId: selectedQuote?.printerId ?? MY_PRINTER_ID,
+        status: "queued",
+        progressPct: 4,
+        etaLabel: "Just placed",
+        printCost: selectedQuote?.price ?? 18.5,
+        serviceFee: 2.5,
+        material: selectedQuote?.material ?? selectedMaterial,
+        color: selectedQuote?.color ?? "Black",
+        machineId: selectedQuote?.machineId ?? selectedMachineId,
+        addons: selectedQuote?.addons ?? selectedAddons,
+        createdAt: new Date().toISOString(),
+        messages: [],
+        viewed: false,
+        rated: false,
+        ...orderFields,
+      };
+      setOrders((prev) => [newOrder, ...prev]);
+      if (creditsUsed > 0) {
+        setCurrentUser((prev) =>
+          prev ? { ...prev, credits: Math.max(0, (prev.credits ?? 0) - creditsUsed) } : prev
+        );
+      }
+      setDirectRequestPrinterId(null);
+      setSelectedDesign(null);
+      return id;
+    },
+    [selectedQuote, selectedMaterial, selectedMachineId, selectedAddons]
+  );
 
-  // Post-order rating: appends a review to the printer and marks the
-  // order as rated so the prompt doesn't show again.
   const rateOrder = useCallback(
     (orderId, printerId, { rating, text }) => {
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, rated: true } : o)));
@@ -202,27 +239,36 @@ export function AppProvider({ children }) {
     [currentUser]
   );
 
-  // A single synthesized quote when the buyer requested one specific shop
-  // directly from its profile, instead of broadcasting to every nearby
-  // shop. Falls back to the mock multi-shop quote list otherwise.
+  // Stateful Quoting Engine: calculates dynamic quotes for nearby shops based on material multiplier and add-ons
   const quotes = useMemo(() => {
+    const grams = request?.estimatedGrams ?? 55;
+    const mat = selectedMaterial || request?.material || "PETG";
+    const matInfo = MATERIAL_MULTIPLIERS[mat] || { multiplier: 1.0, rate: 0.08 };
+    let addonCost = 0;
+    selectedAddons.forEach((id) => {
+      const a = POST_PROCESSING_ADDONS.find((item) => item.id === id);
+      if (a) addonCost += a.cost;
+    });
+
     if (!directRequestPrinterId) {
-      if (request?.estimatedGrams) {
-        const factor = Math.max(0.4, Math.min(2.5, request.estimatedGrams / 55));
-        return mockQuotes.map((q) => ({
+      return mockQuotes.map((q) => {
+        const base = q.price * (matInfo.multiplier / 1.0) * (grams / 55);
+        const finalPrice = Math.round((base + addonCost) * 10) / 10;
+        return {
           ...q,
-          price: Math.round(q.price * factor * 10) / 10,
-          material: request.material ?? q.material,
-        }));
-      }
-      return mockQuotes;
+          price: Math.max(8, finalPrice),
+          material: mat,
+          machineId: selectedMachineId,
+          addons: [...selectedAddons],
+        };
+      });
     }
+
     const shop = printers.find((p) => p.id === directRequestPrinterId);
     if (!shop) return mockQuotes;
-    const material = request?.material ?? shop.materials[0];
-    const rate = shop.pricingRates?.[material] ?? 0.08;
-    const grams = request?.estimatedGrams ?? 70;
-    const price = Math.max(6, Math.round(rate * grams * 100) / 100);
+    const rate = (shop.pricingRates?.[mat] ?? shop.pricingRates?.PLA ?? 0.08) * matInfo.multiplier;
+    const base = rate * grams;
+    const price = Math.max(8, Math.round((base + addonCost) * 10) / 10);
     return [
       {
         id: `direct-${shop.id}`,
@@ -230,11 +276,13 @@ export function AppProvider({ children }) {
         printerId: shop.id,
         price,
         etaHours: shop.turnaroundLabel === "Same day" ? 8 : shop.turnaroundLabel === "24hr" ? 24 : 48,
-        material,
+        material: mat,
         color: "As specified",
+        machineId: selectedMachineId,
+        addons: [...selectedAddons],
       },
     ];
-  }, [directRequestPrinterId, printers, request]);
+  }, [directRequestPrinterId, printers, request, selectedMaterial, selectedAddons, selectedMachineId]);
 
   const activeOrderCount = useMemo(
     () => orders.filter((o) => o.status !== "completed" && o.status !== "cancelled").length,
@@ -251,14 +299,9 @@ export function AppProvider({ children }) {
   }, []);
 
   const updatePrinter = useCallback((id, patch) => {
-    setPrinters((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
-    );
+    setPrinters((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   }, []);
 
-  // "My shop" = the signed-in printer owner's own listing (Dana's Print
-  // Shop / Riverside Rapid Prints). Editing it in Settings updates the
-  // same record buyers see on the home feed and map.
   const myShop = useMemo(
     () => printers.find((p) => p.id === MY_PRINTER_ID) ?? printers[0],
     [printers]
@@ -323,6 +366,14 @@ export function AppProvider({ children }) {
       toast,
       showToast,
       hideToast,
+      // Track 2 Exports
+      selectedMaterial,
+      setSelectedMaterial,
+      selectedMachineId,
+      setSelectedMachineId,
+      selectedAddons,
+      toggleAddon,
+      quoteBreakdown,
     }),
     [
       role,
@@ -357,6 +408,11 @@ export function AppProvider({ children }) {
       toast,
       showToast,
       hideToast,
+      selectedMaterial,
+      selectedMachineId,
+      selectedAddons,
+      toggleAddon,
+      quoteBreakdown,
     ]
   );
 

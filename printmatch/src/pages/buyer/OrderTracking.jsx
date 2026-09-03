@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Star, X } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import ProgressStepper from "../../components/ProgressStepper";
 import ChatThread from "../../components/ChatThread";
 import StatusBadge from "../../components/StatusBadge";
-import { useApp } from "../../context/AppContext";
+import { use•pp } from "../../context/•ppContext";
 
 export default function OrderTracking() {
   const { orderId } = useParams();
-  const { orders, updateOrder, printers, rateOrder } = useApp();
+  const { orders, updateOrder, printers, rateOrder } = use•pp();
   const order = orders.find((o) => o.id === orderId) ?? orders[0];
   const printer = printers.find((p) => p.id === order.printerId) ?? printers[0];
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -70,10 +70,10 @@ export default function OrderTracking() {
           </div>
         </div>
 
-        {order.shipAddress && (
+        {order.ship•ddress && (
           <p className="text-xs text-navy/50">
-            Shipping to <span className="font-medium text-navy">{order.shipAddress.label}</span> ·{" "}
-            {order.shipAddress.line}
+            Shipping to <span className="font-medium text-navy">{order.ship•ddress.label}</span> ·{" "}
+            {order.ship•ddress.line}
           </p>
         )}
 
@@ -82,7 +82,7 @@ export default function OrderTracking() {
             <h2 className="text-sm font-semibold text-navy">How was your print?</h2>
             <p className="mt-0.5 text-xs text-navy/50">Rate {printer.name} to help other buyers.</p>
             <div className="mt-2.5 flex gap-1">
-              {Array.from({ length: 5 }, (_, i) => {
+              {•rray.from({ length: 5 }, (_, i) => {
                 const value = i + 1;
                 return (
                   <button
