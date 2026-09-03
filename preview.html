@@ -195,6 +195,100 @@
       },
     ];
 
+    // Showcase of Previously Completed Work by Printer Owners
+    const COMPLETED_SHOWCASE = [
+      {
+        id: "showcase-1",
+        title: "Articulated Robot Arm Link",
+        shopId: "p1",
+        shopName: "Riverside Rapid Prints",
+        ownerName: "Dana K.",
+        machine: "Bambu Lab X1-Carbon",
+        material: "PETG",
+        imageUrl: "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 58, y: 32, z: 26 },
+        grams: 48,
+        price: 15.50,
+        turnaround: "Same day",
+        rating: 5.0,
+        tagline: "High load strength with smooth articulated joints",
+        presetType: "bracket",
+        infill: "40% gyroid"
+      },
+      {
+        id: "showcase-2",
+        title: "Knurled Rotary Encoder Knob",
+        shopId: "p3",
+        shopName: "Cube & Coil Studio",
+        ownerName: "Priya S.",
+        machine: "Creality K1 Max",
+        material: "PLA",
+        imageUrl: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 32, y: 32, z: 22 },
+        grams: 26,
+        price: 11.50,
+        turnaround: "24hr",
+        rating: 4.9,
+        tagline: "Fine-pitch ribbed knurling with 6mm D-shaft bore",
+        presetType: "knob",
+        infill: "25% grid"
+      },
+      {
+        id: "showcase-3",
+        title: "Vibration-Damping Drone Mount",
+        shopId: "p1",
+        shopName: "Riverside Rapid Prints",
+        ownerName: "Dana K.",
+        machine: "Bambu Lab X1-Carbon",
+        material: "TPU",
+        imageUrl: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 42, y: 30, z: 18 },
+        grams: 22,
+        price: 14.20,
+        turnaround: "Same day",
+        rating: 5.0,
+        tagline: "Flexible 95A TPU absorbs high-frequency motor vibrations",
+        presetType: "clip",
+        infill: "100% solid"
+      },
+      {
+        id: "showcase-4",
+        title: "Weatherproof Sensor Enclosure",
+        shopId: "p2",
+        shopName: "Oak Hill 3D Lab",
+        ownerName: "Marcus T.",
+        machine: "Prusa XL 5-Tool",
+        material: "ABS",
+        imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 68, y: 44, z: 28 },
+        grams: 58,
+        price: 17.80,
+        turnaround: "24hr",
+        rating: 4.8,
+        tagline: "Heat-resistant to 90&deg;C with tool-less snap latch",
+        presetType: "enclosure",
+        infill: "35% cubic"
+      },
+      {
+        id: "showcase-5",
+        title: "Snap-Fit Heavy Duty Cable Clamp",
+        shopId: "p3",
+        shopName: "Cube & Coil Studio",
+        ownerName: "Priya S.",
+        machine: "Creality K1 Max",
+        material: "PETG",
+        imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 34, y: 22, z: 16 },
+        grams: 16,
+        price: 9.20,
+        turnaround: "48hr",
+        rating: 4.9,
+        tagline: "Compliant spring clip for clean desk &amp; server routing",
+        presetType: "clip",
+        infill: "50% gyroid"
+      }
+    ];
+
     const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon: 0.15 };
 
     // App State
@@ -262,6 +356,35 @@
       }
     };
 
+    // 1-Click Order from Completed Showcase Item
+    function orderShowcaseItem(showcaseId, directToCheckout = true) {
+      const item = COMPLETED_SHOWCASE.find(c => c.id === showcaseId);
+      if (!item) return;
+
+      const matchedShop = PRINTER_SHOPS.find(s => s.id === item.shopId) || PRINTER_SHOPS[0];
+
+      state.selectedPreset = {
+        id: item.id,
+        name: item.title,
+        type: item.presetType,
+        photoUrl: item.imageUrl,
+        dimensions: item.dimensions,
+        estimatedGrams: item.grams,
+        recommendedMaterial: item.material,
+        infillRecommendation: item.infill,
+        agentSummary: `Re-printing verified job: "${item.title}". Originally fabricated by ${item.shopName} (${item.machine}) in ${item.material}. Watertight manifold geometry pre-validated.`,
+      };
+      state.material = item.material;
+      state.selectedShop = matchedShop;
+
+      if (directToCheckout) {
+        state.screen = "checkout";
+      } else {
+        state.screen = "request";
+      }
+      render();
+    }
+
     // Global helper exposed to window for Leaflet popups
     window.requestQuoteFromMap = (shopId) => {
       const found = PRINTER_SHOPS.find(s => s.id === shopId);
@@ -277,7 +400,7 @@
         state.chatMessages = [
           {
             sender: "shop",
-            text: `Hi Damian! I'm ${found.ownerName} from ${found.name}. Feel free to ask about our ${found.materials.join('/')} stock or turnaround times!`,
+            text: `Hi Damian! I'm ${found.ownerName} from ${found.name}. Feel free to ask about our ${found.materials.join('/')} stock, our active print queue, or pickup times!`,
             time: "Just now"
           }
         ];
@@ -850,7 +973,6 @@
       const input = document.getElementById("chat-input");
       const sendBtn = document.getElementById("btn-send-chat");
       const container = document.getElementById("chat-messages-container");
-      const typing = document.getElementById("chat-typing-indicator");
 
       const closeChat = () => {
         state.chatOpen = false;
@@ -1130,8 +1252,57 @@
             </div>
           </div>
 
+          <!-- Completed Works Showcase by Local Printer Owners -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-sm font-semibold text-[#0f2a4a]">Completed by Local Printers</h2>
+                <p class="text-[10px] text-[#0f2a4a]/50">Real finished parts in Springfield &bull; 1-click re-order</p>
+              </div>
+              <span class="text-[10px] font-bold text-[#e8752d]">Verified Works</span>
+            </div>
+
+            <div class="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+              ${COMPLETED_SHOWCASE.map(item => `
+                <div class="w-[230px] shrink-0 rounded-2xl border border-black/5 bg-white p-3 shadow-xs flex flex-col justify-between hover:border-[#e8752d]/40 transition">
+                  <div>
+                    <div class="relative h-28 w-full overflow-hidden rounded-xl bg-[#0f2a4a]/5 mb-2.5 cursor-pointer btn-inspect-showcase" data-showcase-id="${item.id}">
+                      <img src="${item.imageUrl}" alt="${item.title}" class="h-full w-full object-cover transition duration-300 hover:scale-105" />
+                      <span class="absolute top-2 left-2 rounded-md bg-[#0f2a4a]/85 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur">
+                        ${item.material}
+                      </span>
+                      <span class="absolute bottom-2 right-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur">
+                        &#9733; ${item.rating}
+                      </span>
+                    </div>
+
+                    <h3 class="font-bold text-xs text-[#0f2a4a] truncate leading-tight cursor-pointer btn-inspect-showcase" data-showcase-id="${item.id}">
+                      ${item.title}
+                    </h3>
+                    <p class="text-[10px] text-[#0f2a4a]/60 mt-0.5 truncate">${item.shopName} &bull; ${item.machine}</p>
+                    <p class="text-[10px] text-[#0f2a4a]/50 mt-1 italic line-clamp-1">"${item.tagline}"</p>
+                  </div>
+
+                  <div class="mt-3 pt-2.5 border-t border-black/5 flex items-center justify-between">
+                    <div>
+                      <span class="text-xs font-bold text-[#e8752d]">$${item.price.toFixed(2)}</span>
+                      <span class="text-[9px] text-[#0f2a4a]/40 block">${item.turnaround} ready</span>
+                    </div>
+                    <button 
+                      class="btn-order-showcase rounded-xl bg-[#e8752d] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#d0631f] active:scale-95 cursor-pointer flex items-center gap-1"
+                      data-showcase-id="${item.id}"
+                    >
+                      <span>Order Print</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
           <!-- Section Header with List vs Map Toggle -->
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between pt-1">
             <div>
               <h2 class="text-sm font-semibold text-[#0f2a4a]">Nearby Springfield Print Shops</h2>
               <p class="text-[10px] text-[#0f2a4a]/50">${filteredShops.length} verified printers nearby</p>
@@ -1241,6 +1412,21 @@
           render();
         };
       }
+
+      // 1-Click Order Buttons from Showcase
+      document.querySelectorAll(".btn-order-showcase").forEach(btn => {
+        btn.onclick = () => {
+          const sId = btn.getAttribute("data-showcase-id");
+          orderShowcaseItem(sId, true);
+        };
+      });
+
+      document.querySelectorAll(".btn-inspect-showcase").forEach(el => {
+        el.onclick = () => {
+          const sId = el.getAttribute("data-showcase-id");
+          orderShowcaseItem(sId, false);
+        };
+      });
 
       document.querySelectorAll(".btn-select-shop-quote").forEach(btn => {
         btn.onclick = () => {
