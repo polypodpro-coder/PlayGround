@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Poly POD â€“ Meshy AI 3D Preview & Distributed Print</title>
+  <title>Poly POD - Meshy AI 3D Preview &amp; Distributed Print</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS for Printer Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
     :root {
       --color-navy: #0f2a4a;
@@ -41,6 +46,10 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     #three-canvas { touch-action: none; }
+
+    /* Keep Leaflet below header and bottom nav */
+    .leaflet-pane { z-index: 10 !important; }
+    .leaflet-top, .leaflet-bottom { z-index: 15 !important; }
 
     @keyframes slideUp {
       from { transform: translateY(100%); opacity: 0; }
@@ -133,17 +142,66 @@
     ];
 
     const PRINTER_SHOPS = [
-      { id: "p1", name: "Riverside Rapid Prints", rating: 4.95, distance: "1.2 mi", turnaround: "Same day", materials: ["PLA", "PETG", "TPU"], rate: 0.08, basePrice: 14.50 },
-      { id: "p2", name: "Oak Hill 3D Lab", rating: 4.88, distance: "2.4 mi", turnaround: "24hr", materials: ["PLA", "PETG", "ABS"], rate: 0.075, basePrice: 12.00 },
-      { id: "p3", name: "Cube & Coil Studio", rating: 4.92, distance: "3.8 mi", turnaround: "24hr", materials: ["PLA", "PETG", "Nylon"], rate: 0.09, basePrice: 16.20 },
+      { 
+        id: "p1", 
+        name: "Riverside Rapid Prints", 
+        ownerName: "Dana K.", 
+        rating: 4.95, 
+        distance: "0.8 mi", 
+        turnaround: "Same day", 
+        materials: ["PLA", "PETG", "TPU"], 
+        rate: 0.08, 
+        basePrice: 14.50,
+        lat: 39.786, 
+        lng: -89.644, 
+        radiusMi: 10, 
+        color: "#1F6F63",
+        machines: "2x Bambu Lab X1-Carbon",
+        bio: "Specializing in fast functional prints and engineering prototypes. Same-day pickup available."
+      },
+      { 
+        id: "p2", 
+        name: "Oak Hill 3D Lab", 
+        ownerName: "Marcus T.", 
+        rating: 4.88, 
+        distance: "1.4 mi", 
+        turnaround: "24hr", 
+        materials: ["PLA", "PETG", "ABS"], 
+        rate: 0.075, 
+        basePrice: 12.00,
+        lat: 39.791, 
+        lng: -89.660, 
+        radiusMi: 6, 
+        color: "#6B5B95",
+        machines: "1x Prusa XL 5-Tool, 1x Voron 2.4",
+        bio: "Community fab lab open daily. Great for tight-tolerance mechanical parts and heat-resistant ABS."
+      },
+      { 
+        id: "p3", 
+        name: "Cube & Coil Studio", 
+        ownerName: "Priya S.", 
+        rating: 4.92, 
+        distance: "2.1 mi", 
+        turnaround: "48hr", 
+        materials: ["PLA", "PETG", "Nylon"], 
+        rate: 0.09, 
+        basePrice: 16.20,
+        lat: 39.765, 
+        lng: -89.625, 
+        radiusMi: 12, 
+        color: "#B4562B",
+        machines: "3x Creality K1 Max",
+        bio: "Fine-detail studio. We inspect every first layer and verify manifold slicer integrity before printing."
+      },
     ];
 
     const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon: 0.15 };
 
     // App State
     const state = {
-      screen: "request", // "home" | "request" | "quotes" | "checkout" | "orders" | "account" | "owner"
+      screen: "home", // "home" | "request" | "quotes" | "checkout" | "orders" | "account" | "owner"
       role: "buyer",     // "buyer" | "owner"
+      buyerHomeView: "list", // "list" | "map"
       selectedPreset: SAMPLE_PRESETS[0],
       customPresets: [],
       showUploadMenu: false,
@@ -151,8 +209,6 @@
       generationProgress: 100,
       generationStage: "Model synthesized! Ready for slicer inspection.",
       material: "PETG",
-      neededBy: "",
-      notes: "",
       wireframe: false,
       autoRotate: true,
       viewMode: "textured", // "textured" | "filament"
@@ -161,6 +217,19 @@
       selectedShop: PRINTER_SHOPS[0],
       paymentPlan: "full", // "full" | "split" | "net30"
       deliveryOption: "pickup", // "pickup" | "courier"
+      leafletMap: null,
+
+      // Live Chat State
+      chatOpen: false,
+      chatShop: PRINTER_SHOPS[0],
+      chatMessages: [
+        {
+          sender: "shop",
+          text: "Hi Damian! I'm Dana from Riverside Rapid Prints. I see you're checking out 3D parts. Let me know if you need advice on PETG vs PLA, wall thickness, or same-day pickup!",
+          time: "1:20 PM"
+        }
+      ],
+
       orders: [
         {
           id: "PM-8942",
@@ -183,14 +252,38 @@
       printerHub: {
         name: "Springfield Community Hub #04",
         machines: [
-          { name: "Bambu Lab X1-Carbon #1", status: "Printing", temp: "220Â°C / 60Â°C", job: "bracket_v2.stl", pct: 64 },
-          { name: "Prusa XL 5-Toolhead", status: "Idle (Ready)", temp: "24Â°C / 22Â°C", job: "Spool: PETG Orange", pct: 0 },
-          { name: "Creality K1 Max #3", status: "Printing", temp: "240Â°C / 75Â°C", job: "knurled_knob.stl", pct: 88 }
+          { name: "Bambu Lab X1-Carbon #1", status: "Printing", temp: "220&deg;C / 60&deg;C", job: "bracket_v2.stl", pct: 64 },
+          { name: "Prusa XL 5-Toolhead", status: "Idle (Ready)", temp: "24&deg;C / 22&deg;C", job: "Spool: PETG Orange", pct: 0 },
+          { name: "Creality K1 Max #3", status: "Printing", temp: "240&deg;C / 75&deg;C", job: "knurled_knob.stl", pct: 88 }
         ],
         earningsToday: 142.80,
         completedJobs: 4,
         rating: 4.96
       }
+    };
+
+    // Global helper exposed to window for Leaflet popups
+    window.requestQuoteFromMap = (shopId) => {
+      const found = PRINTER_SHOPS.find(s => s.id === shopId);
+      if (found) state.selectedShop = found;
+      state.screen = "request";
+      render();
+    };
+
+    window.openChatWithShop = (shopId) => {
+      const found = PRINTER_SHOPS.find(s => s.id === shopId);
+      if (found) {
+        state.chatShop = found;
+        state.chatMessages = [
+          {
+            sender: "shop",
+            text: `Hi Damian! I'm ${found.ownerName} from ${found.name}. Feel free to ask about our ${found.materials.join('/')} stock or turnaround times!`,
+            time: "Just now"
+          }
+        ];
+      }
+      state.chatOpen = true;
+      render();
     };
 
     // Three.js Viewport Controller
@@ -204,11 +297,10 @@
       prevMouse: { x: 0, y: 0 },
     };
 
-    // Construct a Solid 3D Watertight Manifold Relief Mesh directly from Image Pixels
     function createImageHeightfieldGeometry(img, dims) {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-      const nx = 32; // 32x32 resolution for silky smooth geometry & instantaneous render
+      const nx = 32;
       const ny = 32;
       canvas.width = nx;
       canvas.height = ny;
@@ -224,7 +316,6 @@
       const uvs = [];
       const indices = [];
 
-      // Compute vertex height grid from pixel intensity
       const heights = [];
       for (let j = 0; j < ny; j++) {
         heights[j] = [];
@@ -234,14 +325,13 @@
           const g = imgData[idx + 1];
           const b = imgData[idx + 2];
           const a = imgData[idx + 3] / 255;
-          // Calculate relief so salient contours and shadows form distinct sculpted 3D geometry
           const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
           const relief = (1 - lum) * a;
           heights[j][i] = baseThickness + relief * maxDepth;
         }
       }
 
-      // 1. Top sculpted surface vertices
+      // Top surface
       for (let j = 0; j < ny; j++) {
         const y = ((j / (ny - 1)) - 0.5) * h;
         for (let i = 0; i < nx; i++) {
@@ -252,7 +342,6 @@
         }
       }
 
-      // Top surface triangles
       for (let j = 0; j < ny - 1; j++) {
         for (let i = 0; i < nx - 1; i++) {
           const a = j * nx + i;
@@ -264,7 +353,7 @@
         }
       }
 
-      // 2. Bottom flat base plate vertices (z = 0)
+      // Bottom flat base plate
       const bottomOffset = positions.length / 3;
       for (let j = 0; j < ny; j++) {
         const y = ((j / (ny - 1)) - 0.5) * h;
@@ -275,7 +364,6 @@
         }
       }
 
-      // Bottom surface triangles (reverse winding for outward normal)
       for (let j = 0; j < ny - 1; j++) {
         for (let i = 0; i < nx - 1; i++) {
           const a = bottomOffset + (j * nx + i);
@@ -287,29 +375,25 @@
         }
       }
 
-      // 3. Side skirts to seal the manifold solid
-      // Top edge (j = 0)
+      // Side skirts
       for (let i = 0; i < nx - 1; i++) {
         const t1 = i, t2 = i + 1;
         const b1 = bottomOffset + i, b2 = bottomOffset + i + 1;
         indices.push(t1, b1, t2);
         indices.push(t2, b1, b2);
       }
-      // Bottom edge (j = ny - 1)
       for (let i = 0; i < nx - 1; i++) {
         const t1 = (ny - 1) * nx + i, t2 = (ny - 1) * nx + i + 1;
         const b1 = bottomOffset + (ny - 1) * nx + i, b2 = bottomOffset + (ny - 1) * nx + i + 1;
         indices.push(t1, t2, b1);
         indices.push(t2, b2, b1);
       }
-      // Left edge (i = 0)
       for (let j = 0; j < ny - 1; j++) {
         const t1 = j * nx, t2 = (j + 1) * nx;
         const b1 = bottomOffset + j * nx, b2 = bottomOffset + (j + 1) * nx;
         indices.push(t1, t2, b1);
         indices.push(t2, b2, b1);
       }
-      // Right edge (i = nx - 1)
       for (let j = 0; j < ny - 1; j++) {
         const t1 = j * nx + (nx - 1), t2 = (j + 1) * nx + (nx - 1);
         const b1 = bottomOffset + j * nx + (nx - 1), b2 = bottomOffset + (j + 1) * nx + (nx - 1);
@@ -366,8 +450,6 @@
         geom.center();
         return geom;
       }
-
-      // Fallback
       return new THREE.BoxGeometry(sx, sy, sz);
     }
 
@@ -395,7 +477,7 @@
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       viewport.renderer = renderer;
 
-      // Lighting
+      // Lights
       const ambient = new THREE.AmbientLight(0xffffff, 0.9);
       scene.add(ambient);
       const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -410,7 +492,6 @@
       grid.position.y = -1.2;
       scene.add(grid);
 
-      // Determine Geometry & Texture from preset or uploaded image
       const p = state.selectedPreset;
       let geom;
 
@@ -429,7 +510,6 @@
         wireframe: state.wireframe
       });
 
-      // If user uploaded an image and viewMode is "textured", apply texture
       if (p.isCustomPhoto && state.viewMode === "textured") {
         const texLoader = new THREE.TextureLoader();
         texLoader.load(p.photoUrl, (tex) => {
@@ -445,7 +525,7 @@
       scene.add(mesh);
       viewport.mesh = mesh;
 
-      // Mouse & Touch Orbit Interactions
+      // Orbit Interactions
       const onDown = (e) => {
         viewport.isDragging = true;
         const cx = e.touches ? e.touches[0].clientX : e.clientX;
@@ -521,6 +601,63 @@
       URL.revokeObjectURL(url);
     }
 
+    // Leaflet Printer Map Initialization
+    function initPrinterMap() {
+      const mapContainer = document.getElementById("printer-leaflet-map");
+      if (!mapContainer || typeof L === 'undefined') return;
+
+      if (state.leafletMap) {
+        try { state.leafletMap.remove(); } catch(e) {}
+        state.leafletMap = null;
+      }
+
+      const map = L.map("printer-leaflet-map", { scrollWheelZoom: false }).setView([39.7817, -89.6501], 12);
+      state.leafletMap = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      PRINTER_SHOPS.forEach(s => {
+        // Service Radius Circle
+        L.circle([s.lat, s.lng], {
+          color: s.color,
+          fillColor: s.color,
+          fillOpacity: 0.12,
+          weight: 1.5,
+          radius: s.radiusMi * 1609.34
+        }).addTo(map);
+
+        // Custom Pin Marker
+        const customIcon = L.divIcon({
+          className: '',
+          html: `<div style="width:36px;height:36px;border-radius:50%;background:${s.color};border:3px solid white;box-shadow:0 2px 8px rgba(15,42,74,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;font-family:sans-serif;">${s.name.charAt(0)}</div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+          popupAnchor: [0, -20]
+        });
+
+        const marker = L.marker([s.lat, s.lng], { icon: customIcon }).addTo(map);
+
+        const popupContent = `
+          <div style="min-width:180px;font-family:'Inter',sans-serif;padding:2px;">
+            <div style="font-weight:bold;font-size:13px;color:#0f2a4a;">${s.name}</div>
+            <div style="font-size:11px;color:#666;margin-top:2px;">Owner: ${s.ownerName} &bull; ${s.distance}</div>
+            <div style="font-size:11px;color:#e8752d;font-weight:600;margin-top:2px;">&#9733; ${s.rating} &bull; ${s.turnaround} ready</div>
+            <div style="font-size:10px;color:#888;margin-top:3px;">${s.machines}</div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button onclick="window.requestQuoteFromMap('${s.id}')" style="flex:1;background:#e8752d;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Get Quote</button>
+              <button onclick="window.openChatWithShop('${s.id}')" style="background:#0f2a4a;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Chat</button>
+            </div>
+          </div>
+        `;
+        marker.bindPopup(popupContent);
+      });
+
+      setTimeout(() => { map.invalidateSize(); }, 200);
+    }
+
     // AI 2D-to-3D Reconstruction Pipeline
     function triggerAIPhotoReconstruction(file, photoUrl) {
       state.screen = "request";
@@ -533,7 +670,6 @@
       const cleanName = file ? file.name.replace(/\.[^/.]+$/, "") : "Custom 3D Part";
       const fileSize = file ? (file.size / 1024).toFixed(1) + " KB" : "96.4 KB";
 
-      // Preload image object to generate real 3D relief mesh
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
@@ -556,7 +692,7 @@
           estimatedGrams: calcGrams,
           recommendedMaterial: "PETG",
           infillRecommendation: "35% gyroid",
-          agentSummary: `AI analyzed 2D reference photo "${rawName}" (${img.naturalWidth}Ã—${img.naturalHeight}px). Extracted silhouette boundary, symmetry planes, and surface depth topology. Reconstructed watertight manifold 3D mesh with 2.4mm minimum structural wall thickness.`,
+          agentSummary: `AI analyzed 2D reference photo "${rawName}" (${img.naturalWidth} x ${img.naturalHeight}px). Extracted silhouette boundary, symmetry planes, and surface depth topology. Reconstructed watertight manifold 3D mesh with 2.4mm minimum structural wall thickness.`,
         };
 
         state.selectedPreset = newCustomPreset;
@@ -635,6 +771,157 @@
       else if (state.screen === "account") renderAccount(app);
     }
 
+    // Live Chat Drawer Component
+    function renderChatDrawer() {
+      if (!state.chatOpen) return '';
+      const shop = state.chatShop || PRINTER_SHOPS[0];
+
+      return `
+        <div id="chat-modal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity">
+          <div class="animate-slide-up w-full max-w-[480px] h-[520px] rounded-t-3xl bg-white shadow-2xl flex flex-col border-t border-black/10">
+            <!-- Chat Header -->
+            <div class="p-3.5 border-b border-black/5 bg-[#f4f8fc] rounded-t-3xl flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="relative">
+                  <div class="h-9 w-9 rounded-full bg-[${shop.color}] text-white flex items-center justify-center font-bold text-xs" style="background-color: ${shop.color};">
+                    ${shop.name.charAt(0)}
+                  </div>
+                  <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white"></span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <h3 class="font-bold text-xs text-[#0f2a4a]">${shop.name}</h3>
+                    <span class="text-[9px] bg-green-100 text-green-700 font-bold px-1.5 py-0.2 rounded-full">Verified</span>
+                  </div>
+                  <p class="text-[10px] text-[#0f2a4a]/60">${shop.ownerName} &bull; Typically replies in ~3m</p>
+                </div>
+              </div>
+              <button id="btn-close-chat" class="h-7 w-7 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">
+                &times;
+              </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar bg-[#f9fbfd]">
+              ${state.chatMessages.map(m => `
+                <div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}">
+                  <div class="max-w-[78%] rounded-2xl p-3 text-xs leading-relaxed ${m.sender === 'user' ? 'bg-[#e8752d] text-white rounded-br-xs' : 'bg-white text-[#0f2a4a] border border-black/5 shadow-xs rounded-bl-xs'}">
+                    <p>${m.text}</p>
+                    <span class="block text-[9px] mt-1 text-right ${m.sender === 'user' ? 'text-white/70' : 'text-[#0f2a4a]/40'}">${m.time}</span>
+                  </div>
+                </div>
+              `).join('')}
+              <div id="chat-typing-indicator" class="hidden flex items-center gap-1.5 text-[11px] text-[#0f2a4a]/50 italic">
+                <span class="animate-bounce">&bull;</span>
+                <span class="animate-bounce" style="animation-delay: 0.15s">&bull;</span>
+                <span class="animate-bounce" style="animation-delay: 0.3s">&bull;</span>
+                <span>${shop.ownerName} is typing...</span>
+              </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="px-3 py-2 bg-white border-t border-black/5 flex gap-1.5 overflow-x-auto no-scrollbar">
+              <button class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="Can you print this today in PETG?">
+                Can you print today in PETG?
+              </button>
+              <button class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="What tolerances can you hit?">
+                What tolerances can you hit?
+              </button>
+              <button class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="Can I pick up locally?">
+                Can I pick up locally?
+              </button>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="p-3 bg-white border-t border-black/5 flex items-center gap-2">
+              <input id="chat-input" placeholder="Message ${shop.ownerName}..." class="flex-1 bg-[#f4f8fc] text-xs px-3 py-2 rounded-xl border border-black/5 outline-none focus:border-[#e8752d]" />
+              <button id="btn-send-chat" class="h-8 w-8 rounded-xl bg-[#e8752d] text-white flex items-center justify-center cursor-pointer hover:bg-[#d0631f] active:scale-95 shadow-xs">
+                &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setupChatEvents() {
+      const closeBtn = document.getElementById("btn-close-chat");
+      const backdrop = document.getElementById("chat-modal-backdrop");
+      const input = document.getElementById("chat-input");
+      const sendBtn = document.getElementById("btn-send-chat");
+      const container = document.getElementById("chat-messages-container");
+      const typing = document.getElementById("chat-typing-indicator");
+
+      const closeChat = () => {
+        state.chatOpen = false;
+        render();
+      };
+
+      if (closeBtn) closeBtn.onclick = closeChat;
+      if (backdrop) {
+        backdrop.onclick = (e) => {
+          if (e.target === backdrop) closeChat();
+        };
+      }
+
+      const sendUserMessage = (text) => {
+        if (!text || !text.trim()) return;
+        const msg = text.trim();
+        state.chatMessages.push({
+          sender: "user",
+          text: msg,
+          time: "Just now"
+        });
+        if (input) input.value = "";
+        render();
+
+        // Simulate Operator Response
+        setTimeout(() => {
+          const typingEl = document.getElementById("chat-typing-indicator");
+          if (typingEl) typingEl.classList.remove("hidden");
+          const msgContainer = document.getElementById("chat-messages-container");
+          if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+          setTimeout(() => {
+            let reply = `Got it! I reviewed the 3D model volume. Overhangs look well within 45 degrees, so it will print clean without surface scars. Ready when you are!`;
+            const lower = msg.toLowerCase();
+            if (lower.includes("petg") || lower.includes("material")) {
+              reply = `Yes! We have Bambu PETG-CF and standard PETG loaded right now. It gives great layer adhesion and heat resistance up to 75&deg;C. Perfect for functional parts.`;
+            } else if (lower.includes("today") || lower.includes("pick up") || lower.includes("pickup")) {
+              reply = `Yes! Our queue is clear on Bambu Lab #1. If you place the quote order within the hour, it will be ready for local hub pickup by 4:30 PM today.`;
+            } else if (lower.includes("tolerance")) {
+              reply = `We calibrate with a 0.4mm hardened nozzle regularly. Typical dimensional accuracy is &plusmn;0.15mm, perfect for M4 mounting holes and snap fits.`;
+            }
+
+            state.chatMessages.push({
+              sender: "shop",
+              text: reply,
+              time: "Just now"
+            });
+            render();
+            const finalContainer = document.getElementById("chat-messages-container");
+            if (finalContainer) finalContainer.scrollTop = finalContainer.scrollHeight;
+          }, 1100);
+        }, 200);
+      };
+
+      if (sendBtn && input) {
+        sendBtn.onclick = () => sendUserMessage(input.value);
+        input.onkeydown = (e) => {
+          if (e.key === "Enter") sendUserMessage(input.value);
+        };
+      }
+
+      document.querySelectorAll(".btn-quick-chat").forEach(btn => {
+        btn.onclick = () => {
+          const msg = btn.getAttribute("data-msg");
+          sendUserMessage(msg);
+        };
+      });
+
+      if (container) container.scrollTop = container.scrollHeight;
+    }
+
     // Modal Upload Menu
     function renderUploadMenuModal() {
       if (!state.showUploadMenu) return '';
@@ -650,7 +937,7 @@
                 <p class="text-xs text-[#0f2a4a]/60">Choose how to submit your part to Springfield print shops</p>
               </div>
               <button id="btn-close-modal" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2a4a]/5 text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                &times;
               </button>
             </div>
 
@@ -659,7 +946,7 @@
             <input type="file" id="menu-file-cad" accept=".stl,.obj,.step,.3mf" class="hidden" />
 
             <div class="space-y-3">
-              <!-- Option 1: 2D Photo / Reference Image to 3D -->
+              <!-- Option 1: 2D Photo to 3D -->
               <button id="btn-opt-photo" class="w-full text-left flex items-start gap-3.5 rounded-2xl border-2 border-[#e8752d] bg-[#fdf5f0] p-4 transition hover:bg-[#faeae0] active:scale-[0.99] cursor-pointer shadow-sm">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f28c4a] to-[#e8752d] text-white shadow-md shadow-[#e8752d]/30">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -676,11 +963,8 @@
                     Upload a 2D reference photo, sketch, or drawing. The AI agent analyzes contours and synthesizes a printable 3D manifold model.
                   </p>
                   <div class="mt-2 flex items-center gap-2 text-[10px] font-semibold text-[#e8752d]">
-                    <span class="flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-                      Meshy AI Powered
-                    </span>
-                    <span>â€¢</span>
+                    <span>Meshy AI Powered</span>
+                    <span>&bull;</span>
                     <span>Take photo or choose file</span>
                   </div>
                 </div>
@@ -691,7 +975,6 @@
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a] text-white">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/>
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
@@ -812,7 +1095,7 @@
             <div class="flex flex-1 items-center gap-2 rounded-full bg-[#f4f8fc] px-4 py-2.5 text-sm text-[#0f2a4a]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0f2a4a" stroke-width="2" class="opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input id="search-shops-input" value="${state.searchQuery}" placeholder="Search shops (e.g. Riverside, TPU, PETG)" class="w-full bg-transparent outline-none placeholder:text-[#0f2a4a]/40" />
-              ${state.searchQuery ? `<button id="clear-search-btn" class="text-xs text-[#0f2a4a]/50">âœ•</button>` : ''}
+              ${state.searchQuery ? `<button id="clear-search-btn" class="text-xs text-[#0f2a4a]/50 cursor-pointer">&times;</button>` : ''}
             </div>
           </div>
         </header>
@@ -843,39 +1126,66 @@
                 </div>
                 <p class="text-[11px] text-[#0f2a4a]/70">Snap a broken part or sketch; AI synthesizes a printable 3D mesh.</p>
               </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              <span class="text-sm font-bold text-[#e8752d]">&rarr;</span>
             </div>
           </div>
 
+          <!-- Section Header with List vs Map Toggle -->
           <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-[#0f2a4a]">Nearby Springfield Print Shops</h2>
-            <span class="text-xs text-[#e8752d] font-semibold">${filteredShops.length} shops online</span>
+            <div>
+              <h2 class="text-sm font-semibold text-[#0f2a4a]">Nearby Springfield Print Shops</h2>
+              <p class="text-[10px] text-[#0f2a4a]/50">${filteredShops.length} verified printers nearby</p>
+            </div>
+            <div class="flex rounded-full bg-[#0f2a4a]/10 p-0.5 text-xs font-semibold">
+              <button id="btn-view-list" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'list' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">List</button>
+              <button id="btn-view-map" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'map' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">Map</button>
+            </div>
           </div>
 
-          ${filteredShops.map(s => `
-            <div class="shop-card rounded-2xl border border-black/5 bg-[#f4f8fc] p-3.5 shadow-xs hover:border-[#e8752d]/40 transition cursor-pointer" data-shop-id="${s.id}">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-semibold text-sm text-[#0f2a4a]">${s.name}</h3>
-                  <p class="text-xs text-[#0f2a4a]/60">${s.distance} â€¢ ${s.turnaround} turnaround</p>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-bold text-[#e8752d]">â˜… ${s.rating}</span>
-                  <p class="text-[10px] text-[#0f2a4a]/50">from $${s.basePrice.toFixed(2)}</p>
-                </div>
-              </div>
-              <div class="mt-2 flex items-center justify-between">
-                <div class="flex gap-1">
-                  ${s.materials.map(m => `<span class="rounded-md bg-[#0f2a4a]/5 px-2 py-0.5 text-[10px] text-[#0f2a4a]/70 font-medium">${m}</span>`).join('')}
-                </div>
-                <span class="text-[10px] font-semibold text-[#e8752d]">Request Quote â†’</span>
-              </div>
+          <!-- Main Content: Map View or List View -->
+          ${state.buyerHomeView === 'map' ? `
+            <div class="space-y-2">
+              <div id="printer-leaflet-map" class="h-[310px] w-full rounded-2xl border border-black/10 overflow-hidden shadow-sm"></div>
+              <p class="text-center text-[11px] text-[#0f2a4a]/50">
+                Tap any pin to view service radius, turnaround time, or start a chat.
+              </p>
             </div>
-          `).join('')}
+          ` : `
+            <div class="space-y-3">
+              ${filteredShops.map(s => `
+                <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-3.5 shadow-xs hover:border-[#e8752d]/40 transition">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="font-semibold text-sm text-[#0f2a4a]">${s.name}</h3>
+                      <p class="text-xs text-[#0f2a4a]/60">${s.distance} &bull; ${s.turnaround} turnaround</p>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-xs font-bold text-[#e8752d]">&#9733; ${s.rating}</span>
+                      <p class="text-[10px] text-[#0f2a4a]/50">from $${s.basePrice.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <div class="mt-2 flex items-center justify-between">
+                    <div class="flex gap-1">
+                      ${s.materials.map(m => `<span class="rounded-md bg-[#0f2a4a]/5 px-2 py-0.5 text-[10px] text-[#0f2a4a]/70 font-medium">${m}</span>`).join('')}
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button class="btn-chat-with-shop text-[11px] font-semibold text-[#0f2a4a] hover:text-[#e8752d] cursor-pointer" data-shop-id="${s.id}">
+                        Chat &rarr;
+                      </button>
+                      <button class="btn-select-shop-quote rounded-lg bg-[#e8752d] text-white px-2.5 py-1 text-[11px] font-semibold hover:bg-[#d0631f] cursor-pointer" data-shop-id="${s.id}">
+                        Quote
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
         </div>
 
         ${renderBottomNav("home")}
         ${renderUploadMenuModal()}
+        ${renderChatDrawer()}
       `;
 
       // Event Listeners
@@ -916,9 +1226,25 @@
         };
       }
 
-      document.querySelectorAll(".shop-card").forEach(card => {
-        card.onclick = () => {
-          const sId = card.getAttribute("data-shop-id");
+      const btnList = document.getElementById("btn-view-list");
+      if (btnList) {
+        btnList.onclick = () => {
+          state.buyerHomeView = "list";
+          render();
+        };
+      }
+
+      const btnMap = document.getElementById("btn-view-map");
+      if (btnMap) {
+        btnMap.onclick = () => {
+          state.buyerHomeView = "map";
+          render();
+        };
+      }
+
+      document.querySelectorAll(".btn-select-shop-quote").forEach(btn => {
+        btn.onclick = () => {
+          const sId = btn.getAttribute("data-shop-id");
           const found = PRINTER_SHOPS.find(s => s.id === sId);
           if (found) state.selectedShop = found;
           state.screen = "request";
@@ -926,8 +1252,20 @@
         };
       });
 
+      document.querySelectorAll(".btn-chat-with-shop").forEach(btn => {
+        btn.onclick = () => {
+          const sId = btn.getAttribute("data-shop-id");
+          window.openChatWithShop(sId);
+        };
+      });
+
       setupUploadMenuEvents();
+      setupChatEvents();
       setupNavEvents();
+
+      if (state.buyerHomeView === "map") {
+        setTimeout(initPrinterMap, 50);
+      }
     }
 
     // 2. Request Screen (3D Preview & Meshy AI Co-pilot)
@@ -1048,7 +1386,7 @@
                     <div class="flex items-center justify-between text-xs mb-1.5">
                       <span class="font-bold text-[#e8752d] flex items-center gap-1.5">
                         <svg class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
-                        AI 2Dâ†’3D Reconstruction
+                        AI 2D to 3D Reconstruction
                       </span>
                       <span id="gen-progress-pct" class="font-mono font-bold text-white">${state.generationProgress}%</span>
                     </div>
@@ -1088,8 +1426,8 @@
                   <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
                     <div class="flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
                       <span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
-                      <span>${p.dimensions.x} Ã— ${p.dimensions.y} Ã— ${p.dimensions.z} mm</span>
-                      <span class="text-white/40">â€¢</span>
+                      <span>${p.dimensions.x} &times; ${p.dimensions.y} &times; ${p.dimensions.z} mm</span>
+                      <span class="text-white/40">&bull;</span>
                       <span class="text-[#f28c4a]">~${p.estimatedGrams}g ${state.material}</span>
                     </div>
 
@@ -1133,7 +1471,7 @@
               </div>
             </div>
 
-            <!-- Model Switcher (Custom Uploads + Sample Presets) -->
+            <!-- Model Switcher -->
             <div class="mt-3 rounded-xl bg-[#0f2a4a]/5 p-2.5">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-[11px] font-semibold text-[#0f2a4a]/70">Active models &amp; sample library:</p>
@@ -1171,8 +1509,8 @@
               $
             </div>
             <div>
-              <p class="text-sm font-semibold text-[#0f2a4a]">Est. $${costLow}â€“$${costHigh}</p>
-              <p class="text-xs text-[#0f2a4a]/50">~${p.estimatedGrams}g of ${state.material}, calculated from your 3D mesh volume â€¢ Springfield printers set final price</p>
+              <p class="text-sm font-semibold text-[#0f2a4a]">Est. $${costLow} - $${costHigh}</p>
+              <p class="text-xs text-[#0f2a4a]/50">~${p.estimatedGrams}g of ${state.material}, calculated from your 3D mesh volume &bull; Springfield printers set final price</p>
             </div>
           </div>
         </div>
@@ -1187,6 +1525,7 @@
         </div>
 
         ${renderUploadMenuModal()}
+        ${renderChatDrawer()}
       `;
 
       // Event handlers
@@ -1205,7 +1544,6 @@
         render();
       };
 
-      // Direct Photo Upload Button
       const directPhotoInput = document.getElementById("direct-photo-input");
       const btnDirectPhoto = document.getElementById("btn-direct-upload-photo");
       if (btnDirectPhoto && directPhotoInput) {
@@ -1221,7 +1559,6 @@
         };
       }
 
-      // Direct CAD Upload Button
       const directCadInput = document.getElementById("direct-cad-input");
       const btnDirectCad = document.getElementById("btn-direct-upload-cad");
       if (btnDirectCad && directCadInput) {
@@ -1302,10 +1639,10 @@
           if (chip === "thickness") {
             state.selectedPreset.dimensions.z += 2;
             state.selectedPreset.estimatedGrams = Math.round(state.selectedPreset.estimatedGrams * 1.12);
-            state.selectedPreset.agentSummary = `Reinforced wall thickness to ${state.selectedPreset.dimensions.z}mm (+12% structural load capacity).`;
+            state.selectedPreset.agentSummary = `Reinforced wall thickness to ${state.selectedPreset.dimensions.z}mm (+12% load capacity).`;
           } else if (chip === "ribs") {
             state.selectedPreset.estimatedGrams += 4;
-            state.selectedPreset.agentSummary = "Added 45Â° internal reinforcement gusset ribs to resist deflection under load.";
+            state.selectedPreset.agentSummary = "Added 45&deg; internal reinforcement gusset ribs to resist deflection under load.";
           } else if (chip === "holes") {
             state.selectedPreset.agentSummary = "Generated two standardized M4 countersunk mounting slots on flange.";
           } else if (chip === "fillet") {
@@ -1328,6 +1665,7 @@
       if (inpPrompt) inpPrompt.onkeydown = (e) => { if (e.key === "Enter") sendPrompt(); };
 
       setupUploadMenuEvents();
+      setupChatEvents();
 
       if (!state.isGenerating) {
         setTimeout(init3DViewer, 20);
@@ -1354,7 +1692,7 @@
             <div class="min-w-0 flex-1">
               <p class="font-semibold truncate">3D Model: ${p.name}</p>
               <p class="text-[10px] text-[#0f2a4a]/60">
-                ${p.dimensions.x} Ã— ${p.dimensions.y} Ã— ${p.dimensions.z} mm â€¢ ~${p.estimatedGrams}g ${state.material}
+                ${p.dimensions.x} &times; ${p.dimensions.y} &times; ${p.dimensions.z} mm &bull; ~${p.estimatedGrams}g ${state.material}
               </p>
             </div>
             <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Slicer Ready</span>
@@ -1365,27 +1703,34 @@
           ${PRINTER_SHOPS.map((shop, idx) => {
             const price = Math.round(shop.rate * p.estimatedGrams * 1.25 * 10) / 10;
             return `
-              <div class="rounded-2xl border ${idx === 0 ? 'border-[#e8752d] ring-1 ring-[#e8752d]/30' : 'border-black/5'} bg-[#f4f8fc] p-4 shadow-sm">
-                ${idx === 0 ? `<div class="mb-2 inline-block rounded-full bg-[#e8752d] px-2 py-0.5 text-[9px] font-bold uppercase text-white tracking-wider">Best Match</div>` : ''}
+              <div class="rounded-2xl border ${idx === 0 ? 'border-[#e8752d] ring-1 ring-[#e8752d]/30' : 'border-black/5'} bg-[#f4f8fc] p-4 shadow-sm space-y-2">
+                ${idx === 0 ? `<div class="inline-block rounded-full bg-[#e8752d] px-2 py-0.5 text-[9px] font-bold uppercase text-white tracking-wider">Best Match</div>` : ''}
                 <div class="flex items-center justify-between">
                   <div>
                     <h3 class="font-semibold text-sm text-[#0f2a4a]">${shop.name}</h3>
-                    <p class="text-xs text-[#0f2a4a]/60">${shop.distance} â€¢ ${shop.turnaround} ready</p>
+                    <p class="text-xs text-[#0f2a4a]/60">${shop.distance} &bull; ${shop.turnaround} ready</p>
                   </div>
                   <div class="text-right">
                     <span class="text-lg font-bold text-[#0f2a4a]">$${price.toFixed(2)}</span>
                     <p class="text-[10px] text-[#0f2a4a]/50">${state.material}</p>
                   </div>
                 </div>
-                <button class="btn-checkout-shop mt-3 w-full rounded-xl bg-[#0f2a4a] py-2.5 text-xs font-semibold text-white transition hover:bg-[#17385f] active:scale-[0.98] cursor-pointer" data-shop-id="${shop.id}" data-price="${price}">
-                  Accept quote &amp; proceed to checkout
-                </button>
+
+                <div class="flex items-center justify-between pt-1">
+                  <button class="btn-quote-chat text-xs text-[#0f2a4a]/70 hover:text-[#e8752d] font-semibold cursor-pointer" data-shop-id="${shop.id}">
+                    Chat with ${shop.ownerName} &rarr;
+                  </button>
+                  <button class="btn-checkout-shop rounded-xl bg-[#0f2a4a] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#17385f] active:scale-[0.98] cursor-pointer" data-shop-id="${shop.id}">
+                    Accept quote &amp; checkout
+                  </button>
+                </div>
               </div>
             `;
           }).join('')}
         </div>
 
         ${renderBottomNav("home")}
+        ${renderChatDrawer()}
       `;
 
       document.getElementById("btn-back-request").onclick = () => {
@@ -1403,10 +1748,18 @@
         };
       });
 
+      document.querySelectorAll(".btn-quote-chat").forEach(btn => {
+        btn.onclick = () => {
+          const sId = btn.getAttribute("data-shop-id");
+          window.openChatWithShop(sId);
+        };
+      });
+
+      setupChatEvents();
       setupNavEvents();
     }
 
-    // 4. Checkout Screen (Payment Plans & Escrow Security)
+    // 4. Checkout Screen
     function renderCheckout(app) {
       const p = state.selectedPreset;
       const shop = state.selectedShop || PRINTER_SHOPS[0];
@@ -1423,7 +1776,6 @@
             Secure Checkout
           </button>
           <span class="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             Escrow Protected
           </span>
         </header>
@@ -1435,7 +1787,7 @@
               <img src="${p.photoUrl}" alt="Part" class="h-12 w-12 rounded-xl object-cover ring-1 ring-black/10" />
               <div class="min-w-0 flex-1">
                 <h4 class="font-bold text-sm text-[#0f2a4a] truncate">${p.name}</h4>
-                <p class="text-xs text-[#0f2a4a]/60">${state.material} â€¢ ~${p.estimatedGrams}g â€¢ ${shop.name}</p>
+                <p class="text-xs text-[#0f2a4a]/60">${state.material} &bull; ~${p.estimatedGrams}g &bull; ${shop.name}</p>
                 <span class="text-[10px] text-[#e8752d] font-semibold">${shop.turnaround} ready</span>
               </div>
             </div>
@@ -1444,8 +1796,8 @@
           <!-- Escrow & Security Trust Card -->
           <div class="rounded-2xl border border-green-600/20 bg-green-50/70 p-3.5 text-xs text-[#0f2a4a]">
             <div class="flex items-start gap-2.5">
-              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-bold text-xs">
+                &check;
               </div>
               <div>
                 <p class="font-bold text-green-950">Poly POD Escrow Guarantee</p>
@@ -1456,17 +1808,17 @@
             </div>
           </div>
 
-          <!-- Delivery / Pickup Selector -->
+          <!-- Fulfillment Selector -->
           <div>
             <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Fulfillment Method</label>
             <div class="grid grid-cols-2 gap-2">
               <button class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'pickup' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="pickup">
                 <span class="text-xs font-bold text-[#0f2a4a]">Local Hub Pickup</span>
-                <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">Free â€¢ Ready today</span>
+                <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">Free &bull; Ready today</span>
               </button>
               <button class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'courier' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="courier">
                 <span class="text-xs font-bold text-[#0f2a4a]">Courier Delivery</span>
-                <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">+$4.99 â€¢ To your door</span>
+                <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">+$4.99 &bull; To your door</span>
               </button>
             </div>
           </div>
@@ -1539,7 +1891,6 @@
             id="btn-confirm-pay"
             class="w-full rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Authorize Escrow &amp; Place Order ($${total})
           </button>
         </div>
@@ -1566,7 +1917,7 @@
 
       document.getElementById("btn-confirm-pay").onclick = () => {
         const btn = document.getElementById("btn-confirm-pay");
-        btn.innerHTML = `<span class="animate-spin mr-2">âš™</span> Securing in Escrow...`;
+        btn.innerHTML = `<span class="animate-spin mr-2">&#9881;</span> Securing in Escrow...`;
         btn.disabled = true;
 
         setTimeout(() => {
@@ -1606,12 +1957,12 @@
         </header>
 
         <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
-          ${state.orders.map((o, idx) => `
+          ${state.orders.map(o => `
             <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-4 shadow-sm space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
                   <span class="text-xs font-bold text-[#0f2a4a]">${o.id}</span>
-                  <span class="text-xs text-[#0f2a4a]/40">â€¢ ${o.date}</span>
+                  <span class="text-xs text-[#0f2a4a]/40">&bull; ${o.date}</span>
                 </div>
                 <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
@@ -1623,7 +1974,7 @@
                 <img src="${o.photoUrl}" alt="${o.partName}" class="h-14 w-14 rounded-xl object-cover ring-1 ring-black/10" />
                 <div class="min-w-0 flex-1">
                   <h4 class="font-bold text-sm text-[#0f2a4a] truncate">${o.partName}</h4>
-                  <p class="text-xs text-[#0f2a4a]/60">${o.shop} â€¢ ${o.material}</p>
+                  <p class="text-xs text-[#0f2a4a]/60">${o.shop} &bull; ${o.material}</p>
                   <p class="text-xs font-bold text-[#e8752d] mt-0.5">$${o.price.toFixed(2)}</p>
                 </div>
               </div>
@@ -1652,7 +2003,7 @@
                 <button class="btn-view-part-spec flex-1 rounded-xl bg-[#0f2a4a] py-2 text-xs font-semibold text-white hover:bg-[#17385f] cursor-pointer">
                   Inspect 3D Specs
                 </button>
-                <button class="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0f2a4a] hover:bg-black/5 cursor-pointer">
+                <button class="btn-open-order-chat rounded-xl border border-black/10 bg-white px-3.5 py-2 text-xs font-semibold text-[#0f2a4a] hover:bg-black/5 cursor-pointer" data-shop-name="${o.shop}">
                   Chat Shop
                 </button>
               </div>
@@ -1661,6 +2012,7 @@
         </div>
 
         ${renderBottomNav("orders")}
+        ${renderChatDrawer()}
       `;
 
       document.querySelectorAll(".btn-view-part-spec").forEach(btn => {
@@ -1670,6 +2022,15 @@
         };
       });
 
+      document.querySelectorAll(".btn-open-order-chat").forEach(btn => {
+        btn.onclick = () => {
+          const shopName = btn.getAttribute("data-shop-name");
+          const found = PRINTER_SHOPS.find(s => s.name === shopName) || PRINTER_SHOPS[0];
+          window.openChatWithShop(found.id);
+        };
+      });
+
+      setupChatEvents();
       setupNavEvents();
     }
 
@@ -1689,10 +2050,10 @@
             </div>
             <div class="flex-1">
               <h3 class="font-bold text-sm text-[#0f2a4a]">Damian</h3>
-              <p class="text-xs text-[#0f2a4a]/60">Springfield Buyer â€¢ Poly POD Pro</p>
+              <p class="text-xs text-[#0f2a4a]/60">Springfield Buyer &bull; Poly POD Pro</p>
               <div class="mt-1 flex items-center gap-2 text-[10px] text-green-700 font-semibold">
-                <span>ðŸ›¡ Escrow Protected</span>
-                <span>â€¢</span>
+                <span>Escrow Protected</span>
+                <span>&bull;</span>
                 <span>4 Completed Orders</span>
               </div>
             </div>
@@ -1703,21 +2064,21 @@
             <h4 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Security &amp; Trust</h4>
             <div class="flex items-center justify-between py-1">
               <div class="flex items-center gap-2 text-xs">
-                <span class="text-green-600">âœ“</span>
+                <span class="text-green-600 font-bold">&check;</span>
                 <span>256-Bit SSL End-to-End Encryption</span>
               </div>
               <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Active</span>
             </div>
             <div class="flex items-center justify-between py-1">
               <div class="flex items-center gap-2 text-xs">
-                <span class="text-green-600">âœ“</span>
+                <span class="text-green-600 font-bold">&check;</span>
                 <span>Payment Escrow Release Authorization</span>
               </div>
               <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Manual OK</span>
             </div>
             <div class="flex items-center justify-between py-1">
               <div class="flex items-center gap-2 text-xs">
-                <span class="text-green-600">âœ“</span>
+                <span class="text-green-600 font-bold">&check;</span>
                 <span>Local Quality Tolerance Guarantee (0.15mm)</span>
               </div>
               <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Enforced</span>
@@ -1728,15 +2089,15 @@
           <div class="rounded-2xl bg-white p-2 border border-black/5 divide-y divide-black/5">
             <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
               <span>Saved Springfield Delivery Addresses</span>
-              <span class="text-[#0f2a4a]/40">â€º</span>
+              <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
             <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
               <span>Payment Methods &amp; Split Billing</span>
-              <span class="text-[#0f2a4a]/40">â€º</span>
+              <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
             <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
               <span>CAD Slicer Export &amp; Mesh Preferences</span>
-              <span class="text-[#0f2a4a]/40">â€º</span>
+              <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
           </div>
         </div>
@@ -1747,7 +2108,7 @@
       setupNavEvents();
     }
 
-    // 7. Owner / Print Shop Operator Dashboard
+    // 7. Owner Dashboard
     function renderOwnerDashboard(app) {
       const hub = state.printerHub;
 
@@ -1771,7 +2132,7 @@
             </div>
             <div class="rounded-xl bg-white/10 p-2.5">
               <p class="text-[10px] text-white/60">Shop Rating</p>
-              <p class="text-lg font-bold text-white">â˜… ${hub.rating} <span class="text-xs font-normal text-white/60">(${hub.completedJobs} done)</span></p>
+              <p class="text-lg font-bold text-white">&#9733; ${hub.rating} <span class="text-xs font-normal text-white/60">(${hub.completedJobs} done)</span></p>
             </div>
           </div>
         </header>
@@ -1812,7 +2173,7 @@
                 <span class="text-xs font-bold text-[#e8752d]">$16.50</span>
               </div>
               <p class="text-xs text-[#0f2a4a]/70 leading-relaxed">
-                Reconstructed manifold 3D mesh â€¢ ~${state.selectedPreset.estimatedGrams}g ${state.material} â€¢ Downtown Springfield buyer
+                Reconstructed manifold 3D mesh &bull; ~${state.selectedPreset.estimatedGrams}g ${state.material} &bull; Downtown Springfield buyer
               </p>
               <div class="flex gap-2">
                 <button id="btn-owner-accept" class="flex-1 rounded-xl bg-[#0f2a4a] py-2 text-xs font-semibold text-white hover:bg-[#17385f] cursor-pointer">
@@ -1854,7 +2215,7 @@
       const btnAccept = document.getElementById("btn-owner-accept");
       if (btnAccept) {
         btnAccept.onclick = () => {
-          btnAccept.textContent = "âœ“ Slicing Job Queued on Bambu Lab #1";
+          btnAccept.innerHTML = "&check; Slicing Job Queued on Bambu Lab #1";
           btnAccept.disabled = true;
           setTimeout(() => {
             state.role = "buyer";
