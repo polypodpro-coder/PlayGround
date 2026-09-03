@@ -75,11 +75,11 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     #three-canvas { touch-action: none; }
 
-    /* Button Design System Tokens */
+    /* Button Design System Tokens with Accessible Focus States */
     .btn-primary {
       background: linear-gradient(135deg, #e8752d, #f28c4a);
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 700;
       border-radius: 1rem;
       padding: 0.875rem 1.25rem;
       min-height: 46px;
@@ -93,10 +93,20 @@
       border: none;
       user-select: none;
     }
+    .btn-primary:hover {
+      filter: brightness(1.06);
+      box-shadow: 0 12px 28px -4px rgba(232, 117, 45, 0.45);
+    }
     .btn-primary:active {
       transform: scale(0.97);
+      filter: brightness(0.95);
       box-shadow: 0 4px 12px rgba(232, 117, 45, 0.25);
     }
+    .btn-primary:focus-visible {
+      outline: 2px solid #0f2a4a;
+      outline-offset: 2px;
+    }
+
     .btn-secondary {
       background-color: #0f2a4a;
       color: #ffffff;
@@ -115,12 +125,18 @@
     }
     .btn-secondary:hover {
       background-color: #17385f;
+      box-shadow: 0 4px 12px rgba(15, 42, 74, 0.25);
     }
     .btn-secondary:active {
       transform: scale(0.97);
     }
+    .btn-secondary:focus-visible {
+      outline: 2px solid #e8752d;
+      outline-offset: 2px;
+    }
+
     .btn-outline {
-      border: 1px solid rgba(15, 42, 74, 0.15);
+      border: 1px solid rgba(15, 42, 74, 0.18);
       background-color: #ffffff;
       color: #0f2a4a;
       font-weight: 600;
@@ -135,12 +151,17 @@
       user-select: none;
     }
     .btn-outline:hover {
-      background-color: rgba(15, 42, 74, 0.04);
-      border-color: rgba(15, 42, 74, 0.25);
+      background-color: rgba(15, 42, 74, 0.05);
+      border-color: rgba(15, 42, 74, 0.35);
     }
     .btn-outline:active {
       transform: scale(0.97);
     }
+    .btn-outline:focus-visible {
+      outline: 2px solid #e8752d;
+      outline-offset: 2px;
+    }
+
     .btn-chip {
       border-radius: 9999px;
       padding: 0.375rem 0.875rem;
@@ -155,6 +176,10 @@
     }
     .btn-chip:active {
       transform: scale(0.96);
+    }
+    .btn-chip:focus-visible {
+      outline: 2px solid #e8752d;
+      outline-offset: 2px;
     }
 
     /* Leaflet z-index isolation */
@@ -336,6 +361,55 @@
         desc: "Heat-set brass threaded inserts (M3/M4/M5), press-fit precision bearings, and stainless dowel pins."
       }
     ];
+
+    // Track 1: Custom 3D Scanning Categories for Showcase
+    const SCANNING_SHOWCASE_DATA = {
+      trim: {
+        id: "trim",
+        tabTitle: "Broken Trim",
+        title: "Broken Trim & Architectural Molding",
+        subtitle: "Non-Destructive Contactless Metrology",
+        sampleName: "1960s Historic Cypress Window Trim Profile",
+        originalImage: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80",
+        reconstructedImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+        problem: "Original woodwork shattered from storm damage; supplier closed 40 years ago.",
+        solution: "Contactless optical photogrammetry captured fragmentary curvature; CAD synthesized contiguous extrusion profile with reinforced fastener bosses.",
+        materialUsed: "PETG / ASA Weather-Resistant",
+        accuracy: "&plusmn;0.04mm",
+        turnaround: "24-48 Hours",
+        tags: ["Architectural Restoration", "Marine Moldings", "Cabinetry Bezels"],
+      },
+      hardware: {
+        id: "hardware",
+        tabTitle: "Vintage Hardware",
+        title: "Vintage & Obsolete Mechanical Hardware",
+        subtitle: "Dimensional Reverse-Engineering",
+        sampleName: "Antique Brass Casement Window Sash Latch",
+        originalImage: "https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=600&q=80",
+        reconstructedImage: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=600&q=80",
+        problem: "Cast iron latch snapped at pivot axis; custom replacement quote from machine shop was $340.",
+        solution: "Scanned mating halves, restored sheared internal pivot pin geometry in CAD, printed in carbon-fiber reinforced PETG for $24.50.",
+        materialUsed: "PETG-CF / Polycarbonate",
+        accuracy: "&plusmn;0.05mm",
+        turnaround: "Same-Day Ready",
+        tags: ["Door Mechanisms", "Heirloom Hardware", "Industrial Cams"],
+      },
+      automotive: {
+        id: "automotive",
+        tabTitle: "Discontinued Auto",
+        title: "Discontinued Automotive & Marine Parts",
+        subtitle: "High-Temp Under-Hood & Interior Replication",
+        sampleName: "Classic Dash AC Vent Louver & Snap Bezel",
+        originalImage: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80",
+        reconstructedImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80",
+        problem: "Sun-baked brittle plastic tabs snapped; OEM replacement discontinued by manufacturer in 1998.",
+        solution: "Scanned intact vent half and mirrored in CAD with +0.8mm thickened snap-clips. Printed in heat-deflection Polycarbonate (110&deg;C rating).",
+        materialUsed: "Polycarbonate / ABS-ESD",
+        accuracy: "&plusmn;0.03mm",
+        turnaround: "Same-Day Fabrication",
+        tags: ["Dash Louvers", "Bezel Retainers", "Engine Bay Grommets"],
+      },
+    };
 
     const PRINTER_SHOPS = [
       { 
@@ -519,6 +593,10 @@
       leafletMap: null,
       toast: null, // { message, type }
 
+      // Track 1: Custom Scanning Showcase State
+      scanShowcaseCategory: "automotive",
+      scanShowcaseViewMode: "reconstruction", // 'original' | 'reconstruction'
+
       // Modals
       activeModal: null, // "addresses" | "payment" | "slicer" | "escrow-release" | "escrow-dispute" | "machine-detail" | "decline-job"
       selectedOrderForAction: null,
@@ -643,7 +721,7 @@
               <span class="h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${t.type === 'error' ? 'bg-red-600 text-white' : (t.type === 'success' ? 'bg-green-600 text-white' : 'bg-[#e8752d] text-white')}">${icon}</span>
               <span class="text-xs font-semibold leading-tight truncate">${t.message}</span>
             </div>
-            <button type="button" onclick="window.dismissToast()" class="h-6 w-6 rounded-full flex items-center justify-center text-[#0f2a4a]/40 hover:text-[#0f2a4a] hover:bg-black/5 cursor-pointer">&times;</button>
+            <button type="button" aria-label="Dismiss notification" onclick="window.dismissToast()" class="h-6 w-6 rounded-full flex items-center justify-center text-[#0f2a4a]/40 hover:text-[#0f2a4a] hover:bg-black/5 cursor-pointer">&times;</button>
           </div>
         </div>
       `;
@@ -665,6 +743,8 @@
           activeQuickFilter: state.activeQuickFilter,
           selectedMachineId: state.selectedMachineId,
           selectedAddons: state.selectedAddons,
+          scanShowcaseCategory: state.scanShowcaseCategory,
+          scanShowcaseViewMode: state.scanShowcaseViewMode,
           customPresets: state.customPresets.map(p => ({
             id: p.id,
             name: p.name,
@@ -702,6 +782,8 @@
         if (data.activeQuickFilter) state.activeQuickFilter = data.activeQuickFilter;
         if (data.selectedMachineId) state.selectedMachineId = data.selectedMachineId;
         if (data.selectedAddons) state.selectedAddons = data.selectedAddons;
+        if (data.scanShowcaseCategory) state.scanShowcaseCategory = data.scanShowcaseCategory;
+        if (data.scanShowcaseViewMode) state.scanShowcaseViewMode = data.scanShowcaseViewMode;
         if (data.customPresets && data.customPresets.length > 0) {
           state.customPresets = data.customPresets;
           state.customPresets.forEach(p => {
@@ -1134,8 +1216,8 @@
             <div style="font-size:11px;color:#e8752d;font-weight:600;margin-top:2px;">&#9733; ${s.rating} &bull; ${s.turnaround} ready</div>
             <div style="font-size:10px;color:#888;margin-top:3px;">${s.machines}</div>
             <div style="display:flex;gap:6px;margin-top:8px;">
-              <button type="button" onclick="window.requestQuoteFromMap('${s.id}')" style="flex:1;background:#e8752d;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Get Quote</button>
-              <button type="button" onclick="window.openChatWithShop('${s.id}')" style="background:#0f2a4a;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Chat</button>
+              <button type="button" aria-label="Get instant quote from ${s.name}" onclick="window.requestQuoteFromMap('${s.id}')" style="flex:1;background:#e8752d;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Get Quote</button>
+              <button type="button" aria-label="Open chat with ${s.name}" onclick="window.openChatWithShop('${s.id}')" style="background:#0f2a4a;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Chat</button>
             </div>
           </div>
         `;
@@ -1275,7 +1357,7 @@
               <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-[#0f2a4a]">Saved Delivery Addresses</h3>
-                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" aria-label="Close addresses modal" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="space-y-2.5 mb-4">
@@ -1288,7 +1370,7 @@
                       </div>
                       <p class="text-[11px] text-[#0f2a4a]/70 mt-0.5">${addr.address}</p>
                     </div>
-                    <button type="button" class="btn-set-default-addr text-[11px] font-semibold text-[#e8752d] hover:underline cursor-pointer" data-id="${addr.id}">
+                    <button type="button" aria-label="Set ${addr.label} as default delivery address" class="btn-set-default-addr text-[11px] font-semibold text-[#e8752d] hover:underline cursor-pointer" data-id="${addr.id}">
                       ${addr.isDefault ? 'Selected' : 'Set default'}
                     </button>
                   </div>
@@ -1314,7 +1396,7 @@
               <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-[#0f2a4a]">Payment &amp; Split Billing</h3>
-                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" aria-label="Close payment modal" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="space-y-2.5 mb-4">
@@ -1349,7 +1431,7 @@
                 </div>
               </div>
 
-              <button type="button" class="btn-outline w-full py-2.5 text-xs flex items-center justify-center gap-2">
+              <button type="button" aria-label="Add new payment card" class="btn-outline w-full py-2.5 text-xs flex items-center justify-center gap-2">
                 <span>+ Add New Payment Method</span>
               </button>
             </div>
@@ -1365,7 +1447,7 @@
               <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-[#0f2a4a]">CAD Slicer &amp; Mesh Preferences</h3>
-                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" aria-label="Close slicer modal" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="space-y-3 mb-4">
@@ -1459,7 +1541,7 @@
                   <span class="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">!</span>
                   <h3 class="text-base font-bold text-[#0f2a4a]">Open Escrow Claim</h3>
                 </div>
-                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" aria-label="Close dispute modal" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <p class="text-xs text-[#0f2a4a]/70 mb-3 leading-snug">
@@ -1504,7 +1586,7 @@
                   <h3 class="text-base font-bold text-[#0f2a4a]">${m.name}</h3>
                   <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${m.status.includes('Printing') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${m.status}</span>
                 </div>
-                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" aria-label="Close machine modal" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="grid grid-cols-2 gap-2 text-xs mb-4">
@@ -1701,7 +1783,7 @@
                   <p class="text-[10px] text-[#0f2a4a]/60">${shop.ownerName} &bull; Typically replies in ~3m</p>
                 </div>
               </div>
-              <button type="button" id="btn-close-chat" class="h-7 w-7 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">
+              <button type="button" id="btn-close-chat" aria-label="Close chat window" class="h-7 w-7 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">
                 &times;
               </button>
             </div>
@@ -1740,7 +1822,7 @@
             <!-- Input Bar -->
             <div class="p-3 bg-white border-t border-black/5 flex items-center gap-2">
               <input id="chat-input" placeholder="Message ${shop.ownerName}..." class="flex-1 bg-[#f4f8fc] text-xs px-3 py-2 rounded-xl border border-black/5 outline-none focus:border-[#e8752d]" />
-              <button type="button" id="btn-send-chat" class="h-8 w-8 rounded-xl bg-[#e8752d] text-white flex items-center justify-center cursor-pointer hover:bg-[#d0631f] active:scale-95 shadow-xs">
+              <button type="button" id="btn-send-chat" aria-label="Send message to shop" class="h-8 w-8 rounded-xl bg-[#e8752d] text-white flex items-center justify-center cursor-pointer hover:bg-[#d0631f] active:scale-95 shadow-xs">
                 &rarr;
               </button>
             </div>
@@ -1842,7 +1924,7 @@
                 <h3 class="text-base font-bold text-[#0f2a4a]">Upload Part for Printing</h3>
                 <p class="text-xs text-[#0f2a4a]/60">Choose how to submit your part to New Iberia print shops</p>
               </div>
-              <button type="button" id="btn-close-modal" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2a4a]/5 text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer">
+              <button type="button" id="btn-close-modal" aria-label="Close upload options modal" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2a4a]/5 text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer">
                 &times;
               </button>
             </div>
@@ -1853,7 +1935,7 @@
 
             <div class="space-y-3">
               <!-- Option 1: 2D Photo to 3D -->
-              <button type="button" id="btn-opt-photo" class="w-full text-left flex items-start gap-3.5 rounded-2xl border-2 border-[#e8752d] bg-[#fdf5f0] p-4 transition hover:bg-[#faeae0] active:scale-[0.99] cursor-pointer shadow-sm">
+              <button type="button" id="btn-opt-photo" aria-label="Upload 2D reference photo for AI 3D model synthesis" class="w-full text-left flex items-start gap-3.5 rounded-2xl border-2 border-[#e8752d] bg-[#fdf5f0] p-4 transition hover:bg-[#faeae0] active:scale-[0.99] cursor-pointer shadow-sm">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f28c4a] to-[#e8752d] text-white shadow-md shadow-[#e8752d]/30">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -1877,7 +1959,7 @@
               </button>
 
               <!-- Option 2: High Precision 3D Scanning -->
-              <button type="button" id="btn-opt-scan" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
+              <button type="button" id="btn-opt-scan" aria-label="Upload photos of broken part for metrology 3D scanning" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a] text-white">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -1897,7 +1979,7 @@
               </button>
 
               <!-- Option 3: Direct 3D CAD File -->
-              <button type="button" id="btn-opt-cad" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
+              <button type="button" id="btn-opt-cad" aria-label="Upload existing 3D CAD file" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#0f2a4a] border border-black/10">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="12 2 2 7 12 12 22 7 12 2"/>
@@ -1969,7 +2051,7 @@
       }
     }
 
-    // 1. Home Screen
+    // 1. Home Screen (Enhanced Track 1: Services Layout & Custom 3D Scanning Showcase)
     function renderHome(app) {
       const quickFilters = ["PLA", "PETG", "TPU", "Polycarbonate", "ABS-ESD", "Commercial/Bulk", "Reverse Engineering"];
 
@@ -1992,21 +2074,23 @@
         return matchesQuery && matchesPill;
       });
 
+      const currentScan = SCANNING_SHOWCASE_DATA[state.scanShowcaseCategory] || SCANNING_SHOWCASE_DATA.automotive;
+
       app.innerHTML = `
         <header class="bg-[#0f2a4a] px-4 pb-4 pt-5 text-white">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-white/60">Printing near</p>
+              <p class="text-xs text-white/60">Manufacturing near</p>
               <div class="flex items-center gap-1.5 text-sm font-bold">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                New Iberia, LA
+                New Iberia, LA &bull; Acadiana Hub
               </div>
             </div>
 
             <!-- Enhanced Segmented Control -->
             <div class="flex items-center gap-1.5 rounded-full bg-white/15 p-1 text-xs shadow-inner">
-              <button type="button" id="role-buyer-btn" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'buyer' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Buyer</button>
-              <button type="button" id="role-owner-btn" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'owner' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Owner</button>
+              <button type="button" id="role-buyer-btn" aria-label="Switch to Buyer view" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'buyer' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Buyer</button>
+              <button type="button" id="role-owner-btn" aria-label="Switch to Owner view" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'owner' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Owner</button>
             </div>
           </div>
 
@@ -2014,13 +2098,13 @@
           <div class="mt-4 flex items-center gap-2">
             <div class="flex flex-1 items-center gap-2 rounded-full bg-[#f4f8fc] px-4 py-2.5 text-sm text-[#0f2a4a] shadow-xs">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0f2a4a" stroke-width="2" class="opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input id="search-shops-input" value="${state.searchQuery}" placeholder="Search shops (e.g. Riverside, TPU, PETG)" class="w-full bg-transparent outline-none placeholder:text-[#0f2a4a]/40" />
-              ${state.searchQuery ? `<button type="button" id="clear-search-btn" class="text-xs text-[#0f2a4a]/50 cursor-pointer">&times;</button>` : ''}
+              <input id="search-shops-input" value="${state.searchQuery}" placeholder="Search Acadiana shops, TPU, PETG..." aria-label="Search print shops or materials in the Acadiana area" class="w-full bg-transparent outline-none placeholder:text-[#0f2a4a]/40" />
+              ${state.searchQuery ? `<button type="button" id="clear-search-btn" aria-label="Clear search query" class="text-xs text-[#0f2a4a]/50 cursor-pointer">&times;</button>` : ''}
             </div>
           </div>
 
           <!-- Quick Filters Horizontally Scrolling Row -->
-          <div class="mt-3 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar pb-0.5">
+          <div role="region" aria-label="Quick material filters" class="mt-3 -mx-4 flex gap-2 overflow-x-auto px-4 no-scrollbar pb-0.5">
             ${quickFilters.map(filter => {
               const isActive = state.activeQuickFilter === filter;
               return `
@@ -2028,6 +2112,7 @@
                   type="button"
                   class="btn-quick-filter shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer border ${isActive ? 'bg-[#e8752d] text-white border-[#e8752d] shadow-sm ring-1 ring-white/30' : 'bg-white/10 text-white/90 border-white/20 hover:bg-white/20 active:scale-95'}"
                   data-filter="${filter}"
+                  aria-pressed="${isActive}"
                 >
                   ${filter}
                 </button>
@@ -2040,56 +2125,250 @@
         <button
           type="button"
           id="btn-open-upload-menu"
+          aria-label="Upload a part, 3D CAD file, or reference photo to start quoting"
           class="btn-primary mx-4 -mt-2.5 mb-2 py-3.5 text-sm"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-          Upload a part, 3D file, or photo
+          Upload a part, 3D file, or reference photo
         </button>
 
         <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4 no-scrollbar">
-          <!-- Feature Cards -->
-          <div class="space-y-2.5">
-            <!-- 2D Photo to 3D -->
-            <div id="banner-photo-to-3d" class="rounded-2xl border border-[#e8752d]/30 bg-gradient-to-br from-[#fdf5f0] to-[#f4f8fc] p-3.5 shadow-xs cursor-pointer hover:border-[#e8752d] transition">
-              <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e8752d]/15 text-[#e8752d]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                  </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <h4 class="text-xs font-bold text-[#0f2a4a]">Turn Any 2D Photo into 3D</h4>
-                    <span class="rounded bg-[#e8752d] px-1.5 py-0.2 text-[8px] font-bold text-white uppercase">AI Agent</span>
+
+          <!-- Track 1: Regional Services Layout (FDM Fabrication & Reverse-Engineering/Photogrammetry) -->
+          <section aria-label="Regional Fabrication and Scanning Services" class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-sm font-bold text-[#0f2a4a]">Acadiana Manufacturing Services</h2>
+                <p class="text-[10px] text-[#0f2a4a]/50">Distributed 3D printing farm &bull; Rapid local dispatch</p>
+              </div>
+              <span class="rounded-full bg-[#e8752d]/15 px-2 py-0.5 text-[9px] font-bold text-[#e8752d]">New Iberia Hub</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2.5">
+              <!-- Service Pillar 1: FDM Rapid Fabrication -->
+              <div class="rounded-2xl border border-[#0f2a4a]/10 bg-white p-3.5 shadow-xs hover:border-[#e8752d]/40 transition space-y-2.5">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 font-bold text-xs">
+                      FDM
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <h3 class="text-xs font-bold text-[#0f2a4a]">FDM Rapid Fabrication</h3>
+                        <span class="rounded bg-blue-100 text-blue-800 text-[8px] font-bold px-1.5 py-0.2">High-Speed Fleet</span>
+                      </div>
+                      <p class="text-[10px] text-[#0f2a4a]/60">Bambu Lab X1-C, P1P &amp; Prusa XL 360mm multi-tool</p>
+                    </div>
                   </div>
-                  <p class="text-[11px] text-[#0f2a4a]/70">Snap a broken part or sketch; AI synthesizes a printable 3D mesh.</p>
+                  <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Same-Day</span>
                 </div>
-                <span class="text-sm font-bold text-[#e8752d]">&rarr;</span>
+
+                <p class="text-xs text-[#0f2a4a]/75 leading-relaxed">
+                  Direct production of functional engineering parts in PLA, PETG, TPU 95A, static-dissipative ABS-ESD, and high-temp Polycarbonate.
+                </p>
+
+                <div class="grid grid-cols-3 gap-1.5 text-center text-[10px] rounded-xl bg-[#f4f8fc] p-2 border border-black/5">
+                  <div>
+                    <span class="text-[#0f2a4a]/40 text-[9px] block uppercase font-bold">Accuracy</span>
+                    <span class="font-bold text-[#0f2a4a]">&plusmn;0.15mm</span>
+                  </div>
+                  <div>
+                    <span class="text-[#0f2a4a]/40 text-[9px] block uppercase font-bold">Max Volume</span>
+                    <span class="font-bold text-[#0f2a4a]">360&sup3; mm</span>
+                  </div>
+                  <div>
+                    <span class="text-[#0f2a4a]/40 text-[9px] block uppercase font-bold">Turnaround</span>
+                    <span class="font-bold text-[#e8752d]">8h - 24h</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  id="btn-service-fdm-quote"
+                  aria-label="Request FDM 3D printing quote"
+                  class="btn-secondary w-full py-2.5 text-xs flex items-center justify-center gap-1.5"
+                >
+                  <span>Request FDM Quote</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+
+              <!-- Service Pillar 2: Reverse Engineering & Photogrammetry -->
+              <div class="rounded-2xl border border-[#0f2a4a]/10 bg-white p-3.5 shadow-xs hover:border-[#e8752d]/40 transition space-y-2.5">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#e8752d] font-bold text-xs">
+                      SCAN
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <h3 class="text-xs font-bold text-[#0f2a4a]">Reverse-Engineering &amp; Photogrammetry</h3>
+                        <span class="rounded bg-orange-100 text-orange-800 text-[8px] font-bold px-1.5 py-0.2">Optical Metrology</span>
+                      </div>
+                      <p class="text-[10px] text-[#0f2a4a]/60">Contactless 3D point cloud &bull; Parametric CAD export</p>
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">&plusmn;0.04mm</span>
+                </div>
+
+                <p class="text-xs text-[#0f2a4a]/75 leading-relaxed">
+                  Non-destructive optical capture of physical parts, obsolete mechanisms, and broken geometry. Delivers watertight STEP / STL solid CAD models.
+                </p>
+
+                <div class="grid grid-cols-3 gap-1.5 text-center text-[10px] rounded-xl bg-[#f4f8fc] p-2 border border-black/5">
+                  <div>
+                    <span class="text-[#0f2a4a]/40 text-[9px] block uppercase font-bold">Resolution</span>
+                    <span class="font-bold text-[#0f2a4a]">0.04mm</span>
+                  </div>
+                  <div>
+                    <span class="text-[#0f2a4a]/40 text-[9px] block uppercase font-bold">Formats</span>
+                    <span class="font-bold text-[#0f2a4a]">STEP / STL</span>
+                  </div>
+                  <div>
+                    <span class="text-[#0f2a4a]/40 text-[9px] block uppercase font-bold">Scanning Hub</span>
+                    <span class="font-bold text-[#e8752d]">New Iberia</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  id="btn-service-scan-quote"
+                  aria-label="Request 3D scan and reverse engineering quote"
+                  class="btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-1.5"
+                >
+                  <span>Request 3D Scanning Quote</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Track 1: Distinct Visual Component for "Custom 3D Scanning" -->
+          <section aria-label="Custom 3D Scanning and Replication Showcase" class="rounded-3xl border-2 border-[#e8752d]/30 bg-gradient-to-br from-[#fdf6f0] via-[#f4f8fc] to-[#e7eff8] p-4 shadow-sm space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="flex items-center gap-1 rounded-full bg-[#e8752d] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                    Metrology Showcase
+                  </span>
+                  <span class="text-[10px] text-[#0f2a4a]/60 font-semibold">Poly Pod Farm</span>
+                </div>
+                <h2 class="text-sm font-bold text-[#0f2a4a] mt-1">Custom 3D Scanning &amp; Replication</h2>
+                <p class="text-xs text-[#0f2a4a]/70">
+                  Replicate broken trim, vintage hardware, or discontinued automotive parts with zero drawings required.
+                </p>
               </div>
             </div>
 
-            <!-- High-Precision 3D Scanning -->
-            <div id="banner-3d-scanning" class="rounded-2xl border border-[#0f2a4a]/15 bg-gradient-to-br from-[#f4f8fc] to-[#e7eff8] p-3.5 shadow-xs cursor-pointer hover:border-[#0f2a4a]/40 transition">
-              <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a]/10 text-[#0f2a4a]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.29 7 12 12 20.71 7"/>
-                    <line x1="12" y1="22" x2="12" y2="12"/>
-                  </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <h4 class="text-xs font-bold text-[#0f2a4a]">High-Precision 3D Scanning</h4>
-                    <span class="rounded bg-[#0f2a4a] px-1.5 py-0.2 text-[8px] font-bold text-white uppercase">Metrology</span>
-                  </div>
-                  <p class="text-[11px] text-[#0f2a4a]/70">Photogrammetric scans for reverse engineering, broken hardware replication, and custom part design.</p>
-                </div>
-                <span class="text-sm font-bold text-[#0f2a4a]">&rarr;</span>
-              </div>
+            <!-- Category Pills Tabs -->
+            <div role="tablist" aria-label="Scanning replication categories" class="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              ${Object.values(SCANNING_SHOWCASE_DATA).map(cat => {
+                const isActive = cat.id === state.scanShowcaseCategory;
+                return `
+                  <button
+                    key="${cat.id}"
+                    type="button"
+                    role="tab"
+                    id="tab-${cat.id}"
+                    aria-selected="${isActive}"
+                    aria-controls="scan-panel"
+                    class="btn-scan-tab shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${isActive ? 'bg-[#0f2a4a] text-white shadow-xs' : 'bg-white/80 text-[#0f2a4a]/70 hover:bg-white active:scale-95'}"
+                    data-cat="${cat.id}"
+                  >
+                    ${cat.tabTitle}
+                  </button>
+                `;
+              }).join('')}
             </div>
-          </div>
+
+            <!-- Interactive Visual Preview Box -->
+            <div id="scan-panel" role="tabpanel" class="rounded-2xl bg-white p-3.5 shadow-xs border border-black/10 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-xs font-bold text-[#0f2a4a]">${currentScan.title}</h3>
+                  <p class="text-[10px] text-[#0f2a4a]/50">${currentScan.sampleName}</p>
+                </div>
+
+                <!-- Before / After Toggle -->
+                <div class="flex rounded-lg bg-[#0f2a4a]/5 p-0.5 text-[10px] font-semibold">
+                  <button
+                    type="button"
+                    id="btn-scan-view-orig"
+                    aria-pressed="${state.scanShowcaseViewMode === 'original'}"
+                    class="rounded-md px-2 py-1 cursor-pointer transition ${state.scanShowcaseViewMode === 'original' ? 'bg-white text-[#0f2a4a] shadow-xs font-bold' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}"
+                  >
+                    Damaged Part
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-scan-view-cad"
+                    aria-pressed="${state.scanShowcaseViewMode === 'reconstruction'}"
+                    class="rounded-md px-2 py-1 cursor-pointer transition ${state.scanShowcaseViewMode === 'reconstruction' ? 'bg-[#e8752d] text-white shadow-xs font-bold' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}"
+                  >
+                    3D CAD Mesh
+                  </button>
+                </div>
+              </div>
+
+              <!-- Image with Scanner Laser Effect -->
+              <div class="relative h-44 w-full overflow-hidden rounded-xl bg-[#0a1e35]">
+                <img
+                  src="${state.scanShowcaseViewMode === 'original' ? currentScan.originalImage : currentScan.reconstructedImage}"
+                  alt="${state.scanShowcaseViewMode === 'original' ? 'Damaged physical sample' : '3D mesh reconstructed model'}"
+                  class="h-full w-full object-cover transition-opacity duration-300"
+                />
+
+                <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a1e35]/80 via-transparent to-transparent"></div>
+
+                ${state.scanShowcaseViewMode === 'reconstruction' ? `
+                  <div class="pointer-events-none absolute inset-0 border border-[#e8752d]/40 bg-[#e8752d]/5">
+                    <div class="absolute inset-x-0 h-0.5 bg-[#e8752d] shadow-[0_0_8px_#e8752d] animate-scan-laser"></div>
+                  </div>
+                ` : ''}
+
+                <div class="absolute top-2.5 left-2.5">
+                  <span class="rounded-md bg-black/75 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur">
+                    ${state.scanShowcaseViewMode === 'original' ? 'Original Physical Part' : 'Watertight Solid CAD'}
+                  </span>
+                </div>
+
+                <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white">
+                  <span class="font-mono bg-[#0f2a4a]/85 px-2 py-0.5 rounded backdrop-blur font-semibold">
+                    Accuracy: ${currentScan.accuracy}
+                  </span>
+                  <span class="bg-[#e8752d]/90 px-2 py-0.5 rounded font-bold backdrop-blur">
+                    ${currentScan.turnaround}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Problem & Solution -->
+              <div class="grid grid-cols-1 gap-2 text-xs">
+                <div class="rounded-xl bg-red-50/60 p-2.5 border border-red-100">
+                  <span class="font-bold text-red-900 text-[10px] uppercase tracking-wider block">Obsolescence Challenge</span>
+                  <p class="text-red-950/80 mt-0.5 leading-snug">${currentScan.problem}</p>
+                </div>
+                <div class="rounded-xl bg-green-50/60 p-2.5 border border-green-100">
+                  <span class="font-bold text-green-900 text-[10px] uppercase tracking-wider block">Poly Pod 3D Metrology Solution</span>
+                  <p class="text-green-950/80 mt-0.5 leading-snug">${currentScan.solution}</p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-1">
+                ${currentScan.tags.map(tag => `<span class="rounded-md bg-[#0f2a4a]/5 px-2 py-0.5 text-[10px] font-medium text-[#0f2a4a]/70">${tag}</span>`).join('')}
+              </div>
+
+              <button
+                type="button"
+                id="btn-scan-showcase-request"
+                aria-label="Submit physical part for 3D scanning quote"
+                class="btn-primary w-full py-3 text-xs flex items-center justify-center gap-2"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                <span>Upload Photos of Broken Part for Scanning Quote</span>
+              </button>
+            </div>
+          </section>
 
           <!-- Completed Works Showcase -->
           <div class="space-y-2">
@@ -2129,6 +2408,7 @@
                     </div>
                     <button 
                       type="button"
+                      aria-label="Re-order ${item.title} 3D print"
                       class="btn-order-showcase btn-primary py-1 px-3 text-xs min-h-[32px] shadow-xs"
                       data-showcase-id="${item.id}"
                     >
@@ -2150,8 +2430,8 @@
               </p>
             </div>
             <div class="flex rounded-full bg-[#0f2a4a]/10 p-0.5 text-xs font-semibold">
-              <button type="button" id="btn-view-list" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'list' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">List</button>
-              <button type="button" id="btn-view-map" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'map' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">Map</button>
+              <button type="button" id="btn-view-list" aria-label="View shops as list" aria-pressed="${state.buyerHomeView === 'list'}" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'list' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">List</button>
+              <button type="button" id="btn-view-map" aria-label="View shops on interactive map" aria-pressed="${state.buyerHomeView === 'map'}" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'map' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">Map</button>
             </div>
           </div>
 
@@ -2169,7 +2449,7 @@
                 <div class="text-center py-8 rounded-2xl bg-white border border-black/5 p-4">
                   <p class="text-xs font-bold text-[#0f2a4a]">No shops found matching "${state.activeQuickFilter || state.searchQuery}"</p>
                   <p class="text-[10px] text-[#0f2a4a]/50 mt-1">Try tapping another material filter pill above</p>
-                  <button type="button" id="btn-reset-filters" class="btn-outline mt-3 py-1.5 px-3 text-xs">Clear Filter</button>
+                  <button type="button" id="btn-reset-filters" aria-label="Clear active search and filters" class="btn-outline mt-3 py-1.5 px-3 text-xs">Clear Filter</button>
                 </div>
               ` : filteredShops.map(s => `
                 <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-3.5 shadow-xs hover:border-[#e8752d]/40 transition">
@@ -2188,10 +2468,10 @@
                       ${s.materials.map(m => `<span class="rounded-md bg-[#0f2a4a]/5 px-2 py-0.5 text-[10px] text-[#0f2a4a]/70 font-medium">${m}</span>`).join('')}
                     </div>
                     <div class="flex items-center gap-2">
-                      <button type="button" class="btn-chat-with-shop text-[11px] font-semibold text-[#0f2a4a] hover:text-[#e8752d] cursor-pointer" data-shop-id="${s.id}">
+                      <button type="button" aria-label="Open chat with ${s.name}" class="btn-chat-with-shop text-[11px] font-semibold text-[#0f2a4a] hover:text-[#e8752d] cursor-pointer" data-shop-id="${s.id}">
                         Chat &rarr;
                       </button>
-                      <button type="button" class="btn-select-shop-quote btn-primary py-1 px-3 text-[11px] min-h-[30px] rounded-lg shadow-xs" data-shop-id="${s.id}">
+                      <button type="button" aria-label="Get custom quote from ${s.name}" class="btn-select-shop-quote btn-primary py-1 px-3 text-[11px] min-h-[30px] rounded-lg shadow-xs" data-shop-id="${s.id}">
                         Quote
                       </button>
                     </div>
@@ -2215,19 +2495,55 @@
         render();
       };
 
-      const bannerPhoto = document.getElementById("banner-photo-to-3d");
-      if (bannerPhoto) {
-        bannerPhoto.onclick = () => {
-          state.showUploadMenu = true;
+      const btnFdm = document.getElementById("btn-service-fdm-quote");
+      if (btnFdm) {
+        btnFdm.onclick = () => {
+          state.screen = "request";
+          render();
+          showToast("FDM rapid fabrication intake active", "info");
+        };
+      }
+
+      const btnScan = document.getElementById("btn-service-scan-quote");
+      if (btnScan) {
+        btnScan.onclick = () => {
+          state.screen = "request";
+          render();
+          showToast("Upload photos or dimensions for 3D scanning quote", "info");
+        };
+      }
+
+      // Track 1: Custom 3D Scanning Tab & Viewmode Toggles
+      document.querySelectorAll(".btn-scan-tab").forEach(tab => {
+        tab.onclick = () => {
+          state.scanShowcaseCategory = tab.getAttribute("data-cat");
+          saveAppState();
+          render();
+        };
+      });
+
+      const btnOrig = document.getElementById("btn-scan-view-orig");
+      if (btnOrig) {
+        btnOrig.onclick = () => {
+          state.scanShowcaseViewMode = "original";
           render();
         };
       }
 
-      const bannerScan = document.getElementById("banner-3d-scanning");
-      if (bannerScan) {
-        bannerScan.onclick = () => {
-          state.showUploadMenu = true;
+      const btnCad = document.getElementById("btn-scan-view-cad");
+      if (btnCad) {
+        btnCad.onclick = () => {
+          state.scanShowcaseViewMode = "reconstruction";
           render();
+        };
+      }
+
+      const btnScanShowcaseReq = document.getElementById("btn-scan-showcase-request");
+      if (btnScanShowcaseReq) {
+        btnScanShowcaseReq.onclick = () => {
+          state.screen = "request";
+          render();
+          showToast("Submit photos of your broken component for 3D scanning", "info");
         };
       }
 
@@ -2369,7 +2685,7 @@
 
       app.innerHTML = `
         <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
-          <button type="button" id="btn-back-home" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+          <button type="button" id="btn-back-home" aria-label="Return to Marketplace Home" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
             Request a print
           </button>
@@ -2384,6 +2700,7 @@
               <button
                 type="button"
                 id="btn-change-upload"
+                aria-label="Open upload options menu"
                 class="btn-outline py-1 px-2.5 text-[11px] rounded-full"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -2397,6 +2714,7 @@
               <button
                 type="button"
                 id="btn-direct-upload-photo"
+                aria-label="Upload reference photo for 3D reconstruction"
                 class="btn-outline border-[#e8752d]/30 bg-[#fdf5f0] text-[#e8752d] py-2 px-2 text-xs"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2410,6 +2728,7 @@
               <button
                 type="button"
                 id="btn-direct-upload-cad"
+                aria-label="Upload direct 3D STL or OBJ file"
                 class="btn-outline py-2 px-2 text-xs"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2444,7 +2763,7 @@
                 </div>
                 <div class="flex flex-col items-end gap-1">
                   <span class="text-[10px] text-green-700 font-bold bg-green-100 px-2 py-0.5 rounded-full">Manifold OK</span>
-                  <button type="button" id="btn-toggle-compare" class="text-[10px] text-[#e8752d] font-semibold underline hover:text-[#d0631f] cursor-pointer">
+                  <button type="button" id="btn-toggle-compare" aria-label="Toggle 2D reference comparison view" class="text-[10px] text-[#e8752d] font-semibold underline hover:text-[#d0631f] cursor-pointer">
                     ${state.showReferenceCompare ? 'Hide 2D image' : 'View 2D reference'}
                   </button>
                 </div>
@@ -2470,17 +2789,17 @@
 
                 <div class="absolute right-2.5 top-2.5 flex items-center gap-1.5">
                   ${p.isCustomPhoto ? `
-                    <button type="button" id="btn-toggle-viewmode" title="Toggle Texture / Filament" class="flex h-7 px-2 text-[10px] items-center justify-center rounded-lg backdrop-blur font-semibold cursor-pointer ${state.viewMode === 'textured' ? 'bg-[#e8752d] text-white' : 'bg-white/15 text-white'}">
+                    <button type="button" id="btn-toggle-viewmode" aria-label="Toggle textured or filament view" class="flex h-7 px-2 text-[10px] items-center justify-center rounded-lg backdrop-blur font-semibold cursor-pointer ${state.viewMode === 'textured' ? 'bg-[#e8752d] text-white' : 'bg-white/15 text-white'}">
                       ${state.viewMode === 'textured' ? 'Color' : 'Filament'}
                     </button>
                   ` : ''}
-                  <button type="button" id="btn-wireframe" title="Toggle Wireframe" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.wireframe ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
+                  <button type="button" id="btn-wireframe" aria-label="Toggle 3D mesh wireframe" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.wireframe ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                   </button>
-                  <button type="button" id="btn-rotate" title="Auto Rotate" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.autoRotate ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
+                  <button type="button" id="btn-rotate" aria-label="Toggle turntable auto rotation" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.autoRotate ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
-                  <button type="button" id="btn-reset-cam" title="Reset View" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur bg-white/10 text-white/80 hover:bg-white/20 cursor-pointer">
+                  <button type="button" id="btn-reset-cam" aria-label="Reset 3D camera angle" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur bg-white/10 text-white/80 hover:bg-white/20 cursor-pointer">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/></svg>
                   </button>
                 </div>
@@ -2493,7 +2812,7 @@
                     <span class="text-[#f28c4a]">~${p.estimatedGrams}g ${state.material}</span>
                   </div>
 
-                  <button type="button" id="btn-export-stl" class="pointer-events-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-semibold text-white shadow backdrop-blur hover:bg-white/30 cursor-pointer">
+                  <button type="button" id="btn-export-stl" aria-label="Export watertight STL mesh file" class="pointer-events-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-semibold text-white shadow backdrop-blur hover:bg-white/30 cursor-pointer">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     STL
                   </button>
@@ -2516,15 +2835,15 @@
                 </div>
 
                 <div class="mt-2.5 flex flex-wrap gap-1.5">
-                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="thickness">+2mm thickness</button>
-                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="ribs">Reinforce ribs</button>
-                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="holes">Add mounting holes</button>
-                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="fillet">Fillet corners</button>
+                  <button type="button" aria-label="Reinforce thickness by 2 millimeters" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="thickness">+2mm thickness</button>
+                  <button type="button" aria-label="Add 45 degree reinforcement ribs" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="ribs">Reinforce ribs</button>
+                  <button type="button" aria-label="Add standardized M4 mounting holes" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="holes">Add mounting holes</button>
+                  <button type="button" aria-label="Apply stress relief corner fillets" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="fillet">Fillet corners</button>
                 </div>
 
                 <div class="mt-2 flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-black/5">
                   <input id="inp-prompt" placeholder="Tell agent: e.g. make it stronger, smooth corners..." class="flex-1 bg-transparent text-[11px] text-[#0f2a4a] outline-none placeholder:text-[#0f2a4a]/35" />
-                  <button type="button" id="btn-send-prompt" class="flex h-5 w-5 items-center justify-center text-[#e8752d] cursor-pointer">
+                  <button type="button" id="btn-send-prompt" aria-label="Send co-pilot instruction" class="flex h-5 w-5 items-center justify-center text-[#e8752d] cursor-pointer">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
                 </div>
@@ -2539,7 +2858,7 @@
               </div>
               <div class="grid grid-cols-2 gap-1.5">
                 ${[...state.customPresets, ...SAMPLE_PRESETS].map(preset => `
-                  <button type="button" class="btn-select-preset flex items-center gap-2 rounded-lg p-1.5 text-left transition cursor-pointer ${preset.id === p.id ? 'bg-[#e8752d]/15 ring-1 ring-[#e8752d]' : 'bg-white hover:bg-white/80'}" data-id="${preset.id}">
+                  <button type="button" aria-label="Select model preset ${preset.name}" class="btn-select-preset flex items-center gap-2 rounded-lg p-1.5 text-left transition cursor-pointer ${preset.id === p.id ? 'bg-[#e8752d]/15 ring-1 ring-[#e8752d]' : 'bg-white hover:bg-white/80'}" data-id="${preset.id}">
                     <img src="${preset.photoUrl}" alt="${preset.name}" class="h-7 w-7 rounded object-cover" />
                     <div class="min-w-0 flex-1">
                       <p class="text-[11px] font-semibold text-[#0f2a4a] truncate">${preset.name}</p>
@@ -2564,6 +2883,8 @@
                 return `
                   <button
                     type="button"
+                    aria-pressed="${isSelected}"
+                    aria-label="Select material ${m} with multiplier ${info.multiplier}x"
                     class="btn-material btn-chip flex items-center gap-1.5 ${isSelected ? 'bg-[#0f2a4a] text-white' : 'bg-white text-[#0f2a4a]/70 ring-1 ring-black/5 hover:bg-black/5'}"
                     data-mat="${m}"
                   >
@@ -2655,6 +2976,8 @@
                     </div>
                     <button
                       type="button"
+                      aria-label="Toggle add-on ${addon.name}"
+                      aria-pressed="${active}"
                       class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${active ? 'border-[#e8752d] bg-[#e8752d] text-white' : 'border-black/20 bg-white'}"
                     >
                       ${active ? '&check;' : ''}
@@ -2718,6 +3041,7 @@
           <button
             type="button"
             id="btn-goto-quotes"
+            aria-label="Proceed to step 2: Compare local printer quotes"
             class="btn-primary w-full text-sm"
           >
             Get quotes (Step 2 of 2)
@@ -2917,7 +3241,7 @@
 
       app.innerHTML = `
         <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
-          <button type="button" id="btn-back-request" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+          <button type="button" id="btn-back-request" aria-label="Return to intake part specification" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
             Quotes for your part
           </button>
@@ -2956,10 +3280,10 @@
                 </div>
 
                 <div class="flex items-center justify-between pt-1">
-                  <button type="button" class="btn-quote-chat text-xs text-[#0f2a4a]/70 hover:text-[#e8752d] font-semibold cursor-pointer" data-shop-id="${shop.id}">
+                  <button type="button" aria-label="Open chat with ${shop.name}" class="btn-quote-chat text-xs text-[#0f2a4a]/70 hover:text-[#e8752d] font-semibold cursor-pointer" data-shop-id="${shop.id}">
                     Chat with ${shop.ownerName} &rarr;
                   </button>
-                  <button type="button" class="btn-checkout-shop btn-secondary py-2 px-3.5 text-xs" data-shop-id="${shop.id}">
+                  <button type="button" aria-label="Accept quote from ${shop.name} and proceed to checkout" class="btn-checkout-shop btn-secondary py-2 px-3.5 text-xs" data-shop-id="${shop.id}">
                     Accept quote &amp; checkout
                   </button>
                 </div>
@@ -3020,7 +3344,7 @@
 
       app.innerHTML = `
         <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
-          <button type="button" id="btn-back-quotes" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+          <button type="button" id="btn-back-quotes" aria-label="Return to quotes comparison" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
             Secure Checkout
           </button>
@@ -3061,11 +3385,11 @@
           <div>
             <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Fulfillment Method</label>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'pickup' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="pickup">
+              <button type="button" aria-label="Select Local Hub Pickup" class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'pickup' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="pickup">
                 <span class="text-xs font-bold text-[#0f2a4a]">Local Hub Pickup</span>
                 <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">Free &bull; Ready today</span>
               </button>
-              <button type="button" class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'courier' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="courier">
+              <button type="button" aria-label="Select Courier Delivery" class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'courier' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="courier">
                 <span class="text-xs font-bold text-[#0f2a4a]">Courier Delivery</span>
                 <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">+$4.99 &bull; To your door</span>
               </button>
@@ -3084,7 +3408,7 @@
               <div class="mt-2 rounded-xl bg-white border border-black/5 p-3 text-xs">
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-[#0f2a4a]">Courier Dispatch Address</span>
-                  <button type="button" id="btn-change-checkout-addr" class="text-[10px] font-semibold text-[#e8752d] hover:underline cursor-pointer">Change</button>
+                  <button type="button" id="btn-change-checkout-addr" aria-label="Change delivery address" class="text-[10px] font-semibold text-[#e8752d] hover:underline cursor-pointer">Change</button>
                 </div>
                 <p class="text-[11px] text-[#0f2a4a]/70 mt-0.5">${state.deliveryAddress}</p>
                 <p class="text-[10px] text-green-700 font-semibold mt-1">Same-day courier dispatch guaranteed upon print completion</p>
@@ -3200,6 +3524,7 @@
           <button
             type="button"
             id="btn-confirm-pay"
+            aria-label="Authorize escrow payment and place print order"
             class="btn-primary w-full text-sm flex items-center justify-center gap-2"
           >
             Authorize Escrow &amp; Place Order ($${total})
@@ -3335,10 +3660,10 @@
                     <span class="text-[9px] text-[#0f2a4a]/60 block">Release funds or dispute within 48 hours</span>
                   </div>
                   <div class="flex gap-1.5">
-                    <button type="button" class="btn-open-dispute btn-outline py-1 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50 cursor-pointer" data-order-id="${o.id}">
+                    <button type="button" aria-label="Open escrow dispute for order ${o.id}" class="btn-open-dispute btn-outline py-1 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50 cursor-pointer" data-order-id="${o.id}">
                       Dispute
                     </button>
-                    <button type="button" class="btn-open-release btn-primary py-1 px-2.5 text-[10px] min-h-[30px] cursor-pointer" data-order-id="${o.id}">
+                    <button type="button" aria-label="Release escrow payment to shop for order ${o.id}" class="btn-open-release btn-primary py-1 px-2.5 text-[10px] min-h-[30px] cursor-pointer" data-order-id="${o.id}">
                       Release Funds
                     </button>
                   </div>
@@ -3346,10 +3671,10 @@
               ` : ''}
 
               <div class="flex gap-2">
-                <button type="button" class="btn-view-part-spec btn-secondary flex-1 py-2 text-xs">
+                <button type="button" aria-label="Inspect 3D CAD specifications for ${o.partName}" class="btn-view-part-spec btn-secondary flex-1 py-2 text-xs">
                   Inspect 3D Specs
                 </button>
-                <button type="button" class="btn-open-order-chat btn-outline px-3.5 py-2 text-xs cursor-pointer" data-shop-name="${o.shop}">
+                <button type="button" aria-label="Open chat with ${o.shop}" class="btn-open-order-chat btn-outline px-3.5 py-2 text-xs cursor-pointer" data-shop-name="${o.shop}">
                   Chat Shop
                 </button>
               </div>
@@ -3454,21 +3779,21 @@
 
           <!-- Settings Options -->
           <div class="rounded-2xl bg-white p-2 border border-black/5 divide-y divide-black/5">
-            <button type="button" id="btn-open-addr-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+            <button type="button" id="btn-open-addr-settings" aria-label="Manage saved delivery addresses" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
               <div>
                 <span>Saved New Iberia Delivery Addresses</span>
                 <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">${state.savedAddresses.length} saved locations</span>
               </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
-            <button type="button" id="btn-open-pay-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+            <button type="button" id="btn-open-pay-settings" aria-label="Manage payment methods and split installments" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
               <div>
                 <span>Payment Methods &amp; Split Billing</span>
                 <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">Visa &bull;&bull;&bull;&bull; 4242 &bull; Pay in 4 active</span>
               </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
-            <button type="button" id="btn-open-slicer-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+            <button type="button" id="btn-open-slicer-settings" aria-label="Manage CAD slicer export preferences" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
               <div>
                 <span>CAD Slicer Export &amp; Mesh Preferences</span>
                 <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">${state.slicerPrefs.nozzleSize} &bull; ${state.slicerPrefs.infillPattern}</span>
@@ -3479,7 +3804,7 @@
 
           <!-- State Reset Button -->
           <div class="pt-2 text-center">
-            <button type="button" id="btn-reset-demo-state" class="text-[11px] text-[#0f2a4a]/40 hover:text-red-600 underline cursor-pointer">
+            <button type="button" id="btn-reset-demo-state" aria-label="Reset local demo data" class="text-[11px] text-[#0f2a4a]/40 hover:text-red-600 underline cursor-pointer">
               Reset App State to Initial Demo
             </button>
           </div>
@@ -3528,7 +3853,7 @@
               <h2 class="text-sm font-bold text-white">${hub.name}</h2>
             </div>
             <div class="flex items-center gap-1.5 rounded-full bg-white/15 p-1 text-xs shadow-inner">
-              <button type="button" id="owner-back-buyer" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold text-white/70 hover:text-white cursor-pointer transition">Buyer</button>
+              <button type="button" id="owner-back-buyer" aria-label="Return to Buyer mode" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold text-white/70 hover:text-white cursor-pointer transition">Buyer</button>
               <button type="button" class="rounded-full bg-[#e8752d] px-4.5 py-2 min-h-[38px] font-bold text-white shadow-md">Owner</button>
             </div>
           </div>
@@ -3584,10 +3909,10 @@
                 Reconstructed manifold 3D mesh &bull; ~${state.selectedPreset.estimatedGrams}g ${state.material} &bull; New Iberia buyer
               </p>
               <div class="flex gap-2">
-                <button type="button" id="btn-owner-accept" class="btn-secondary flex-1 py-2 text-xs">
+                <button type="button" id="btn-owner-accept" aria-label="Accept job and send to Bambu Lab slicer" class="btn-secondary flex-1 py-2 text-xs">
                   Accept Job &amp; Send to Slicer
                 </button>
-                <button type="button" id="btn-owner-decline" class="btn-outline px-3 py-2 text-xs text-red-600 border-red-200 hover:bg-red-50 cursor-pointer">
+                <button type="button" id="btn-owner-decline" aria-label="Decline incoming job" class="btn-outline px-3 py-2 text-xs text-red-600 border-red-200 hover:bg-red-50 cursor-pointer">
                   Decline
                 </button>
               </div>
@@ -3596,7 +3921,7 @@
         </div>
 
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3">
-          <button type="button" id="btn-return-buyer-mode" class="btn-secondary w-full py-3 text-xs">
+          <button type="button" id="btn-return-buyer-mode" aria-label="Switch back to Buyer Marketplace" class="btn-secondary w-full py-3 text-xs">
             Switch back to Buyer Marketplace
           </button>
         </div>
@@ -3661,16 +3986,16 @@
     function renderBottomNav(activeTab) {
       return `
         <nav class="sticky bottom-0 z-20 flex items-stretch border-t border-black/5 bg-white/95 backdrop-blur">
-          <button type="button" id="nav-home" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'home' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+          <button type="button" id="nav-home" aria-label="Navigate to Home screen" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'home' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Home
           </button>
-          <button type="button" id="nav-orders" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'orders' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+          <button type="button" id="nav-orders" aria-label="Navigate to Orders tracking" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'orders' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
             Orders
             ${state.orders.length > 0 ? `<span class="absolute top-2 right-6 h-1.5 w-1.5 rounded-full bg-[#e8752d]"></span>` : ''}
           </button>
-          <button type="button" id="nav-account" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'account' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+          <button type="button" id="nav-account" aria-label="Navigate to Account and security" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'account' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Account
           </button>
