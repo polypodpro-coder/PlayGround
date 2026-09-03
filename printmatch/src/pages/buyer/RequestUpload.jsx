@@ -55,6 +55,41 @@ export default function RequestUpload() {
 
   const isModel = file && /\.(stl|obj)$/i.test(file.name);
 
+  // Track 3 QA: Compatibility handlers to prevent silent failures
+  const handleMaterialChange = (newMaterial) => {
+    setSelectedMaterial(newMaterial);
+    if (
+      (newMaterial === "Polycarbonate" || newMaterial === "ABS-ESD") &&
+      (selectedMachineId === "bambu-a1mini" || selectedMachineId === "bambu-p1p")
+    ) {
+      setSelectedMachineId("bambu-x1c");
+      if (showToast) {
+        showToast(
+          `${newMaterial} requires an enclosed heated chamber. Upgraded machine to Bambu Lab X1-Carbon.`,
+          "info",
+          4000
+        );
+      }
+    }
+  };
+
+  const handleMachineChange = (newMachineId) => {
+    setSelectedMachineId(newMachineId);
+    if (
+      (newMachineId === "bambu-a1mini" || newMachineId === "bambu-p1p") &&
+      (selectedMaterial === "Polycarbonate" || selectedMaterial === "ABS-ESD")
+    ) {
+      setSelectedMaterial("PETG");
+      if (showToast) {
+        showToast(
+          "Open-frame printers require standard thermoplastics. Switched material to PETG.",
+          "info",
+          4000
+        );
+      }
+    }
+  };
+
   // Ballpark estimate grounded in actual 3D mesh volume when available
   const estimate = useMemo(() => {
     const matRate = MATERIAL_MULTIPLIERS[selectedMaterial]?.rate ?? 0.08;
@@ -71,6 +106,20 @@ export default function RequestUpload() {
   const handleFiles = async (fileList) => {
     const f = fileList?.[0];
     if (!f) return;
+
+    // Track 3 QA: Strict file extension validation
+    const validExts = /\.(stl|obj|step|3mf|png|jpe?g|webp|gif)$/i;
+    if (!validExts.test(f.name) && !f.type.startsWith("image/")) {
+      if (showToast) {
+        showToast(
+          `"${f.name}" is unsupported. Please upload a 3D CAD file (.STL, .OBJ, .STEP, .3MF) or photo (.JPG, .PNG).`,
+          "error",
+          4500
+        );
+      }
+      return;
+    }
+
     setFile(f);
     setSelectedDesign(null);
 
@@ -206,7 +255,7 @@ export default function RequestUpload() {
             <button
               type="button"
               onClick={() => setDirectRequestPrinterId(null)}
-              className="shrink-0 text-xs font-semibold text-accent underline underline-offset-2"
+              className="shrink-0 text-xs font-semibold text-accent underline underline-offset-2 cursor-pointer"
             >
               Change
             </button>
@@ -233,7 +282,7 @@ export default function RequestUpload() {
               <button
                 type="button"
                 onClick={() => setSelectedDesign(null)}
-                className="shrink-0 text-navy/40 hover:text-navy"
+                className="shrink-0 text-navy/40 hover:text-navy cursor-pointer"
                 aria-label="Remove design"
               >
                 <X size={16} />
@@ -286,7 +335,7 @@ export default function RequestUpload() {
                     setMeshyModel(null);
                     setFile(null);
                   }}
-                  className="rounded-full p-1 text-navy/40 hover:bg-navy/5 hover:text-navy"
+                  className="rounded-full p-1 text-navy/40 hover:bg-navy/5 hover:text-navy cursor-pointer"
                   aria-label="Remove model"
                 >
                   <X size={16} />
@@ -322,21 +371,21 @@ export default function RequestUpload() {
                   <button
                     type="button"
                     onClick={() => handleRefine("+2mm thickness")}
-                    className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-navy/80 shadow-xs hover:bg-navy/5"
+                    className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-navy/80 shadow-xs hover:bg-navy/5 cursor-pointer"
                   >
                     +2mm thickness
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRefine("Add 45° gusset ribs")}
-                    className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-navy/80 shadow-xs hover:bg-navy/5"
+                    className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-navy/80 shadow-xs hover:bg-navy/5 cursor-pointer"
                   >
                     Reinforce ribs
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRefine("Add M4 mounting holes")}
-                    className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-navy/80 shadow-xs hover:bg-navy/5"
+                    className="rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-navy/80 shadow-xs hover:bg-navy/5 cursor-pointer"
                   >
                     Add mounting holes
                   </button>
@@ -362,7 +411,7 @@ export default function RequestUpload() {
                     onClick={() => {
                       if (agentPrompt.trim()) handleRefine(agentPrompt);
                     }}
-                    className="flex h-5 w-5 items-center justify-center rounded text-accent hover:bg-accent/10"
+                    className="flex h-5 w-5 items-center justify-center rounded text-accent hover:bg-accent/10 cursor-pointer"
                   >
                     <Send size={11} />
                   </button>
@@ -381,7 +430,7 @@ export default function RequestUpload() {
               <button
                 type="button"
                 onClick={() => setFile(null)}
-                className="text-navy/40 hover:text-navy"
+                className="text-navy/40 hover:text-navy cursor-pointer"
                 aria-label="Remove uploaded file"
               >
                 <X size={16} />
@@ -420,7 +469,7 @@ export default function RequestUpload() {
                   Browse files or photos
                   <input
                     type="file"
-                    accept=".stl,.obj,image/*"
+                    accept=".stl,.obj,.step,.3mf,image/*"
                     className="hidden"
                     onChange={(e) => handleFiles(e.target.files)}
                   />
@@ -439,7 +488,7 @@ export default function RequestUpload() {
                       key={preset.id}
                       type="button"
                       onClick={() => handleSelectPreset(preset)}
-                      className="flex items-center gap-2 rounded-lg bg-surface p-2 text-left ring-1 ring-black/5 transition hover:ring-accent/40 active:scale-[0.98]"
+                      className="flex items-center gap-2 rounded-lg bg-surface p-2 text-left ring-1 ring-black/5 transition hover:ring-accent/40 active:scale-[0.98] cursor-pointer"
                     >
                       <img
                         src={preset.photoUrl}
@@ -469,27 +518,27 @@ export default function RequestUpload() {
           <MaterialChipSelector
             materials={targetShop?.materials}
             selected={selectedMaterial}
-            onChange={setSelectedMaterial}
+            onChange={handleMaterialChange}
           />
         </div>
 
-        {/* Track 2 Feature 1: Instant Quoting Component with Multiplier Variables */}
+        {/* Feature 1: Instant Quoting Component with Multiplier Variables */}
         <InstantQuoteCalculator
           grams={estimate?.grams || (meshyModel?.estimatedGrams ?? 42)}
           material={selectedMaterial}
           selectedAddons={selectedAddons}
         />
 
-        {/* Track 2 Feature 2: Post-Processing Toggles */}
+        {/* Feature 2: Post-Processing Toggles */}
         <PostProcessingToggles
           selectedAddons={selectedAddons}
           onToggleAddon={toggleAddon}
         />
 
-        {/* Track 2 Feature 3: Machine Capabilities Section */}
+        {/* Feature 3: Machine Capabilities Section */}
         <MachineCapabilities
           selectedMachineId={selectedMachineId}
-          onSelectMachine={setSelectedMachineId}
+          onSelectMachine={handleMachineChange}
         />
 
         <div>
@@ -522,7 +571,7 @@ export default function RequestUpload() {
 
         <button
           type="submit"
-          className="w-full rounded-2xl bg-accent py-4 text-center text-sm font-semibold text-white shadow-md shadow-accent/25 transition active:scale-[0.98] cursor-pointer"
+          className="btn-primary w-full py-4 text-center text-sm font-semibold text-white shadow-md shadow-accent/25 transition active:scale-[0.98] cursor-pointer"
         >
           Get quotes (Step 2 of 2)
         </button>

@@ -3158,7 +3158,12 @@
 
       document.querySelectorAll(".btn-material").forEach(btn => {
         btn.onclick = () => {
-          state.material = btn.getAttribute("data-mat");
+          const newMat = btn.getAttribute("data-mat");
+          state.material = newMat;
+          if ((newMat === "Polycarbonate" || newMat === "ABS-ESD") && (state.selectedMachineId === "bambu-a1mini" || state.selectedMachineId === "bambu-p1p")) {
+            state.selectedMachineId = "bambu-x1c";
+            showToast(`${newMat} requires an enclosed heated chamber. Upgraded machine to Bambu Lab X1-Carbon.`, "info", 4000);
+          }
           saveAppState();
           render();
         };
@@ -3179,7 +3184,12 @@
 
       document.querySelectorAll(".btn-select-fleet").forEach(card => {
         card.onclick = () => {
-          state.selectedMachineId = card.getAttribute("data-machine-id");
+          const newMac = card.getAttribute("data-machine-id");
+          state.selectedMachineId = newMac;
+          if ((newMac === "bambu-a1mini" || newMac === "bambu-p1p") && (state.material === "Polycarbonate" || state.material === "ABS-ESD")) {
+            state.material = "PETG";
+            showToast("Open-frame printers require standard thermoplastics. Switched material to PETG.", "info", 4000);
+          }
           saveAppState();
           render();
         };

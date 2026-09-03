@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import Toast from "./components/Toast";
 import { useApp } from "./context/AppContext";
@@ -22,10 +22,6 @@ import JobDetail from "./pages/owner/JobDetail";
 import Earnings from "./pages/owner/Earnings";
 import PrinterSettings from "./pages/owner/PrinterSettings";
 
-// Screens with their own sub-flow (upload, checkout, an individual order's
-// chat) hide the bottom nav so the primary CTA / back button stays in
-// focus. Bottom-nav destinations themselves (/orders list, /shop profile)
-// keep the nav visible since they're browse screens, not task flows.
 const HIDE_NAV_PREFIXES = ["/request", "/quotes", "/checkout", "/owner/requests/"];
 const AUTH_PATHS = ["/login", "/signup"];
 
@@ -37,10 +33,7 @@ export default function App() {
   if (!isAuthenticated && !isAuthPath) {
     return <Navigate to="/login" replace />;
   }
-  // Redirect target depends on role (not a hardcoded "/") so this stays
-  // correct even if it wins a race against an explicit navigate() call
-  // made right after login/signup — e.g. quick-logging in as the owner
-  // must not strand the URL on the buyer home feed.
+
   if (isAuthenticated && isAuthPath) {
     return <Navigate to={role === "owner" ? "/owner" : "/"} replace />;
   }
@@ -75,6 +68,9 @@ export default function App() {
           <Route path="/owner/requests/:jobId" element={<JobDetail />} />
           <Route path="/owner/earnings" element={<Earnings />} />
           <Route path="/owner/settings" element={<PrinterSettings />} />
+
+          {/* Track 3: Graceful fallback route to prevent 404 blank screens */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
       {!hideNav && <BottomNav />}
