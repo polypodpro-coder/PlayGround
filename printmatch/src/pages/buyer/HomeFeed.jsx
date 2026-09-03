@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { Heart, MapPin, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import PrinterCard from "../../components/PrinterCard";
 import PrinterMapView from "../../components/PrinterMapView";
 import RoleToggle from "../../components/RoleToggle";
@@ -155,7 +155,8 @@ export default function HomeFeed() {
         }}
         className="mx-4 -mt-2.5 mb-1 flex items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/30 active:scale-[0.98]"
       >
-        Upload a part &amp; get quotes
+        <Sparkles size={16} />
+        Upload a part, 3D file, or photo
       </button>
 
       <div className="pt-4">

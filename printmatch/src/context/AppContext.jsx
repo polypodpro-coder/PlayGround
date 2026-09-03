@@ -194,12 +194,23 @@ export function AppProvider({ children }) {
   // directly from its profile, instead of broadcasting to every nearby
   // shop. Falls back to the mock multi-shop quote list otherwise.
   const quotes = useMemo(() => {
-    if (!directRequestPrinterId) return mockQuotes;
+    if (!directRequestPrinterId) {
+      if (request?.estimatedGrams) {
+        const factor = Math.max(0.4, Math.min(2.5, request.estimatedGrams / 55));
+        return mockQuotes.map((q) => ({
+          ...q,
+          price: Math.round(q.price * factor * 10) / 10,
+          material: request.material ?? q.material,
+        }));
+      }
+      return mockQuotes;
+    }
     const shop = printers.find((p) => p.id === directRequestPrinterId);
     if (!shop) return mockQuotes;
     const material = request?.material ?? shop.materials[0];
     const rate = shop.pricingRates?.[material] ?? 0.08;
-    const price = Math.max(6, Math.round(rate * 70 * 100) / 100);
+    const grams = request?.estimatedGrams ?? 70;
+    const price = Math.max(6, Math.round(rate * grams * 100) / 100);
     return [
       {
         id: `direct-${shop.id}`,

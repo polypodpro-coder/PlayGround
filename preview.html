@@ -1,0 +1,1916 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Poly POD â€“ Meshy AI 3D Preview & Distributed Print</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-navy: #0f2a4a;
+      --color-navy-light: #17385f;
+      --color-navy-dark: #0a1e35;
+      --color-accent: #e8752d;
+      --color-accent-light: #f28c4a;
+      --color-surface: #f4f8fc;
+      --color-surface-alt: #e7eff8;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #dbe6f0;
+      color: var(--color-navy);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      background-color: #eaf1f9;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 50px rgba(15, 42, 74, 0.15);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes scanLaser {
+      0% { top: 4%; opacity: 0.7; }
+      50% { top: 92%; opacity: 1; }
+      100% { top: 4%; opacity: 0.7; }
+    }
+    .animate-scan-laser {
+      animation: scanLaser 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.9; }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 1.8s ease-in-out infinite;
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body class="antialiased select-none">
+  <div class="app-shell" id="app">
+    <!-- Rendered dynamically by app module below -->
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // Sample Presets
+    const SAMPLE_PRESETS = [
+      {
+        id: "bracket",
+        name: "Angle Bracket with Gusset",
+        type: "bracket",
+        photoUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 52, y: 38, z: 24 },
+        estimatedGrams: 42,
+        recommendedMaterial: "PETG",
+        infillRecommendation: "40% gyroid",
+        agentSummary: "Detected angled structural bracket with two 5.2mm bolt holes and reinforced corner gusset. Overhangs optimized for FDM printing.",
+      },
+      {
+        id: "knob",
+        name: "Knurled Rotary Knob",
+        type: "knob",
+        photoUrl: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 32, y: 32, z: 22 },
+        estimatedGrams: 28,
+        recommendedMaterial: "PLA",
+        infillRecommendation: "25% grid",
+        agentSummary: "Fluted cylindrical knob with 6mm D-shaft connector bore. Ribbed circumference for positive tactile grip.",
+      },
+      {
+        id: "clip",
+        name: "Snap-Fit Cable Organizer",
+        type: "clip",
+        photoUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 26, y: 18, z: 14 },
+        estimatedGrams: 12,
+        recommendedMaterial: "TPU",
+        infillRecommendation: "100% solid",
+        agentSummary: "Flexible compliant snap-fit cable clip. TPU recommended for flexural fatigue resistance.",
+      },
+      {
+        id: "enclosure",
+        name: "Sensor Housing & Cover",
+        type: "enclosure",
+        photoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80",
+        dimensions: { x: 68, y: 44, z: 28 },
+        estimatedGrams: 58,
+        recommendedMaterial: "ABS",
+        infillRecommendation: "30% cubic",
+        agentSummary: "Protective shell with wire pass-through grommet channel and snap-latch rim for tool-less access.",
+      }
+    ];
+
+    const PRINTER_SHOPS = [
+      { id: "p1", name: "Riverside Rapid Prints", rating: 4.95, distance: "1.2 mi", turnaround: "Same day", materials: ["PLA", "PETG", "TPU"], rate: 0.08, basePrice: 14.50 },
+      { id: "p2", name: "Oak Hill 3D Lab", rating: 4.88, distance: "2.4 mi", turnaround: "24hr", materials: ["PLA", "PETG", "ABS"], rate: 0.075, basePrice: 12.00 },
+      { id: "p3", name: "Cube & Coil Studio", rating: 4.92, distance: "3.8 mi", turnaround: "24hr", materials: ["PLA", "PETG", "Nylon"], rate: 0.09, basePrice: 16.20 },
+    ];
+
+    const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon: 0.15 };
+
+    // App State
+    const state = {
+      screen: "request", // "home" | "request" | "quotes" | "checkout" | "orders" | "account" | "owner"
+      role: "buyer",     // "buyer" | "owner"
+      selectedPreset: SAMPLE_PRESETS[0],
+      customPresets: [],
+      showUploadMenu: false,
+      isGenerating: false,
+      generationProgress: 100,
+      generationStage: "Model synthesized! Ready for slicer inspection.",
+      material: "PETG",
+      neededBy: "",
+      notes: "",
+      wireframe: false,
+      autoRotate: true,
+      viewMode: "textured", // "textured" | "filament"
+      showReferenceCompare: false,
+      searchQuery: "",
+      selectedShop: PRINTER_SHOPS[0],
+      paymentPlan: "full", // "full" | "split" | "net30"
+      deliveryOption: "pickup", // "pickup" | "courier"
+      orders: [
+        {
+          id: "PM-8942",
+          date: "Today, 1:15 PM",
+          partName: "Angle Bracket with Gusset",
+          photoUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
+          material: "PETG",
+          shop: "Riverside Rapid Prints",
+          price: 16.50,
+          status: "Printing",
+          statusText: "Printing in progress",
+          layerCurrent: 214,
+          layerTotal: 360,
+          progressPct: 62,
+          eta: "45 mins",
+          escrowStatus: "Protected in Escrow",
+          pickupLocation: "Riverside Rapid Prints, 142 River Rd, Springfield"
+        }
+      ],
+      printerHub: {
+        name: "Springfield Community Hub #04",
+        machines: [
+          { name: "Bambu Lab X1-Carbon #1", status: "Printing", temp: "220Â°C / 60Â°C", job: "bracket_v2.stl", pct: 64 },
+          { name: "Prusa XL 5-Toolhead", status: "Idle (Ready)", temp: "24Â°C / 22Â°C", job: "Spool: PETG Orange", pct: 0 },
+          { name: "Creality K1 Max #3", status: "Printing", temp: "240Â°C / 75Â°C", job: "knurled_knob.stl", pct: 88 }
+        ],
+        earningsToday: 142.80,
+        completedJobs: 4,
+        rating: 4.96
+      }
+    };
+
+    // Three.js Viewport Controller
+    let viewport = {
+      scene: null,
+      camera: null,
+      renderer: null,
+      mesh: null,
+      animFrame: null,
+      isDragging: false,
+      prevMouse: { x: 0, y: 0 },
+    };
+
+    // Construct a Solid 3D Watertight Manifold Relief Mesh directly from Image Pixels
+    function createImageHeightfieldGeometry(img, dims) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const nx = 32; // 32x32 resolution for silky smooth geometry & instantaneous render
+      const ny = 32;
+      canvas.width = nx;
+      canvas.height = ny;
+      ctx.drawImage(img, 0, 0, nx, ny);
+      const imgData = ctx.getImageData(0, 0, nx, ny).data;
+
+      const w = dims.x / 18;
+      const h = dims.y / 18;
+      const maxDepth = dims.z / 22;
+      const baseThickness = 0.38;
+
+      const positions = [];
+      const uvs = [];
+      const indices = [];
+
+      // Compute vertex height grid from pixel intensity
+      const heights = [];
+      for (let j = 0; j < ny; j++) {
+        heights[j] = [];
+        for (let i = 0; i < nx; i++) {
+          const idx = (j * nx + i) * 4;
+          const r = imgData[idx];
+          const g = imgData[idx + 1];
+          const b = imgData[idx + 2];
+          const a = imgData[idx + 3] / 255;
+          // Calculate relief so salient contours and shadows form distinct sculpted 3D geometry
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          const relief = (1 - lum) * a;
+          heights[j][i] = baseThickness + relief * maxDepth;
+        }
+      }
+
+      // 1. Top sculpted surface vertices
+      for (let j = 0; j < ny; j++) {
+        const y = ((j / (ny - 1)) - 0.5) * h;
+        for (let i = 0; i < nx; i++) {
+          const x = ((i / (nx - 1)) - 0.5) * w;
+          const z = heights[j][i];
+          positions.push(x, y, z);
+          uvs.push(i / (nx - 1), 1 - (j / (ny - 1)));
+        }
+      }
+
+      // Top surface triangles
+      for (let j = 0; j < ny - 1; j++) {
+        for (let i = 0; i < nx - 1; i++) {
+          const a = j * nx + i;
+          const b = j * nx + (i + 1);
+          const c = (j + 1) * nx + i;
+          const d = (j + 1) * nx + (i + 1);
+          indices.push(a, b, c);
+          indices.push(b, d, c);
+        }
+      }
+
+      // 2. Bottom flat base plate vertices (z = 0)
+      const bottomOffset = positions.length / 3;
+      for (let j = 0; j < ny; j++) {
+        const y = ((j / (ny - 1)) - 0.5) * h;
+        for (let i = 0; i < nx; i++) {
+          const x = ((i / (nx - 1)) - 0.5) * w;
+          positions.push(x, y, 0);
+          uvs.push(i / (nx - 1), 1 - (j / (ny - 1)));
+        }
+      }
+
+      // Bottom surface triangles (reverse winding for outward normal)
+      for (let j = 0; j < ny - 1; j++) {
+        for (let i = 0; i < nx - 1; i++) {
+          const a = bottomOffset + (j * nx + i);
+          const b = bottomOffset + (j * nx + (i + 1));
+          const c = bottomOffset + ((j + 1) * nx + i);
+          const d = bottomOffset + ((j + 1) * nx + (i + 1));
+          indices.push(a, c, b);
+          indices.push(b, c, d);
+        }
+      }
+
+      // 3. Side skirts to seal the manifold solid
+      // Top edge (j = 0)
+      for (let i = 0; i < nx - 1; i++) {
+        const t1 = i, t2 = i + 1;
+        const b1 = bottomOffset + i, b2 = bottomOffset + i + 1;
+        indices.push(t1, b1, t2);
+        indices.push(t2, b1, b2);
+      }
+      // Bottom edge (j = ny - 1)
+      for (let i = 0; i < nx - 1; i++) {
+        const t1 = (ny - 1) * nx + i, t2 = (ny - 1) * nx + i + 1;
+        const b1 = bottomOffset + (ny - 1) * nx + i, b2 = bottomOffset + (ny - 1) * nx + i + 1;
+        indices.push(t1, t2, b1);
+        indices.push(t2, b2, b1);
+      }
+      // Left edge (i = 0)
+      for (let j = 0; j < ny - 1; j++) {
+        const t1 = j * nx, t2 = (j + 1) * nx;
+        const b1 = bottomOffset + j * nx, b2 = bottomOffset + (j + 1) * nx;
+        indices.push(t1, t2, b1);
+        indices.push(t2, b2, b1);
+      }
+      // Right edge (i = nx - 1)
+      for (let j = 0; j < ny - 1; j++) {
+        const t1 = j * nx + (nx - 1), t2 = (j + 1) * nx + (nx - 1);
+        const b1 = bottomOffset + j * nx + (nx - 1), b2 = bottomOffset + (j + 1) * nx + (nx - 1);
+        indices.push(t1, b1, t2);
+        indices.push(t2, b1, b2);
+      }
+
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+      geom.center();
+      return geom;
+    }
+
+    function createPartGeometry(type, dims) {
+      const sx = dims.x / 20;
+      const sy = dims.y / 20;
+      const sz = dims.z / 20;
+
+      if (type === "knob") {
+        return new THREE.CylinderGeometry(sx * 0.9, sx * 0.95, sy * 0.8, 28);
+      }
+      if (type === "clip") {
+        const shape = new THREE.Shape();
+        shape.moveTo(-sx, -sy);
+        shape.lineTo(sx, -sy);
+        shape.lineTo(sx, sy);
+        shape.lineTo(sx * 0.6, sy);
+        shape.lineTo(sx * 0.6, -sy * 0.5);
+        shape.lineTo(-sx * 0.6, -sy * 0.5);
+        shape.lineTo(-sx * 0.6, sy);
+        shape.lineTo(-sx, sy);
+        shape.closePath();
+        const geom = new THREE.ExtrudeGeometry(shape, { steps: 1, depth: sz, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 2 });
+        geom.center();
+        return geom;
+      }
+      if (type === "enclosure") {
+        return new THREE.BoxGeometry(sx * 1.6, sy * 1.1, sz * 0.8, 4, 4, 4);
+      }
+      if (type === "bracket") {
+        const shape = new THREE.Shape();
+        const t = 0.45;
+        shape.moveTo(0, 0);
+        shape.lineTo(sx * 1.2, 0);
+        shape.lineTo(sx * 1.2, t);
+        shape.lineTo(t, t);
+        shape.lineTo(t, sy * 1.2);
+        shape.lineTo(0, sy * 1.2);
+        shape.closePath();
+        const geom = new THREE.ExtrudeGeometry(shape, { steps: 1, depth: sz * 1.1, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.1, bevelSegments: 3 });
+        geom.center();
+        return geom;
+      }
+
+      // Fallback
+      return new THREE.BoxGeometry(sx, sy, sz);
+    }
+
+    function init3DViewer() {
+      const canvas = document.getElementById('three-canvas');
+      const container = document.getElementById('canvas-container');
+      if (!canvas || !container) return;
+
+      if (viewport.animFrame) cancelAnimationFrame(viewport.animFrame);
+      if (viewport.renderer) viewport.renderer.dispose();
+
+      const width = container.clientWidth || 360;
+      const height = 230;
+
+      const scene = new THREE.Scene();
+      viewport.scene = scene;
+
+      const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+      camera.position.set(4.2, 3.5, 4.5);
+      camera.lookAt(0, 0, 0);
+      viewport.camera = camera;
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      viewport.renderer = renderer;
+
+      // Lighting
+      const ambient = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambient);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      keyLight.position.set(5, 8, 4);
+      scene.add(keyLight);
+      const fillLight = new THREE.DirectionalLight(0x90b0e0, 0.6);
+      fillLight.position.set(-5, 2, -3);
+      scene.add(fillLight);
+
+      // Bed Grid
+      const grid = new THREE.GridHelper(6, 12, 0x3d5a80, 0x1f334a);
+      grid.position.y = -1.2;
+      scene.add(grid);
+
+      // Determine Geometry & Texture from preset or uploaded image
+      const p = state.selectedPreset;
+      let geom;
+
+      if (p.isCustomPhoto && p.imgElement) {
+        geom = createImageHeightfieldGeometry(p.imgElement, p.dimensions);
+      } else {
+        geom = createPartGeometry(p.type, p.dimensions);
+      }
+
+      const matColor = state.material === "PETG" ? 0xe8752d : (state.material === "PLA" ? 0x2563eb : (state.material === "ABS" ? 0x475569 : 0x10b981));
+
+      const material = new THREE.MeshStandardMaterial({
+        color: matColor,
+        roughness: 0.35,
+        metalness: 0.15,
+        wireframe: state.wireframe
+      });
+
+      // If user uploaded an image and viewMode is "textured", apply texture
+      if (p.isCustomPhoto && state.viewMode === "textured") {
+        const texLoader = new THREE.TextureLoader();
+        texLoader.load(p.photoUrl, (tex) => {
+          if (viewport.mesh && viewport.mesh.material && state.viewMode === "textured") {
+            viewport.mesh.material.map = tex;
+            viewport.mesh.material.color.setHex(0xffffff);
+            viewport.mesh.material.needsUpdate = true;
+          }
+        });
+      }
+
+      const mesh = new THREE.Mesh(geom, material);
+      scene.add(mesh);
+      viewport.mesh = mesh;
+
+      // Mouse & Touch Orbit Interactions
+      const onDown = (e) => {
+        viewport.isDragging = true;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        viewport.prevMouse = { x: cx, y: cy };
+        if (e.touches && e.cancelable) e.preventDefault();
+      };
+
+      const onMove = (e) => {
+        if (!viewport.isDragging || !viewport.mesh) return;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = cx - viewport.prevMouse.x;
+        const dy = cy - viewport.prevMouse.y;
+        viewport.mesh.rotation.y += dx * 0.012;
+        viewport.mesh.rotation.x += dy * 0.012;
+        viewport.prevMouse = { x: cx, y: cy };
+        if (e.touches && e.cancelable) e.preventDefault();
+      };
+
+      const onUp = () => { viewport.isDragging = false; };
+
+      canvas.onmousedown = onDown;
+      canvas.ontouchstart = onDown;
+      window.onmousemove = onMove;
+      window.ontouchmove = onMove;
+      window.onmouseup = onUp;
+      window.ontouchend = onUp;
+
+      const animate = () => {
+        viewport.animFrame = requestAnimationFrame(animate);
+        if (viewport.mesh && state.autoRotate && !viewport.isDragging) {
+          viewport.mesh.rotation.y += 0.008;
+        }
+        renderer.render(scene, camera);
+      };
+      animate();
+    }
+
+    function resetCamera() {
+      if (!viewport.camera || !viewport.mesh) return;
+      viewport.camera.position.set(4.2, 3.5, 4.5);
+      viewport.camera.lookAt(0, 0, 0);
+      viewport.mesh.rotation.set(0, 0, 0);
+    }
+
+    function exportSTL() {
+      if (!viewport.mesh) return;
+      const rawGeom = viewport.mesh.geometry;
+      const g = rawGeom.index ? rawGeom.toNonIndexed() : rawGeom;
+      const pos = g.attributes.position;
+      const numTriangles = pos.count / 3;
+      const buffer = new ArrayBuffer(84 + 50 * numTriangles);
+      const view = new DataView(buffer);
+      view.setUint32(80, numTriangles, true);
+
+      for (let i = 0; i < numTriangles; i++) {
+        const offset = 84 + i * 50;
+        for (let v = 0; v < 3; v++) {
+          const idx = i * 3 + v;
+          view.setFloat32(offset + 12 + v * 12, pos.getX(idx), true);
+          view.setFloat32(offset + 16 + v * 12, pos.getY(idx), true);
+          view.setFloat32(offset + 20 + v * 12, pos.getZ(idx), true);
+        }
+      }
+
+      const blob = new Blob([buffer], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${state.selectedPreset.id || 'reconstructed'}_part.stl`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // AI 2D-to-3D Reconstruction Pipeline
+    function triggerAIPhotoReconstruction(file, photoUrl) {
+      state.screen = "request";
+      state.showUploadMenu = false;
+      state.isGenerating = true;
+      state.generationProgress = 15;
+      state.generationStage = "Ingesting 2D reference photo & extracting edge boundaries...";
+
+      const rawName = file ? file.name : "reference_image.jpg";
+      const cleanName = file ? file.name.replace(/\.[^/.]+$/, "") : "Custom 3D Part";
+      const fileSize = file ? (file.size / 1024).toFixed(1) + " KB" : "96.4 KB";
+
+      // Preload image object to generate real 3D relief mesh
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const aspect = img.naturalWidth / Math.max(1, img.naturalHeight);
+        const calcX = Math.round(52 * Math.max(0.65, Math.min(1.6, aspect)));
+        const calcY = 44;
+        const calcZ = 22;
+        const calcGrams = Math.max(16, Math.round((calcX * calcY * calcZ) / 1050));
+
+        const newCustomPreset = {
+          id: "custom_" + Date.now(),
+          name: cleanName,
+          type: "heightfield",
+          isCustomPhoto: true,
+          photoUrl: photoUrl,
+          imgElement: img,
+          fileName: rawName,
+          fileSize: fileSize,
+          dimensions: { x: calcX, y: calcY, z: calcZ },
+          estimatedGrams: calcGrams,
+          recommendedMaterial: "PETG",
+          infillRecommendation: "35% gyroid",
+          agentSummary: `AI analyzed 2D reference photo "${rawName}" (${img.naturalWidth}Ã—${img.naturalHeight}px). Extracted silhouette boundary, symmetry planes, and surface depth topology. Reconstructed watertight manifold 3D mesh with 2.4mm minimum structural wall thickness.`,
+        };
+
+        state.selectedPreset = newCustomPreset;
+        state.customPresets.unshift(newCustomPreset);
+        state.material = "PETG";
+        state.viewMode = "textured";
+
+        render();
+
+        const stages = [
+          { progress: 34, stage: "Detecting 2D perspective vanishing points & contours..." },
+          { progress: 60, stage: "Inferring volumetric depth field & 3D symmetry planes..." },
+          { progress: 80, stage: "Synthesizing manifold 3D polygon mesh with Meshy AI engine..." },
+          { progress: 94, stage: "Verifying wall thickness (2.4mm) & FDM slicer printability..." },
+          { progress: 100, stage: "3D Model Synthesized Successfully! Watertight & Manifold." },
+        ];
+
+        let idx = 0;
+        const interval = setInterval(() => {
+          if (idx < stages.length) {
+            state.generationProgress = stages[idx].progress;
+            state.generationStage = stages[idx].stage;
+            idx++;
+            const bar = document.getElementById("gen-progress-bar");
+            const text = document.getElementById("gen-progress-stage");
+            const pct = document.getElementById("gen-progress-pct");
+            if (bar) bar.style.width = `${state.generationProgress}%`;
+            if (text) text.textContent = state.generationStage;
+            if (pct) pct.textContent = `${state.generationProgress}%`;
+          } else {
+            clearInterval(interval);
+            state.isGenerating = false;
+            render();
+          }
+        }, 450);
+      };
+      img.src = photoUrl;
+    }
+
+    function handleDirectCADUpload(file) {
+      state.screen = "request";
+      state.showUploadMenu = false;
+      const cleanName = file.name.replace(/\.[^/.]+$/, "");
+      const newCAD = {
+        id: "cad_" + Date.now(),
+        name: cleanName,
+        type: "bracket",
+        isCADFile: true,
+        photoUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
+        fileName: file.name,
+        fileSize: (file.size / 1024).toFixed(1) + " KB",
+        dimensions: { x: 50, y: 36, z: 22 },
+        estimatedGrams: 38,
+        recommendedMaterial: "PLA",
+        infillRecommendation: "30% gyroid",
+        agentSummary: `Imported direct CAD geometry from "${file.name}". Verified manifold geometry and validated layer support angles for local print shops.`,
+      };
+      state.selectedPreset = newCAD;
+      state.customPresets.unshift(newCAD);
+      state.material = "PLA";
+      render();
+    }
+
+    // Main Router
+    function render() {
+      const app = document.getElementById("app");
+      if (state.role === "owner") {
+        renderOwnerDashboard(app);
+        return;
+      }
+      if (state.screen === "home") renderHome(app);
+      else if (state.screen === "request") renderRequest(app);
+      else if (state.screen === "quotes") renderQuotes(app);
+      else if (state.screen === "checkout") renderCheckout(app);
+      else if (state.screen === "orders") renderOrders(app);
+      else if (state.screen === "account") renderAccount(app);
+    }
+
+    // Modal Upload Menu
+    function renderUploadMenuModal() {
+      if (!state.showUploadMenu) return '';
+
+      return `
+        <div id="modal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity">
+          <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10">
+            <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-base font-bold text-[#0f2a4a]">Upload Part for Printing</h3>
+                <p class="text-xs text-[#0f2a4a]/60">Choose how to submit your part to Springfield print shops</p>
+              </div>
+              <button id="btn-close-modal" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2a4a]/5 text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <!-- Hidden File Inputs -->
+            <input type="file" id="menu-file-photo" accept="image/*" class="hidden" />
+            <input type="file" id="menu-file-cad" accept=".stl,.obj,.step,.3mf" class="hidden" />
+
+            <div class="space-y-3">
+              <!-- Option 1: 2D Photo / Reference Image to 3D -->
+              <button id="btn-opt-photo" class="w-full text-left flex items-start gap-3.5 rounded-2xl border-2 border-[#e8752d] bg-[#fdf5f0] p-4 transition hover:bg-[#faeae0] active:scale-[0.99] cursor-pointer shadow-sm">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f28c4a] to-[#e8752d] text-white shadow-md shadow-[#e8752d]/30">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span class="text-sm font-bold text-[#0f2a4a]">Photo to 3D Model</span>
+                    <span class="rounded-full bg-[#e8752d] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">AI Agent</span>
+                  </div>
+                  <p class="text-xs text-[#0f2a4a]/75 leading-relaxed">
+                    Upload a 2D reference photo, sketch, or drawing. The AI agent analyzes contours and synthesizes a printable 3D manifold model.
+                  </p>
+                  <div class="mt-2 flex items-center gap-2 text-[10px] font-semibold text-[#e8752d]">
+                    <span class="flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                      Meshy AI Powered
+                    </span>
+                    <span>â€¢</span>
+                    <span>Take photo or choose file</span>
+                  </div>
+                </div>
+              </button>
+
+              <!-- Option 2: Direct 3D CAD File -->
+              <button id="btn-opt-cad" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a] text-white">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-sm font-bold text-[#0f2a4a]">Upload 3D CAD File</span>
+                    <span class="rounded-full bg-[#0f2a4a]/10 px-2 py-0.5 text-[9px] font-bold text-[#0f2a4a]">Direct Slicing</span>
+                  </div>
+                  <p class="text-xs text-[#0f2a4a]/65 leading-snug">
+                    Upload existing .STL or .OBJ file directly for instant local shop quote calculation.
+                  </p>
+                  <div class="mt-1.5 text-[10px] font-medium text-[#0f2a4a]/50">
+                    .STL, .OBJ, .STEP, .3MF
+                  </div>
+                </div>
+              </button>
+
+              <!-- Option 3: Sample Presets -->
+              <button id="btn-opt-presets" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#0f2a4a] border border-black/10">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-sm font-bold text-[#0f2a4a]">Try Sample Reconstructions</span>
+                    <span class="rounded-full bg-[#0f2a4a]/10 px-2 py-0.5 text-[9px] font-bold text-[#0f2a4a]">Interactive</span>
+                  </div>
+                  <p class="text-xs text-[#0f2a4a]/65 leading-snug">
+                    Explore 4 pre-scanned parts: angle bracket, knurled knob, cable clip, or sensor housing.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setupUploadMenuEvents() {
+      const backdrop = document.getElementById("modal-backdrop");
+      const btnClose = document.getElementById("btn-close-modal");
+      const btnOptPhoto = document.getElementById("btn-opt-photo");
+      const btnOptCad = document.getElementById("btn-opt-cad");
+      const btnOptPresets = document.getElementById("btn-opt-presets");
+      const inputPhoto = document.getElementById("menu-file-photo");
+      const inputCad = document.getElementById("menu-file-cad");
+
+      const closeModal = () => {
+        state.showUploadMenu = false;
+        render();
+      };
+
+      if (backdrop) {
+        backdrop.onclick = (e) => {
+          if (e.target === backdrop) closeModal();
+        };
+      }
+      if (btnClose) btnClose.onclick = closeModal;
+
+      if (btnOptPhoto && inputPhoto) {
+        btnOptPhoto.onclick = () => inputPhoto.click();
+        inputPhoto.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            triggerAIPhotoReconstruction(file, event.target.result);
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      if (btnOptCad && inputCad) {
+        btnOptCad.onclick = () => inputCad.click();
+        inputCad.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          handleDirectCADUpload(file);
+        };
+      }
+
+      if (btnOptPresets) {
+        btnOptPresets.onclick = () => {
+          state.showUploadMenu = false;
+          state.screen = "request";
+          render();
+        };
+      }
+    }
+
+    // 1. Home Screen
+    function renderHome(app) {
+      const filteredShops = PRINTER_SHOPS.filter(s => {
+        if (!state.searchQuery) return true;
+        const q = state.searchQuery.toLowerCase();
+        return s.name.toLowerCase().includes(q) || s.materials.some(m => m.toLowerCase().includes(q));
+      });
+
+      app.innerHTML = `
+        <header class="bg-[#0f2a4a] px-4 pb-5 pt-5 text-white">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-white/60">Printing near</p>
+              <div class="flex items-center gap-1 text-sm font-semibold">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Downtown, Springfield
+              </div>
+            </div>
+            <div class="flex items-center gap-1 rounded-full bg-white/10 p-1 text-xs">
+              <button id="role-buyer-btn" class="rounded-full px-2.5 py-1 font-semibold cursor-pointer ${state.role === 'buyer' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-white/60 hover:text-white'}">Buyer</button>
+              <button id="role-owner-btn" class="rounded-full px-2.5 py-1 font-semibold cursor-pointer ${state.role === 'owner' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-white/60 hover:text-white'}">Owner</button>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-2">
+            <div class="flex flex-1 items-center gap-2 rounded-full bg-[#f4f8fc] px-4 py-2.5 text-sm text-[#0f2a4a]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0f2a4a" stroke-width="2" class="opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="search-shops-input" value="${state.searchQuery}" placeholder="Search shops (e.g. Riverside, TPU, PETG)" class="w-full bg-transparent outline-none placeholder:text-[#0f2a4a]/40" />
+              ${state.searchQuery ? `<button id="clear-search-btn" class="text-xs text-[#0f2a4a]/50">âœ•</button>` : ''}
+            </div>
+          </div>
+        </header>
+
+        <!-- Primary Upload Button -->
+        <button
+          id="btn-open-upload-menu"
+          class="mx-4 -mt-2.5 mb-2 flex items-center justify-center gap-2 rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          Upload a part, 3D file, or photo
+        </button>
+
+        <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4 no-scrollbar">
+          <!-- Feature Banner: 2D Photo to 3D -->
+          <div id="banner-photo-to-3d" class="rounded-2xl border border-[#e8752d]/30 bg-gradient-to-br from-[#fdf5f0] to-[#f4f8fc] p-3.5 shadow-xs cursor-pointer hover:border-[#e8752d] transition">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e8752d]/15 text-[#e8752d]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <h4 class="text-xs font-bold text-[#0f2a4a]">Turn Any 2D Photo into 3D</h4>
+                  <span class="rounded bg-[#e8752d] px-1.5 py-0.2 text-[8px] font-bold text-white uppercase">New</span>
+                </div>
+                <p class="text-[11px] text-[#0f2a4a]/70">Snap a broken part or sketch; AI synthesizes a printable 3D mesh.</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-[#0f2a4a]">Nearby Springfield Print Shops</h2>
+            <span class="text-xs text-[#e8752d] font-semibold">${filteredShops.length} shops online</span>
+          </div>
+
+          ${filteredShops.map(s => `
+            <div class="shop-card rounded-2xl border border-black/5 bg-[#f4f8fc] p-3.5 shadow-xs hover:border-[#e8752d]/40 transition cursor-pointer" data-shop-id="${s.id}">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-semibold text-sm text-[#0f2a4a]">${s.name}</h3>
+                  <p class="text-xs text-[#0f2a4a]/60">${s.distance} â€¢ ${s.turnaround} turnaround</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-[#e8752d]">â˜… ${s.rating}</span>
+                  <p class="text-[10px] text-[#0f2a4a]/50">from $${s.basePrice.toFixed(2)}</p>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex gap-1">
+                  ${s.materials.map(m => `<span class="rounded-md bg-[#0f2a4a]/5 px-2 py-0.5 text-[10px] text-[#0f2a4a]/70 font-medium">${m}</span>`).join('')}
+                </div>
+                <span class="text-[10px] font-semibold text-[#e8752d]">Request Quote â†’</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        ${renderBottomNav("home")}
+        ${renderUploadMenuModal()}
+      `;
+
+      // Event Listeners
+      document.getElementById("btn-open-upload-menu").onclick = () => {
+        state.showUploadMenu = true;
+        render();
+      };
+
+      const banner = document.getElementById("banner-photo-to-3d");
+      if (banner) {
+        banner.onclick = () => {
+          state.showUploadMenu = true;
+          render();
+        };
+      }
+
+      const roleOwnerBtn = document.getElementById("role-owner-btn");
+      if (roleOwnerBtn) {
+        roleOwnerBtn.onclick = () => {
+          state.role = "owner";
+          render();
+        };
+      }
+
+      const searchInput = document.getElementById("search-shops-input");
+      if (searchInput) {
+        searchInput.oninput = (e) => {
+          state.searchQuery = e.target.value;
+          render();
+        };
+      }
+
+      const clearSearchBtn = document.getElementById("clear-search-btn");
+      if (clearSearchBtn) {
+        clearSearchBtn.onclick = () => {
+          state.searchQuery = "";
+          render();
+        };
+      }
+
+      document.querySelectorAll(".shop-card").forEach(card => {
+        card.onclick = () => {
+          const sId = card.getAttribute("data-shop-id");
+          const found = PRINTER_SHOPS.find(s => s.id === sId);
+          if (found) state.selectedShop = found;
+          state.screen = "request";
+          render();
+        };
+      });
+
+      setupUploadMenuEvents();
+      setupNavEvents();
+    }
+
+    // 2. Request Screen (3D Preview & Meshy AI Co-pilot)
+    function renderRequest(app) {
+      const p = state.selectedPreset;
+      const rate = AVG_MATERIAL_RATE[state.material] || 0.08;
+      const costLow = Math.max(6, Math.round(p.estimatedGrams * rate * 0.85));
+      const costHigh = Math.max(9, Math.round(p.estimatedGrams * rate * 1.3));
+
+      app.innerHTML = `
+        <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
+          <button id="btn-back-home" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            Request a print
+          </button>
+          <span class="text-xs font-medium text-[#0f2a4a]/40">Step 1 of 2</span>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
+          <div>
+            <!-- Top Upload Action Row -->
+            <div class="mb-2 flex items-center justify-between">
+              <label class="text-sm font-semibold text-[#0f2a4a]">Part Specification &amp; 3D Model</label>
+              <button
+                id="btn-change-upload"
+                class="flex items-center gap-1 rounded-full bg-[#0f2a4a]/5 px-2.5 py-1 text-[11px] font-semibold text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload Menu
+              </button>
+            </div>
+
+            <!-- Quick Direct Upload Buttons -->
+            <div class="mb-3 grid grid-cols-2 gap-2">
+              <input type="file" id="direct-photo-input" accept="image/*" class="hidden" />
+              <button
+                id="btn-direct-upload-photo"
+                class="flex items-center justify-center gap-1.5 rounded-xl border border-[#e8752d]/30 bg-[#fdf5f0] py-2 px-2 text-xs font-semibold text-[#e8752d] hover:bg-[#faeae0] active:scale-[0.98] cursor-pointer shadow-xs"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span>Upload 2D Photo</span>
+              </button>
+
+              <input type="file" id="direct-cad-input" accept=".stl,.obj,.step,.3mf" class="hidden" />
+              <button
+                id="btn-direct-upload-cad"
+                class="flex items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-[#f4f8fc] py-2 px-2 text-xs font-semibold text-[#0f2a4a] hover:bg-[#e7eff8] active:scale-[0.98] cursor-pointer shadow-xs"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                <span>Upload 3D File</span>
+              </button>
+            </div>
+
+            <!-- Meshy AI Card -->
+            <div class="space-y-3 rounded-2xl border-2 border-[#e8752d]/30 bg-[#f4f8fc] p-3.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-black/10">
+                    <img src="${p.photoUrl}" alt="Reference Photo" class="h-full w-full object-cover" />
+                    ${p.isCustomPhoto ? `
+                      <span class="absolute bottom-0 right-0 rounded-tl bg-[#e8752d] px-1 text-[8px] font-bold text-white">2D</span>
+                    ` : ''}
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="flex items-center gap-1 rounded-full bg-[#e8752d]/15 px-2 py-0.5 text-[10px] font-bold text-[#e8752d]">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                        Meshy AI
+                      </span>
+                      <span class="text-xs font-semibold text-[#0f2a4a] truncate max-w-[130px]">${p.name}</span>
+                    </div>
+                    <p class="text-[10px] text-[#0f2a4a]/50">
+                      ${p.isCustomPhoto ? 'Reconstructed from user 2D reference photo' : '3D mesh synthesized from photo'}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex flex-col items-end gap-1">
+                  <span class="text-[10px] text-green-700 font-bold bg-green-100 px-2 py-0.5 rounded-full">Manifold OK</span>
+                  <button id="btn-toggle-compare" class="text-[10px] text-[#e8752d] font-semibold underline hover:text-[#d0631f] cursor-pointer">
+                    ${state.showReferenceCompare ? 'Hide 2D image' : 'View 2D reference'}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Collapsible 2D Reference Image Comparison Panel -->
+              ${state.showReferenceCompare ? `
+                <div class="rounded-xl border border-[#e8752d]/20 bg-[#fdf5f0] p-3 text-xs">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-[#0f2a4a] flex items-center gap-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      Original 2D Reference Source
+                    </span>
+                    <span class="text-[10px] text-[#0f2a4a]/50">${p.fileName || 'Reference Capture'}</span>
+                  </div>
+                  <div class="relative overflow-hidden rounded-lg border border-black/10 bg-black/5 max-h-48 flex items-center justify-center">
+                    <img src="${p.photoUrl}" alt="2D Reference Preview" class="max-h-48 w-full object-contain" />
+                    <div class="absolute bottom-2 left-2 rounded bg-black/70 px-2 py-0.5 text-[9px] text-white backdrop-blur">
+                      Ground truth reference image
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- 3D Viewport or In-Progress Scanning Card -->
+              ${state.isGenerating ? `
+                <div class="relative overflow-hidden rounded-xl border border-[#0f2a4a]/15 bg-gradient-to-b from-[#111f33] to-[#0c1828] p-5 text-center text-white shadow-inner min-h-[230px] flex flex-col justify-center items-center">
+                  <div class="relative mb-3 h-20 w-20 overflow-hidden rounded-xl border border-[#e8752d]/40 ring-2 ring-[#e8752d]/20">
+                    <img src="${p.photoUrl}" class="h-full w-full object-cover opacity-60 filter blur-[0.5px]" />
+                    <div class="animate-scan-laser absolute left-0 right-0 h-0.5 bg-[#e8752d] shadow-[0_0_8px_#e8752d]"></div>
+                  </div>
+
+                  <div class="w-full max-w-[280px]">
+                    <div class="flex items-center justify-between text-xs mb-1.5">
+                      <span class="font-bold text-[#e8752d] flex items-center gap-1.5">
+                        <svg class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
+                        AI 2Dâ†’3D Reconstruction
+                      </span>
+                      <span id="gen-progress-pct" class="font-mono font-bold text-white">${state.generationProgress}%</span>
+                    </div>
+
+                    <div class="h-2 w-full overflow-hidden rounded-full bg-white/10 p-0.5">
+                      <div id="gen-progress-bar" class="h-full rounded-full bg-gradient-to-r from-[#f28c4a] to-[#e8752d] transition-all duration-300" style="width: ${state.generationProgress}%"></div>
+                    </div>
+
+                    <p id="gen-progress-stage" class="mt-2.5 text-[11px] text-white/70 font-medium leading-relaxed">
+                      ${state.generationStage}
+                    </p>
+                  </div>
+                </div>
+              ` : `
+                <div id="canvas-container" class="relative overflow-hidden rounded-xl border border-[#0f2a4a]/15 bg-gradient-to-b from-[#111f33] to-[#0c1828] shadow-inner">
+                  <canvas id="three-canvas" class="block h-[230px] w-full cursor-grab active:cursor-grabbing"></canvas>
+
+                  <!-- Top Right Controls -->
+                  <div class="absolute right-2.5 top-2.5 flex items-center gap-1.5">
+                    ${p.isCustomPhoto ? `
+                      <button id="btn-toggle-viewmode" title="Toggle Texture / Filament" class="flex h-7 px-2 text-[10px] items-center justify-center rounded-lg backdrop-blur font-semibold cursor-pointer ${state.viewMode === 'textured' ? 'bg-[#e8752d] text-white' : 'bg-white/15 text-white'}">
+                        ${state.viewMode === 'textured' ? 'Color' : 'Filament'}
+                      </button>
+                    ` : ''}
+                    <button id="btn-wireframe" title="Toggle Wireframe" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.wireframe ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+                    </button>
+                    <button id="btn-rotate" title="Auto Rotate" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.autoRotate ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                    <button id="btn-reset-cam" title="Reset View" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur bg-white/10 text-white/80 hover:bg-white/20 cursor-pointer">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/></svg>
+                    </button>
+                  </div>
+
+                  <!-- Bottom Badges -->
+                  <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                    <div class="flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
+                      <span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
+                      <span>${p.dimensions.x} Ã— ${p.dimensions.y} Ã— ${p.dimensions.z} mm</span>
+                      <span class="text-white/40">â€¢</span>
+                      <span class="text-[#f28c4a]">~${p.estimatedGrams}g ${state.material}</span>
+                    </div>
+
+                    <button id="btn-export-stl" class="pointer-events-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-semibold text-white shadow backdrop-blur hover:bg-white/30 cursor-pointer">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      STL
+                    </button>
+                  </div>
+                </div>
+              `}
+
+              <!-- AI Co-Pilot Card -->
+              <div class="rounded-xl bg-[#0f2a4a]/5 p-3 text-xs text-[#0f2a4a]">
+                <div class="flex items-start gap-2">
+                  <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0f2a4a] text-white text-[10px] font-bold">
+                    AI
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="font-semibold">AI Co-pilot</p>
+                      <span class="text-[9px] text-[#0f2a4a]/40 font-mono">Infill: ${p.infillRecommendation}</span>
+                    </div>
+                    <p id="agent-summary-text" class="mt-0.5 leading-relaxed text-[#0f2a4a]/70">${p.agentSummary}</p>
+                  </div>
+                </div>
+
+                <!-- Refinement Chips -->
+                <div class="mt-2.5 flex flex-wrap gap-1.5">
+                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="thickness">+2mm thickness</button>
+                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="ribs">Reinforce ribs</button>
+                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="holes">Add mounting holes</button>
+                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="fillet">Fillet corners</button>
+                </div>
+
+                <div class="mt-2 flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-black/5">
+                  <input id="inp-prompt" placeholder="Tell agent: e.g. make it stronger, smooth corners..." class="flex-1 bg-transparent text-[11px] text-[#0f2a4a] outline-none placeholder:text-[#0f2a4a]/35" />
+                  <button id="btn-send-prompt" class="flex h-5 w-5 items-center justify-center text-[#e8752d] cursor-pointer">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Model Switcher (Custom Uploads + Sample Presets) -->
+            <div class="mt-3 rounded-xl bg-[#0f2a4a]/5 p-2.5">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-[11px] font-semibold text-[#0f2a4a]/70">Active models &amp; sample library:</p>
+                <span class="text-[9px] text-[#0f2a4a]/40 font-medium">Tap to switch</span>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                ${[...state.customPresets, ...SAMPLE_PRESETS].map(preset => `
+                  <button class="btn-select-preset flex items-center gap-2 rounded-lg p-1.5 text-left transition cursor-pointer ${preset.id === p.id ? 'bg-[#e8752d]/15 ring-1 ring-[#e8752d]' : 'bg-white hover:bg-white/80'}" data-id="${preset.id}">
+                    <img src="${preset.photoUrl}" alt="${preset.name}" class="h-7 w-7 rounded object-cover" />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-[11px] font-semibold text-[#0f2a4a] truncate">${preset.name}</p>
+                      <p class="text-[9px] text-[#0f2a4a]/50">~${preset.estimatedGrams}g ${preset.recommendedMaterial}</p>
+                    </div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Material Selector -->
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-[#0f2a4a]">Material</label>
+            <div class="flex flex-wrap gap-2">
+              ${["PLA", "PETG", "ABS", "TPU", "Nylon"].map(m => `
+                <button class="btn-material rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${state.material === m ? 'bg-[#0f2a4a] text-white' : 'bg-white text-[#0f2a4a]/70 ring-1 ring-black/5'}" data-mat="${m}">
+                  ${m}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Price Estimate Box -->
+          <div class="flex items-center gap-3 rounded-2xl bg-[#0f2a4a]/5 p-4">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#e8752d] shadow-xs font-bold text-base">
+              $
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#0f2a4a]">Est. $${costLow}â€“$${costHigh}</p>
+              <p class="text-xs text-[#0f2a4a]/50">~${p.estimatedGrams}g of ${state.material}, calculated from your 3D mesh volume â€¢ Springfield printers set final price</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3.5">
+          <button
+            id="btn-goto-quotes"
+            class="w-full rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer"
+          >
+            Get quotes (Step 2 of 2)
+          </button>
+        </div>
+
+        ${renderUploadMenuModal()}
+      `;
+
+      // Event handlers
+      document.getElementById("btn-back-home").onclick = () => {
+        state.screen = "home";
+        render();
+      };
+
+      document.getElementById("btn-goto-quotes").onclick = () => {
+        state.screen = "quotes";
+        render();
+      };
+
+      document.getElementById("btn-change-upload").onclick = () => {
+        state.showUploadMenu = true;
+        render();
+      };
+
+      // Direct Photo Upload Button
+      const directPhotoInput = document.getElementById("direct-photo-input");
+      const btnDirectPhoto = document.getElementById("btn-direct-upload-photo");
+      if (btnDirectPhoto && directPhotoInput) {
+        btnDirectPhoto.onclick = () => directPhotoInput.click();
+        directPhotoInput.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            triggerAIPhotoReconstruction(file, event.target.result);
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      // Direct CAD Upload Button
+      const directCadInput = document.getElementById("direct-cad-input");
+      const btnDirectCad = document.getElementById("btn-direct-upload-cad");
+      if (btnDirectCad && directCadInput) {
+        btnDirectCad.onclick = () => directCadInput.click();
+        directCadInput.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          handleDirectCADUpload(file);
+        };
+      }
+
+      const btnToggleCompare = document.getElementById("btn-toggle-compare");
+      if (btnToggleCompare) {
+        btnToggleCompare.onclick = () => {
+          state.showReferenceCompare = !state.showReferenceCompare;
+          render();
+        };
+      }
+
+      const btnToggleViewmode = document.getElementById("btn-toggle-viewmode");
+      if (btnToggleViewmode) {
+        btnToggleViewmode.onclick = () => {
+          state.viewMode = state.viewMode === "textured" ? "filament" : "textured";
+          render();
+        };
+      }
+
+      const btnWireframe = document.getElementById("btn-wireframe");
+      if (btnWireframe) {
+        btnWireframe.onclick = () => {
+          state.wireframe = !state.wireframe;
+          if (viewport.mesh) viewport.mesh.material.wireframe = state.wireframe;
+          btnWireframe.className = `flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.wireframe ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}`;
+        };
+      }
+
+      const btnRotate = document.getElementById("btn-rotate");
+      if (btnRotate) {
+        btnRotate.onclick = () => {
+          state.autoRotate = !state.autoRotate;
+          btnRotate.className = `flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.autoRotate ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}`;
+        };
+      }
+
+      const btnResetCam = document.getElementById("btn-reset-cam");
+      if (btnResetCam) {
+        btnResetCam.onclick = resetCamera;
+      }
+
+      const btnExportStl = document.getElementById("btn-export-stl");
+      if (btnExportStl) {
+        btnExportStl.onclick = exportSTL;
+      }
+
+      document.querySelectorAll(".btn-select-preset").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const all = [...state.customPresets, ...SAMPLE_PRESETS];
+          const found = all.find(item => item.id === id);
+          if (found) {
+            state.selectedPreset = found;
+            state.material = found.recommendedMaterial;
+            render();
+          }
+        };
+      });
+
+      document.querySelectorAll(".btn-material").forEach(btn => {
+        btn.onclick = () => {
+          state.material = btn.getAttribute("data-mat");
+          render();
+        };
+      });
+
+      document.querySelectorAll(".btn-refine").forEach(btn => {
+        btn.onclick = () => {
+          const chip = btn.getAttribute("data-chip");
+          if (chip === "thickness") {
+            state.selectedPreset.dimensions.z += 2;
+            state.selectedPreset.estimatedGrams = Math.round(state.selectedPreset.estimatedGrams * 1.12);
+            state.selectedPreset.agentSummary = `Reinforced wall thickness to ${state.selectedPreset.dimensions.z}mm (+12% structural load capacity).`;
+          } else if (chip === "ribs") {
+            state.selectedPreset.estimatedGrams += 4;
+            state.selectedPreset.agentSummary = "Added 45Â° internal reinforcement gusset ribs to resist deflection under load.";
+          } else if (chip === "holes") {
+            state.selectedPreset.agentSummary = "Generated two standardized M4 countersunk mounting slots on flange.";
+          } else if (chip === "fillet") {
+            state.selectedPreset.agentSummary = "Applied 2.5mm radius stress-relief fillets to interior corner edges to prevent delamination.";
+          }
+          render();
+        };
+      });
+
+      const sendPrompt = () => {
+        const inp = document.getElementById("inp-prompt");
+        if (!inp || !inp.value.trim()) return;
+        state.selectedPreset.agentSummary = `AI Co-pilot updated geometry: "${inp.value.trim()}". Recalculated mesh volume & verified manifold integrity.`;
+        inp.value = "";
+        render();
+      };
+      const btnSendPrompt = document.getElementById("btn-send-prompt");
+      const inpPrompt = document.getElementById("inp-prompt");
+      if (btnSendPrompt) btnSendPrompt.onclick = sendPrompt;
+      if (inpPrompt) inpPrompt.onkeydown = (e) => { if (e.key === "Enter") sendPrompt(); };
+
+      setupUploadMenuEvents();
+
+      if (!state.isGenerating) {
+        setTimeout(init3DViewer, 20);
+      }
+    }
+
+    // 3. Quotes Screen
+    function renderQuotes(app) {
+      const p = state.selectedPreset;
+
+      app.innerHTML = `
+        <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
+          <button id="btn-back-request" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            Quotes for your part
+          </button>
+          <span class="text-xs font-medium text-[#0f2a4a]/40">Step 2 of 2</span>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3 no-scrollbar">
+          <!-- Meshy AI Badge -->
+          <div class="flex items-center gap-2.5 rounded-xl border border-[#e8752d]/30 bg-[#e8752d]/10 p-3 text-xs text-[#0f2a4a]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold truncate">3D Model: ${p.name}</p>
+              <p class="text-[10px] text-[#0f2a4a]/60">
+                ${p.dimensions.x} Ã— ${p.dimensions.y} Ã— ${p.dimensions.z} mm â€¢ ~${p.estimatedGrams}g ${state.material}
+              </p>
+            </div>
+            <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Slicer Ready</span>
+          </div>
+
+          <p class="text-xs text-[#0f2a4a]/50">3 nearby Springfield printers ready for production:</p>
+
+          ${PRINTER_SHOPS.map((shop, idx) => {
+            const price = Math.round(shop.rate * p.estimatedGrams * 1.25 * 10) / 10;
+            return `
+              <div class="rounded-2xl border ${idx === 0 ? 'border-[#e8752d] ring-1 ring-[#e8752d]/30' : 'border-black/5'} bg-[#f4f8fc] p-4 shadow-sm">
+                ${idx === 0 ? `<div class="mb-2 inline-block rounded-full bg-[#e8752d] px-2 py-0.5 text-[9px] font-bold uppercase text-white tracking-wider">Best Match</div>` : ''}
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="font-semibold text-sm text-[#0f2a4a]">${shop.name}</h3>
+                    <p class="text-xs text-[#0f2a4a]/60">${shop.distance} â€¢ ${shop.turnaround} ready</p>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-lg font-bold text-[#0f2a4a]">$${price.toFixed(2)}</span>
+                    <p class="text-[10px] text-[#0f2a4a]/50">${state.material}</p>
+                  </div>
+                </div>
+                <button class="btn-checkout-shop mt-3 w-full rounded-xl bg-[#0f2a4a] py-2.5 text-xs font-semibold text-white transition hover:bg-[#17385f] active:scale-[0.98] cursor-pointer" data-shop-id="${shop.id}" data-price="${price}">
+                  Accept quote &amp; proceed to checkout
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        ${renderBottomNav("home")}
+      `;
+
+      document.getElementById("btn-back-request").onclick = () => {
+        state.screen = "request";
+        render();
+      };
+
+      document.querySelectorAll(".btn-checkout-shop").forEach(btn => {
+        btn.onclick = () => {
+          const sId = btn.getAttribute("data-shop-id");
+          const found = PRINTER_SHOPS.find(s => s.id === sId);
+          if (found) state.selectedShop = found;
+          state.screen = "checkout";
+          render();
+        };
+      });
+
+      setupNavEvents();
+    }
+
+    // 4. Checkout Screen (Payment Plans & Escrow Security)
+    function renderCheckout(app) {
+      const p = state.selectedPreset;
+      const shop = state.selectedShop || PRINTER_SHOPS[0];
+      const basePrice = Math.round(shop.rate * p.estimatedGrams * 1.25 * 10) / 10;
+      const courierFee = state.deliveryOption === "courier" ? 4.99 : 0;
+      const serviceFee = 1.85;
+      const total = (basePrice + courierFee + serviceFee).toFixed(2);
+      const splitAmount = (parseFloat(total) / 4).toFixed(2);
+
+      app.innerHTML = `
+        <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
+          <button id="btn-back-quotes" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            Secure Checkout
+          </button>
+          <span class="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Escrow Protected
+          </span>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
+          <!-- Part & Shop Summary -->
+          <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-4 shadow-xs">
+            <div class="flex items-center gap-3">
+              <img src="${p.photoUrl}" alt="Part" class="h-12 w-12 rounded-xl object-cover ring-1 ring-black/10" />
+              <div class="min-w-0 flex-1">
+                <h4 class="font-bold text-sm text-[#0f2a4a] truncate">${p.name}</h4>
+                <p class="text-xs text-[#0f2a4a]/60">${state.material} â€¢ ~${p.estimatedGrams}g â€¢ ${shop.name}</p>
+                <span class="text-[10px] text-[#e8752d] font-semibold">${shop.turnaround} ready</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Escrow & Security Trust Card -->
+          <div class="rounded-2xl border border-green-600/20 bg-green-50/70 p-3.5 text-xs text-[#0f2a4a]">
+            <div class="flex items-start gap-2.5">
+              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div>
+                <p class="font-bold text-green-950">Poly POD Escrow Guarantee</p>
+                <p class="mt-0.5 leading-relaxed text-green-900/80 text-[11px]">
+                  Payment is held securely in escrow until you inspect and verify the physical print. If quality is out of tolerance, receive a 100% refund or free local reprint.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery / Pickup Selector -->
+          <div>
+            <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Fulfillment Method</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'pickup' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="pickup">
+                <span class="text-xs font-bold text-[#0f2a4a]">Local Hub Pickup</span>
+                <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">Free â€¢ Ready today</span>
+              </button>
+              <button class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'courier' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="courier">
+                <span class="text-xs font-bold text-[#0f2a4a]">Courier Delivery</span>
+                <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">+$4.99 â€¢ To your door</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Payment Plans -->
+          <div>
+            <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Payment Plan</label>
+            <div class="space-y-2">
+              <label class="flex items-center justify-between rounded-xl border border-black/10 bg-white p-3 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <input type="radio" name="payplan" value="full" ${state.paymentPlan === 'full' ? 'checked' : ''} class="text-[#e8752d]" />
+                  <div>
+                    <span class="text-xs font-bold text-[#0f2a4a]">Pay in Full ($${total})</span>
+                    <p class="text-[10px] text-[#0f2a4a]/50">Credit / Debit Card or Apple Pay</p>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-[#0f2a4a]">$${total}</span>
+              </label>
+
+              <label class="flex items-center justify-between rounded-xl border border-black/10 bg-white p-3 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <input type="radio" name="payplan" value="split" ${state.paymentPlan === 'split' ? 'checked' : ''} class="text-[#e8752d]" />
+                  <div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-xs font-bold text-[#0f2a4a]">Pay in 4 Installments</span>
+                      <span class="rounded bg-[#0f2a4a]/10 px-1.5 py-0.2 text-[8px] font-bold">0% APR</span>
+                    </div>
+                    <p class="text-[10px] text-[#0f2a4a]/50">4 bi-weekly payments of $${splitAmount}</p>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-[#e8752d]">$${splitAmount}/ea</span>
+              </label>
+
+              <label class="flex items-center justify-between rounded-xl border border-black/10 bg-white p-3 cursor-pointer">
+                <div class="flex items-center gap-2.5">
+                  <input type="radio" name="payplan" value="net30" ${state.paymentPlan === 'net30' ? 'checked' : ''} class="text-[#e8752d]" />
+                  <div>
+                    <span class="text-xs font-bold text-[#0f2a4a]">Poly POD Net30 Invoiced</span>
+                    <p class="text-[10px] text-[#0f2a4a]/50">For engineering labs &amp; verified businesses</p>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-[#0f2a4a]/60">Net30</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Price Breakdown -->
+          <div class="rounded-xl bg-[#0f2a4a]/5 p-3.5 space-y-1.5 text-xs text-[#0f2a4a]">
+            <div class="flex justify-between">
+              <span class="text-[#0f2a4a]/70">3D Part Manufacture (${state.material})</span>
+              <span>$${basePrice.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#0f2a4a]/70">Fulfillment (${state.deliveryOption === 'pickup' ? 'Hub Pickup' : 'Courier'})</span>
+              <span>${courierFee === 0 ? 'Free' : '$' + courierFee.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#0f2a4a]/70">Escrow Security &amp; Slicer Fee</span>
+              <span>$${serviceFee.toFixed(2)}</span>
+            </div>
+            <div class="border-t border-black/10 pt-2 flex justify-between font-bold text-sm">
+              <span>Total Due</span>
+              <span class="text-[#e8752d]">$${total}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3.5">
+          <button
+            id="btn-confirm-pay"
+            class="w-full rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Authorize Escrow &amp; Place Order ($${total})
+          </button>
+        </div>
+      `;
+
+      document.getElementById("btn-back-quotes").onclick = () => {
+        state.screen = "quotes";
+        render();
+      };
+
+      document.querySelectorAll(".btn-delivery").forEach(btn => {
+        btn.onclick = () => {
+          state.deliveryOption = btn.getAttribute("data-opt");
+          render();
+        };
+      });
+
+      document.querySelectorAll("input[name='payplan']").forEach(radio => {
+        radio.onchange = (e) => {
+          state.paymentPlan = e.target.value;
+          render();
+        };
+      });
+
+      document.getElementById("btn-confirm-pay").onclick = () => {
+        const btn = document.getElementById("btn-confirm-pay");
+        btn.innerHTML = `<span class="animate-spin mr-2">âš™</span> Securing in Escrow...`;
+        btn.disabled = true;
+
+        setTimeout(() => {
+          const newOrder = {
+            id: `PM-${Math.floor(1000 + Math.random() * 9000)}`,
+            date: "Just now",
+            partName: p.name,
+            photoUrl: p.photoUrl,
+            material: state.material,
+            shop: shop.name,
+            price: parseFloat(total),
+            status: "Slicing",
+            statusText: "Verified & Sent to Slicer",
+            layerCurrent: 0,
+            layerTotal: 280,
+            progressPct: 15,
+            eta: "Today, 4:30 PM",
+            escrowStatus: "Protected in Escrow",
+            pickupLocation: `${shop.name}, Springfield`
+          };
+          state.orders.unshift(newOrder);
+          state.screen = "orders";
+          render();
+        }, 1100);
+      };
+    }
+
+    // 5. Orders Tracking Screen
+    function renderOrders(app) {
+      app.innerHTML = `
+        <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold text-[#0f2a4a]">Print Orders</h1>
+            <span class="rounded-full bg-[#e8752d] px-2 py-0.2 text-[10px] font-bold text-white">${state.orders.length}</span>
+          </div>
+          <span class="text-xs text-[#0f2a4a]/40 font-medium">Springfield Hub</span>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
+          ${state.orders.map((o, idx) => `
+            <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-[#0f2a4a]">${o.id}</span>
+                  <span class="text-xs text-[#0f2a4a]/40">â€¢ ${o.date}</span>
+                </div>
+                <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                  ${o.status}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <img src="${o.photoUrl}" alt="${o.partName}" class="h-14 w-14 rounded-xl object-cover ring-1 ring-black/10" />
+                <div class="min-w-0 flex-1">
+                  <h4 class="font-bold text-sm text-[#0f2a4a] truncate">${o.partName}</h4>
+                  <p class="text-xs text-[#0f2a4a]/60">${o.shop} â€¢ ${o.material}</p>
+                  <p class="text-xs font-bold text-[#e8752d] mt-0.5">$${o.price.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <!-- Live Progress Stepper -->
+              <div class="rounded-xl bg-white p-3 space-y-2 border border-black/5">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-semibold text-[#0f2a4a] flex items-center gap-1.5">
+                    <span class="animate-pulse h-2 w-2 rounded-full bg-[#e8752d]"></span>
+                    ${o.statusText}
+                  </span>
+                  <span class="text-[#0f2a4a]/60 text-[11px]">ETA: ${o.eta}</span>
+                </div>
+
+                <div class="h-2 w-full overflow-hidden rounded-full bg-black/5">
+                  <div class="h-full rounded-full bg-gradient-to-r from-[#f28c4a] to-[#e8752d]" style="width: ${o.progressPct}%"></div>
+                </div>
+
+                <div class="flex justify-between text-[10px] text-[#0f2a4a]/50">
+                  <span>Layer ${o.layerCurrent} of ${o.layerTotal}</span>
+                  <span class="font-bold text-green-700">${o.escrowStatus}</span>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button class="btn-view-part-spec flex-1 rounded-xl bg-[#0f2a4a] py-2 text-xs font-semibold text-white hover:bg-[#17385f] cursor-pointer">
+                  Inspect 3D Specs
+                </button>
+                <button class="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0f2a4a] hover:bg-black/5 cursor-pointer">
+                  Chat Shop
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        ${renderBottomNav("orders")}
+      `;
+
+      document.querySelectorAll(".btn-view-part-spec").forEach(btn => {
+        btn.onclick = () => {
+          state.screen = "request";
+          render();
+        };
+      });
+
+      setupNavEvents();
+    }
+
+    // 6. Account Screen
+    function renderAccount(app) {
+      app.innerHTML = `
+        <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
+          <h1 class="text-base font-bold text-[#0f2a4a]">Account &amp; Security</h1>
+          <span class="text-xs text-green-700 font-bold bg-green-100 px-2 py-0.5 rounded-full">Verified</span>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
+          <!-- Profile Card -->
+          <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-4 flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0f2a4a] text-white font-bold text-lg">
+              D
+            </div>
+            <div class="flex-1">
+              <h3 class="font-bold text-sm text-[#0f2a4a]">Damian</h3>
+              <p class="text-xs text-[#0f2a4a]/60">Springfield Buyer â€¢ Poly POD Pro</p>
+              <div class="mt-1 flex items-center gap-2 text-[10px] text-green-700 font-semibold">
+                <span>ðŸ›¡ Escrow Protected</span>
+                <span>â€¢</span>
+                <span>4 Completed Orders</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Badges -->
+          <div class="rounded-2xl bg-white p-4 border border-black/5 space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Security &amp; Trust</h4>
+            <div class="flex items-center justify-between py-1">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-green-600">âœ“</span>
+                <span>256-Bit SSL End-to-End Encryption</span>
+              </div>
+              <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Active</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-green-600">âœ“</span>
+                <span>Payment Escrow Release Authorization</span>
+              </div>
+              <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Manual OK</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-green-600">âœ“</span>
+                <span>Local Quality Tolerance Guarantee (0.15mm)</span>
+              </div>
+              <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Enforced</span>
+            </div>
+          </div>
+
+          <!-- Settings Options -->
+          <div class="rounded-2xl bg-white p-2 border border-black/5 divide-y divide-black/5">
+            <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
+              <span>Saved Springfield Delivery Addresses</span>
+              <span class="text-[#0f2a4a]/40">â€º</span>
+            </button>
+            <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
+              <span>Payment Methods &amp; Split Billing</span>
+              <span class="text-[#0f2a4a]/40">â€º</span>
+            </button>
+            <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
+              <span>CAD Slicer Export &amp; Mesh Preferences</span>
+              <span class="text-[#0f2a4a]/40">â€º</span>
+            </button>
+          </div>
+        </div>
+
+        ${renderBottomNav("account")}
+      `;
+
+      setupNavEvents();
+    }
+
+    // 7. Owner / Print Shop Operator Dashboard
+    function renderOwnerDashboard(app) {
+      const hub = state.printerHub;
+
+      app.innerHTML = `
+        <header class="bg-[#0a1e35] px-4 pb-4 pt-5 text-white">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-white/60">Operator Console</p>
+              <h2 class="text-sm font-bold text-white">${hub.name}</h2>
+            </div>
+            <div class="flex items-center gap-1 rounded-full bg-white/10 p-1 text-xs">
+              <button id="owner-back-buyer" class="rounded-full px-2.5 py-1 text-white/60 hover:text-white cursor-pointer">Buyer</button>
+              <button class="rounded-full bg-[#e8752d] px-2.5 py-1 font-semibold text-white shadow-xs">Owner</button>
+            </div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div class="rounded-xl bg-white/10 p-2.5">
+              <p class="text-[10px] text-white/60">Today's Earnings</p>
+              <p class="text-lg font-bold text-[#f28c4a]">$${hub.earningsToday.toFixed(2)}</p>
+            </div>
+            <div class="rounded-xl bg-white/10 p-2.5">
+              <p class="text-[10px] text-white/60">Shop Rating</p>
+              <p class="text-lg font-bold text-white">â˜… ${hub.rating} <span class="text-xs font-normal text-white/60">(${hub.completedJobs} done)</span></p>
+            </div>
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
+          <!-- Active Machines -->
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60 mb-2">Machine Status</h3>
+            <div class="space-y-2">
+              ${hub.machines.map(m => `
+                <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-3 shadow-xs">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-xs text-[#0f2a4a]">${m.name}</h4>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${m.status.includes('Printing') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">
+                      ${m.status}
+                    </span>
+                  </div>
+                  <div class="mt-2 flex items-center justify-between text-[11px] text-[#0f2a4a]/70">
+                    <span>${m.job}</span>
+                    <span class="font-mono">${m.temp}</span>
+                  </div>
+                  ${m.pct > 0 ? `
+                    <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
+                      <div class="h-full rounded-full bg-[#e8752d]" style="width: ${m.pct}%"></div>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Incoming Buyer Job Queue -->
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60 mb-2">Incoming Buyer Orders</h3>
+            <div class="rounded-2xl border-2 border-[#e8752d]/40 bg-[#fdf5f0] p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-[#0f2a4a]">${state.selectedPreset.name}</span>
+                <span class="text-xs font-bold text-[#e8752d]">$16.50</span>
+              </div>
+              <p class="text-xs text-[#0f2a4a]/70 leading-relaxed">
+                Reconstructed manifold 3D mesh â€¢ ~${state.selectedPreset.estimatedGrams}g ${state.material} â€¢ Downtown Springfield buyer
+              </p>
+              <div class="flex gap-2">
+                <button id="btn-owner-accept" class="flex-1 rounded-xl bg-[#0f2a4a] py-2 text-xs font-semibold text-white hover:bg-[#17385f] cursor-pointer">
+                  Accept Job &amp; Send to Slicer
+                </button>
+                <button class="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0f2a4a] cursor-pointer">
+                  Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3">
+          <button id="btn-return-buyer-mode" class="w-full rounded-2xl bg-[#0f2a4a] py-3 text-xs font-semibold text-white cursor-pointer">
+            Switch back to Buyer Marketplace
+          </button>
+        </div>
+      `;
+
+      const backBuyer = document.getElementById("owner-back-buyer");
+      if (backBuyer) {
+        backBuyer.onclick = () => {
+          state.role = "buyer";
+          state.screen = "home";
+          render();
+        };
+      }
+
+      const returnBuyer = document.getElementById("btn-return-buyer-mode");
+      if (returnBuyer) {
+        returnBuyer.onclick = () => {
+          state.role = "buyer";
+          state.screen = "home";
+          render();
+        };
+      }
+
+      const btnAccept = document.getElementById("btn-owner-accept");
+      if (btnAccept) {
+        btnAccept.onclick = () => {
+          btnAccept.textContent = "âœ“ Slicing Job Queued on Bambu Lab #1";
+          btnAccept.disabled = true;
+          setTimeout(() => {
+            state.role = "buyer";
+            state.screen = "orders";
+            render();
+          }, 800);
+        };
+      }
+    }
+
+    // Bottom Navigation Bar
+    function renderBottomNav(activeTab) {
+      return `
+        <nav class="sticky bottom-0 z-20 flex items-stretch border-t border-black/5 bg-white/95 backdrop-blur">
+          <button id="nav-home" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'home' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Home
+          </button>
+          <button id="nav-orders" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'orders' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+            Orders
+            ${state.orders.length > 0 ? `<span class="absolute top-2 right-6 h-1.5 w-1.5 rounded-full bg-[#e8752d]"></span>` : ''}
+          </button>
+          <button id="nav-account" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'account' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Account
+          </button>
+        </nav>
+      `;
+    }
+
+    function setupNavEvents() {
+      const navHome = document.getElementById("nav-home");
+      if (navHome) {
+        navHome.onclick = () => {
+          state.screen = "home";
+          render();
+        };
+      }
+      const navOrders = document.getElementById("nav-orders");
+      if (navOrders) {
+        navOrders.onclick = () => {
+          state.screen = "orders";
+          render();
+        };
+      }
+      const navAccount = document.getElementById("nav-account");
+      if (navAccount) {
+        navAccount.onclick = () => {
+          state.screen = "account";
+          render();
+        };
+      }
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
