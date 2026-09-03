@@ -2,9 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Poly POD - Meshy AI 3D Preview &amp; Distributed Print</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Poly POD - Production On Demand</title>
+  <meta name="description" content="Distributed local 3D printing network with AI 2D-to-3D synthesis, instant quotes, and escrow protection." />
+  <meta name="theme-color" content="#0f2a4a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Poly POD" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="printmatch/public/favicon.svg" />
+  <link rel="apple-touch-icon" href="printmatch/public/favicon.svg" />
+
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -32,6 +44,7 @@
       display: flex;
       justify-content: center;
       min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
     }
     .app-shell {
       width: 100%;
@@ -42,12 +55,95 @@
       display: flex;
       flex-direction: column;
       box-shadow: 0 0 50px rgba(15, 42, 74, 0.15);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     #three-canvas { touch-action: none; }
 
-    /* Keep Leaflet below header and bottom nav */
+    /* Button Design System Tokens */
+    .btn-primary {
+      background: linear-gradient(135deg, #e8752d, #f28c4a);
+      color: #ffffff;
+      font-weight: 600;
+      border-radius: 1rem;
+      padding: 0.875rem 1.25rem;
+      min-height: 46px;
+      box-shadow: 0 10px 25px -5px rgba(232, 117, 45, 0.35);
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border: none;
+      user-select: none;
+    }
+    .btn-primary:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 12px rgba(232, 117, 45, 0.25);
+    }
+    .btn-secondary {
+      background-color: #0f2a4a;
+      color: #ffffff;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      padding: 0.625rem 1rem;
+      min-height: 42px;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      border: none;
+      user-select: none;
+    }
+    .btn-secondary:hover {
+      background-color: #17385f;
+    }
+    .btn-secondary:active {
+      transform: scale(0.97);
+    }
+    .btn-outline {
+      border: 1px solid rgba(15, 42, 74, 0.15);
+      background-color: #ffffff;
+      color: #0f2a4a;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.875rem;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      user-select: none;
+    }
+    .btn-outline:hover {
+      background-color: rgba(15, 42, 74, 0.04);
+      border-color: rgba(15, 42, 74, 0.25);
+    }
+    .btn-outline:active {
+      transform: scale(0.97);
+    }
+    .btn-chip {
+      border-radius: 9999px;
+      padding: 0.375rem 0.875rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.18s ease;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      user-select: none;
+    }
+    .btn-chip:active {
+      transform: scale(0.96);
+    }
+
+    /* Leaflet z-index isolation */
     .leaflet-pane { z-index: 10 !important; }
     .leaflet-top, .leaflet-bottom { z-index: 15 !important; }
 
@@ -93,7 +189,7 @@
   <script type="module">
     import * as THREE from 'three';
 
-    // Sample Presets
+    // Sample Presets Library
     const SAMPLE_PRESETS = [
       {
         id: "bracket",
@@ -157,6 +253,7 @@
         radiusMi: 10, 
         color: "#1F6F63",
         machines: "2x Bambu Lab X1-Carbon",
+        hubAddress: "142 River Rd, Springfield, IL 62701",
         bio: "Specializing in fast functional prints and engineering prototypes. Same-day pickup available."
       },
       { 
@@ -174,6 +271,7 @@
         radiusMi: 6, 
         color: "#6B5B95",
         machines: "1x Prusa XL 5-Tool, 1x Voron 2.4",
+        hubAddress: "880 Oak Hill Blvd, Springfield, IL 62704",
         bio: "Community fab lab open daily. Great for tight-tolerance mechanical parts and heat-resistant ABS."
       },
       { 
@@ -191,11 +289,12 @@
         radiusMi: 12, 
         color: "#B4562B",
         machines: "3x Creality K1 Max",
+        hubAddress: "320 Coil Way, Ste 12, Springfield, IL 62702",
         bio: "Fine-detail studio. We inspect every first layer and verify manifold slicer integrity before printing."
       },
     ];
 
-    // Showcase of Previously Completed Work by Printer Owners
+    // Showcase of Completed Works by Local Print Shops
     const COMPLETED_SHOWCASE = [
       {
         id: "showcase-1",
@@ -291,7 +390,9 @@
 
     const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon: 0.15 };
 
-    // App State
+    // App State Management
+    const STORAGE_KEY = "POLY_POD_V1_STORAGE";
+
     const state = {
       screen: "home", // "home" | "request" | "quotes" | "checkout" | "orders" | "account" | "owner"
       role: "buyer",     // "buyer" | "owner"
@@ -311,7 +412,15 @@
       selectedShop: PRINTER_SHOPS[0],
       paymentPlan: "full", // "full" | "split" | "net30"
       deliveryOption: "pickup", // "pickup" | "courier"
+      deliveryAddress: "142 River Road, Apt 4B, Springfield, IL 62701",
+      poNumber: "PO-2026-849",
+      billingEmail: "engineering@damondynamics.com",
       leafletMap: null,
+
+      // Modals
+      activeModal: null, // "addresses" | "payment" | "slicer" | "escrow-release" | "escrow-dispute" | "machine-detail" | "decline-job"
+      selectedOrderForAction: null,
+      selectedMachineDetail: null,
 
       // Live Chat State
       chatOpen: false,
@@ -334,27 +443,129 @@
           shop: "Riverside Rapid Prints",
           price: 16.50,
           status: "Printing",
-          statusText: "Printing in progress",
+          statusText: "Printing layer 214 of 360",
           layerCurrent: 214,
           layerTotal: 360,
           progressPct: 62,
           eta: "45 mins",
-          escrowStatus: "Protected in Escrow",
+          escrowStatus: "Funds Locked in Escrow",
+          isDelivered: false,
           pickupLocation: "Riverside Rapid Prints, 142 River Rd, Springfield"
+        },
+        {
+          id: "PM-7731",
+          date: "Yesterday, 3:40 PM",
+          partName: "Knurled Precision Dial & Knob",
+          photoUrl: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=400&q=80",
+          material: "PLA",
+          shop: "Cube & Coil Studio",
+          price: 12.00,
+          status: "Delivered",
+          statusText: "Part Ready for Inspection",
+          layerCurrent: 240,
+          layerTotal: 240,
+          progressPct: 100,
+          eta: "Delivered",
+          escrowStatus: "Inspection Pending &bull; Funds in Escrow",
+          isDelivered: true,
+          pickupLocation: "Cube & Coil Studio, Springfield"
         }
       ],
+
       printerHub: {
         name: "Springfield Community Hub #04",
         machines: [
-          { name: "Bambu Lab X1-Carbon #1", status: "Printing", temp: "220&deg;C / 60&deg;C", job: "bracket_v2.stl", pct: 64 },
-          { name: "Prusa XL 5-Toolhead", status: "Idle (Ready)", temp: "24&deg;C / 22&deg;C", job: "Spool: PETG Orange", pct: 0 },
-          { name: "Creality K1 Max #3", status: "Printing", temp: "240&deg;C / 75&deg;C", job: "knurled_knob.stl", pct: 88 }
+          { name: "Bambu Lab X1-Carbon #1", status: "Printing", temp: "220&deg;C / 60&deg;C", bedTemp: "60&deg;C", job: "bracket_v2.stl", pct: 64, spoolRemaining: "680g PETG" },
+          { name: "Prusa XL 5-Toolhead", status: "Idle (Ready)", temp: "24&deg;C / 22&deg;C", bedTemp: "22&deg;C", job: "Spool: PETG Orange", pct: 0, spoolRemaining: "950g PETG" },
+          { name: "Creality K1 Max #3", status: "Printing", temp: "240&deg;C / 75&deg;C", bedTemp: "75&deg;C", job: "knurled_knob.stl", pct: 88, spoolRemaining: "340g PLA" }
         ],
         earningsToday: 142.80,
         completedJobs: 4,
         rating: 4.96
+      },
+
+      savedAddresses: [
+        { id: "a1", label: "Studio / Workshop (Default)", address: "142 River Road, Apt 4B, Springfield, IL 62701", isDefault: true },
+        { id: "a2", label: "Downtown Engineering Office", address: "500 E Capitol Ave, Ste 300, Springfield, IL 62701", isDefault: false }
+      ],
+
+      savedPaymentMethods: [
+        { id: "c1", brand: "Visa", last4: "4242", expiry: "08/28", isDefault: true },
+        { id: "c2", brand: "Apple Pay", last4: "Apple Card", expiry: "Active", isDefault: false }
+      ],
+
+      slicerPrefs: {
+        nozzleSize: "0.4mm (Standard)",
+        layerHeight: "0.16mm (Fine)",
+        infillPattern: "Gyroid",
+        autoRepairManifold: true,
+        supportAngle: "45&deg;"
       }
     };
+
+    // Persistence Layer
+    function saveAppState() {
+      try {
+        const toSave = {
+          orders: state.orders,
+          chatMessages: state.chatMessages,
+          printerHub: state.printerHub,
+          savedAddresses: state.savedAddresses,
+          savedPaymentMethods: state.savedPaymentMethods,
+          slicerPrefs: state.slicerPrefs,
+          paymentPlan: state.paymentPlan,
+          deliveryOption: state.deliveryOption,
+          customPresets: state.customPresets.map(p => ({
+            id: p.id,
+            name: p.name,
+            type: p.type,
+            isCustomPhoto: p.isCustomPhoto,
+            photoUrl: p.photoUrl,
+            fileName: p.fileName,
+            fileSize: p.fileSize,
+            dimensions: p.dimensions,
+            estimatedGrams: p.estimatedGrams,
+            recommendedMaterial: p.recommendedMaterial,
+            infillRecommendation: p.infillRecommendation,
+            agentSummary: p.agentSummary
+          }))
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      } catch(e) {
+        console.warn("localStorage save failed", e);
+      }
+    }
+
+    function hydrateAppState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.orders) state.orders = data.orders;
+        if (data.chatMessages) state.chatMessages = data.chatMessages;
+        if (data.printerHub) state.printerHub = data.printerHub;
+        if (data.savedAddresses) state.savedAddresses = data.savedAddresses;
+        if (data.savedPaymentMethods) state.savedPaymentMethods = data.savedPaymentMethods;
+        if (data.slicerPrefs) state.slicerPrefs = data.slicerPrefs;
+        if (data.paymentPlan) state.paymentPlan = data.paymentPlan;
+        if (data.deliveryOption) state.deliveryOption = data.deliveryOption;
+        if (data.customPresets && data.customPresets.length > 0) {
+          state.customPresets = data.customPresets;
+          state.customPresets.forEach(p => {
+            if (p.isCustomPhoto && p.photoUrl) {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.src = p.photoUrl;
+              p.imgElement = img;
+            }
+          });
+        }
+      } catch(e) {
+        console.warn("localStorage load failed", e);
+      }
+    }
+
+    hydrateAppState();
 
     // 1-Click Order from Completed Showcase Item
     function orderShowcaseItem(showcaseId, directToCheckout = true) {
@@ -823,6 +1034,7 @@
         state.material = "PETG";
         state.viewMode = "textured";
 
+        saveAppState();
         render();
 
         const stages = [
@@ -848,6 +1060,7 @@
           } else {
             clearInterval(interval);
             state.isGenerating = false;
+            saveAppState();
             render();
           }
         }, 450);
@@ -876,6 +1089,7 @@
       state.selectedPreset = newCAD;
       state.customPresets.unshift(newCAD);
       state.material = "PLA";
+      saveAppState();
       render();
     }
 
@@ -892,6 +1106,412 @@
       else if (state.screen === "checkout") renderCheckout(app);
       else if (state.screen === "orders") renderOrders(app);
       else if (state.screen === "account") renderAccount(app);
+    }
+
+    // Modal Manager
+    function renderActiveModal() {
+      if (!state.activeModal) return '';
+
+      // 1. Saved Addresses Modal
+      if (state.activeModal === "addresses") {
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10 max-h-[85vh] overflow-y-auto no-scrollbar">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-[#0f2a4a]">Saved Delivery Addresses</h3>
+                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+              </div>
+
+              <div class="space-y-2.5 mb-4">
+                ${state.savedAddresses.map(addr => `
+                  <div class="rounded-xl border p-3 flex items-start justify-between cursor-pointer transition ${addr.isDefault ? 'border-[#e8752d] bg-[#e8752d]/5 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-[#0f2a4a]">${addr.label}</span>
+                        ${addr.isDefault ? '<span class="rounded bg-[#e8752d] px-1.5 py-0.2 text-[9px] font-bold text-white">Default</span>' : ''}
+                      </div>
+                      <p class="text-[11px] text-[#0f2a4a]/70 mt-0.5">${addr.address}</p>
+                    </div>
+                    <button class="btn-set-default-addr text-[11px] font-semibold text-[#e8752d] hover:underline" data-id="${addr.id}">
+                      ${addr.isDefault ? 'Selected' : 'Set default'}
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Add New Address Form -->
+              <div class="rounded-xl bg-[#f4f8fc] p-3.5 border border-black/5 space-y-2 mb-4">
+                <h4 class="text-xs font-bold text-[#0f2a4a]">Add New Springfield Location</h4>
+                <input id="inp-new-addr-label" placeholder="Address Label (e.g. Workshop, Office)" class="w-full bg-white text-xs px-3 py-2 rounded-lg border border-black/10 outline-none" />
+                <input id="inp-new-addr-street" placeholder="Street Address, Suite / Unit" class="w-full bg-white text-xs px-3 py-2 rounded-lg border border-black/10 outline-none" />
+                <button id="btn-save-new-addr" class="btn-secondary w-full py-2.5 text-xs">Save Address</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Payment Methods & Split Billing Modal
+      if (state.activeModal === "payment") {
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10 max-h-[85vh] overflow-y-auto no-scrollbar">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-[#0f2a4a]">Payment &amp; Split Billing</h3>
+                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+              </div>
+
+              <div class="space-y-2.5 mb-4">
+                ${state.savedPaymentMethods.map(card => `
+                  <div class="rounded-xl border p-3 flex items-center justify-between ${card.isDefault ? 'border-[#e8752d] bg-[#e8752d]/5 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}">
+                    <div class="flex items-center gap-3">
+                      <div class="h-9 w-9 rounded-lg bg-[#0f2a4a] text-white flex items-center justify-center font-bold text-xs">
+                        ${card.brand === 'Visa' ? 'VISA' : 'Pay'}
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-xs font-bold text-[#0f2a4a]">${card.brand} &bull;&bull;&bull;&bull; ${card.last4}</span>
+                          ${card.isDefault ? '<span class="rounded bg-[#e8752d] px-1.5 py-0.2 text-[9px] font-bold text-white">Default</span>' : ''}
+                        </div>
+                        <p class="text-[10px] text-[#0f2a4a]/50">Expires ${card.expiry}</p>
+                      </div>
+                    </div>
+                    <span class="text-green-700 font-bold text-xs">&check; Verified</span>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Pay-in-4 Installment Pre-Approval Badge -->
+              <div class="rounded-xl border border-[#e8752d]/30 bg-[#fdf5f0] p-3.5 flex items-start gap-3 mb-4">
+                <div class="h-8 w-8 rounded-full bg-[#e8752d] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                  4x
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-[#0f2a4a]">Pay in 4 Pre-Approved</h4>
+                  <p class="text-[11px] text-[#0f2a4a]/75 mt-0.5 leading-snug">
+                    You have a $500 revolving credit limit for 4 bi-weekly interest-free installments (0% APR) on any local print job.
+                  </p>
+                </div>
+              </div>
+
+              <button class="btn-outline w-full py-2.5 text-xs flex items-center justify-center gap-2">
+                <span>+ Add New Payment Method</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. Slicer Preferences Modal
+      if (state.activeModal === "slicer") {
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10 max-h-[85vh] overflow-y-auto no-scrollbar">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-[#0f2a4a]">CAD Slicer &amp; Mesh Preferences</h3>
+                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+              </div>
+
+              <div class="space-y-3 mb-4">
+                <div>
+                  <label class="block text-xs font-bold text-[#0f2a4a] mb-1">Standard Nozzle Size</label>
+                  <select id="sel-nozzle" class="w-full bg-[#f4f8fc] border border-black/10 rounded-xl px-3 py-2 text-xs text-[#0f2a4a] font-medium outline-none">
+                    <option ${state.slicerPrefs.nozzleSize.includes('0.4') ? 'selected' : ''}>0.4mm (Standard)</option>
+                    <option ${state.slicerPrefs.nozzleSize.includes('0.2') ? 'selected' : ''}>0.2mm (Ultra Detail)</option>
+                    <option ${state.slicerPrefs.nozzleSize.includes('0.6') ? 'selected' : ''}>0.6mm (High Speed)</option>
+                    <option ${state.slicerPrefs.nozzleSize.includes('0.8') ? 'selected' : ''}>0.8mm (Heavy Duty)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-[#0f2a4a] mb-1">Default Infill Pattern</label>
+                  <select id="sel-infill" class="w-full bg-[#f4f8fc] border border-black/10 rounded-xl px-3 py-2 text-xs text-[#0f2a4a] font-medium outline-none">
+                    <option ${state.slicerPrefs.infillPattern === 'Gyroid' ? 'selected' : ''}>Gyroid (Uniform 3D Strength)</option>
+                    <option ${state.slicerPrefs.infillPattern === 'Grid' ? 'selected' : ''}>Grid (Fast Print Time)</option>
+                    <option ${state.slicerPrefs.infillPattern === 'Cubic' ? 'selected' : ''}>Cubic (High Compression)</option>
+                    <option ${state.slicerPrefs.infillPattern === 'Honeycomb' ? 'selected' : ''}>Honeycomb (Rigid Lateral)</option>
+                  </select>
+                </div>
+
+                <div class="flex items-center justify-between p-3 rounded-xl bg-[#f4f8fc] border border-black/5">
+                  <div>
+                    <span class="text-xs font-bold text-[#0f2a4a]">Auto-Repair Manifold Geometry</span>
+                    <p class="text-[10px] text-[#0f2a4a]/50">Automatically seal inverted normals and stitch non-manifold edges</p>
+                  </div>
+                  <input type="checkbox" id="chk-auto-repair" ${state.slicerPrefs.autoRepairManifold ? 'checked' : ''} class="h-4 w-4 text-[#e8752d]" />
+                </div>
+              </div>
+
+              <button id="btn-save-slicer-prefs" class="btn-primary w-full py-3 text-xs">Save Slicer Settings</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 4. Escrow Release Confirmation Modal
+      if (state.activeModal === "escrow-release") {
+        const order = state.selectedOrderForAction || state.orders[0];
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <div class="text-center mb-4">
+                <div class="mx-auto h-12 w-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xl mb-2">
+                  &check;
+                </div>
+                <h3 class="text-base font-bold text-[#0f2a4a]">Release Escrow Payment</h3>
+                <p class="text-xs text-[#0f2a4a]/60 mt-0.5">Authorize final payment release to ${order.shop}</p>
+              </div>
+
+              <div class="rounded-xl bg-[#f4f8fc] border border-black/5 p-3.5 space-y-2 text-xs mb-4">
+                <div class="flex justify-between">
+                  <span class="text-[#0f2a4a]/60">Order ID</span>
+                  <span class="font-bold text-[#0f2a4a]">${order.id}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#0f2a4a]/60">Part &amp; Material</span>
+                  <span class="font-semibold text-[#0f2a4a]">${order.partName} (${order.material})</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#0f2a4a]/60">Escrow Balance Due</span>
+                  <span class="font-bold text-[#e8752d]">$${order.price.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-[#0f2a4a]/60 text-center mb-4 leading-relaxed">
+                By releasing escrow, you confirm the physical print has been received, inspected, and satisfies required dimensional tolerances (&plusmn;0.15mm).
+              </p>
+
+              <div class="flex gap-2">
+                <button class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
+                <button id="btn-confirm-release-escrow" class="btn-primary flex-1 py-2.5 text-xs">Confirm &amp; Release Payout</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 5. Escrow Dispute / Reprint Claim Modal
+      if (state.activeModal === "escrow-dispute") {
+        const order = state.selectedOrderForAction || state.orders[0];
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">!</span>
+                  <h3 class="text-base font-bold text-[#0f2a4a]">Open Escrow Claim</h3>
+                </div>
+                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+              </div>
+
+              <p class="text-xs text-[#0f2a4a]/70 mb-3 leading-snug">
+                Escrow protection freezes funds ($${order.price.toFixed(2)}) until the issue is rectified with a 100% free reprint or full refund.
+              </p>
+
+              <div class="space-y-2.5 mb-4">
+                <div>
+                  <label class="block text-xs font-semibold text-[#0f2a4a] mb-1">Issue Category</label>
+                  <select id="sel-dispute-reason" class="w-full bg-[#f4f8fc] border border-black/10 rounded-xl px-3 py-2 text-xs text-[#0f2a4a] font-medium outline-none">
+                    <option>Dimensional inaccuracy (Bolt holes/fitment off)</option>
+                    <option>Layer delamination / Structural weakness</option>
+                    <option>Warping / Bed adhesion defect</option>
+                    <option>Incorrect color or filament material</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-[#0f2a4a] mb-1">Defect Details</label>
+                  <textarea id="txt-dispute-desc" placeholder="Describe where the print fails to meet specs..." class="w-full bg-[#f4f8fc] border border-black/10 rounded-xl p-2.5 text-xs text-[#0f2a4a] h-20 outline-none"></textarea>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
+                <button id="btn-submit-dispute" class="btn-primary flex-1 py-2.5 text-xs bg-red-600 hover:bg-red-700">Submit Claim &amp; Freeze Escrow</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 6. Machine Detail Modal (Operator Console)
+      if (state.activeModal === "machine-detail") {
+        const m = state.selectedMachineDetail || state.printerHub.machines[0];
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-base font-bold text-[#0f2a4a]">${m.name}</h3>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${m.status.includes('Printing') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${m.status}</span>
+                </div>
+                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                <div class="rounded-xl bg-[#f4f8fc] p-3 border border-black/5">
+                  <span class="text-[#0f2a4a]/50 text-[10px] block">Extruder Temp</span>
+                  <span class="font-bold text-sm text-[#0f2a4a]">${m.temp}</span>
+                </div>
+                <div class="rounded-xl bg-[#f4f8fc] p-3 border border-black/5">
+                  <span class="text-[#0f2a4a]/50 text-[10px] block">Heated Bed</span>
+                  <span class="font-bold text-sm text-[#0f2a4a]">${m.bedTemp || '60&deg;C'}</span>
+                </div>
+                <div class="rounded-xl bg-[#f4f8fc] p-3 border border-black/5">
+                  <span class="text-[#0f2a4a]/50 text-[10px] block">Active Job</span>
+                  <span class="font-bold text-xs text-[#0f2a4a] truncate block">${m.job}</span>
+                </div>
+                <div class="rounded-xl bg-[#f4f8fc] p-3 border border-black/5">
+                  <span class="text-[#0f2a4a]/50 text-[10px] block">Spool Remaining</span>
+                  <span class="font-bold text-xs text-[#e8752d]">${m.spoolRemaining || '750g'}</span>
+                </div>
+              </div>
+
+              <button class="btn-close-submodal btn-secondary w-full py-2.5 text-xs">Close Machine Monitor</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 7. Decline Job Modal (Operator Console)
+      if (state.activeModal === "decline-job") {
+        return `
+          <div id="submodal-backdrop" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs">
+            <div class="animate-slide-up w-full max-w-[480px] rounded-t-3xl bg-white p-5 shadow-2xl border-t border-black/10">
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
+              <h3 class="text-base font-bold text-[#0f2a4a] mb-2">Decline Incoming Print Job</h3>
+              <p class="text-xs text-[#0f2a4a]/60 mb-3">Please indicate reason so buyer can be re-routed to next nearest hub:</p>
+
+              <div class="space-y-2 mb-4">
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-black/10 text-xs cursor-pointer hover:bg-black/5">
+                  <input type="radio" name="decline_reason" checked class="text-[#e8752d]" />
+                  <span>Queue capacity full for today</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-black/10 text-xs cursor-pointer hover:bg-black/5">
+                  <input type="radio" name="decline_reason" class="text-[#e8752d]" />
+                  <span>Required material/color temporarily out of stock</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-black/10 text-xs cursor-pointer hover:bg-black/5">
+                  <input type="radio" name="decline_reason" class="text-[#e8752d]" />
+                  <span>Part geometry exceeds build volume limits</span>
+                </label>
+              </div>
+
+              <div class="flex gap-2">
+                <button class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
+                <button id="btn-confirm-decline" class="btn-secondary flex-1 py-2.5 text-xs bg-red-700 hover:bg-red-800">Decline &amp; Re-route</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return '';
+    }
+
+    function setupSubmodalEvents() {
+      const backdrop = document.getElementById("submodal-backdrop");
+      const closeBtns = document.querySelectorAll(".btn-close-submodal");
+
+      const closeModal = () => {
+        state.activeModal = null;
+        render();
+      };
+
+      if (backdrop) {
+        backdrop.onclick = (e) => {
+          if (e.target === backdrop) closeModal();
+        };
+      }
+      closeBtns.forEach(btn => { btn.onclick = closeModal; });
+
+      // Addresses modal handlers
+      const saveAddrBtn = document.getElementById("btn-save-new-addr");
+      if (saveAddrBtn) {
+        saveAddrBtn.onclick = () => {
+          const label = document.getElementById("inp-new-addr-label")?.value.trim();
+          const street = document.getElementById("inp-new-addr-street")?.value.trim();
+          if (!label || !street) return;
+          state.savedAddresses.push({
+            id: "a_" + Date.now(),
+            label: label,
+            address: street,
+            isDefault: false
+          });
+          saveAppState();
+          render();
+        };
+      }
+
+      document.querySelectorAll(".btn-set-default-addr").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          state.savedAddresses.forEach(a => {
+            a.isDefault = (a.id === id);
+            if (a.isDefault) state.deliveryAddress = a.address;
+          });
+          saveAppState();
+          render();
+        };
+      });
+
+      // Slicer prefs save handler
+      const saveSlicerBtn = document.getElementById("btn-save-slicer-prefs");
+      if (saveSlicerBtn) {
+        saveSlicerBtn.onclick = () => {
+          const selNozzle = document.getElementById("sel-nozzle")?.value;
+          const selInfill = document.getElementById("sel-infill")?.value;
+          const chkAuto = document.getElementById("chk-auto-repair")?.checked;
+          state.slicerPrefs.nozzleSize = selNozzle;
+          state.slicerPrefs.infillPattern = selInfill;
+          state.slicerPrefs.autoRepairManifold = chkAuto;
+          saveAppState();
+          closeModal();
+        };
+      }
+
+      // Escrow release handler
+      const confirmReleaseBtn = document.getElementById("btn-confirm-release-escrow");
+      if (confirmReleaseBtn) {
+        confirmReleaseBtn.onclick = () => {
+          if (state.selectedOrderForAction) {
+            state.selectedOrderForAction.status = "Completed";
+            state.selectedOrderForAction.statusText = "Inspection Verified &bull; Escrow Released";
+            state.selectedOrderForAction.escrowStatus = "Escrow Released to Shop";
+            state.printerHub.earningsToday += state.selectedOrderForAction.price;
+            saveAppState();
+          }
+          closeModal();
+        };
+      }
+
+      // Dispute submit handler
+      const submitDisputeBtn = document.getElementById("btn-submit-dispute");
+      if (submitDisputeBtn) {
+        submitDisputeBtn.onclick = () => {
+          if (state.selectedOrderForAction) {
+            state.selectedOrderForAction.status = "Dispute";
+            state.selectedOrderForAction.statusText = "Claim Active &bull; Free Reprint In Progress";
+            state.selectedOrderForAction.escrowStatus = "Funds Frozen in Escrow";
+            saveAppState();
+          }
+          closeModal();
+        };
+      }
+
+      // Decline job handler
+      const confirmDeclineBtn = document.getElementById("btn-confirm-decline");
+      if (confirmDeclineBtn) {
+        confirmDeclineBtn.onclick = () => {
+          closeModal();
+        };
+      }
     }
 
     // Live Chat Drawer Component
@@ -994,6 +1614,7 @@
           text: msg,
           time: "Just now"
         });
+        saveAppState();
         if (input) input.value = "";
         render();
 
@@ -1020,6 +1641,7 @@
               text: reply,
               time: "Just now"
             });
+            saveAppState();
             render();
             const finalContainer = document.getElementById("chat-messages-container");
             if (finalContainer) finalContainer.scrollTop = finalContainer.scrollHeight;
@@ -1225,7 +1847,7 @@
         <!-- Primary Upload Button -->
         <button
           id="btn-open-upload-menu"
-          class="mx-4 -mt-2.5 mb-2 flex items-center justify-center gap-2 rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer"
+          class="btn-primary mx-4 -mt-2.5 mb-2 py-3.5 text-sm"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
           Upload a part, 3D file, or photo
@@ -1289,7 +1911,7 @@
                       <span class="text-[9px] text-[#0f2a4a]/40 block">${item.turnaround} ready</span>
                     </div>
                     <button 
-                      class="btn-order-showcase rounded-xl bg-[#e8752d] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#d0631f] active:scale-95 cursor-pointer flex items-center gap-1"
+                      class="btn-order-showcase btn-primary py-1 px-3 text-xs min-h-[32px] shadow-xs"
                       data-showcase-id="${item.id}"
                     >
                       <span>Order Print</span>
@@ -1343,7 +1965,7 @@
                       <button class="btn-chat-with-shop text-[11px] font-semibold text-[#0f2a4a] hover:text-[#e8752d] cursor-pointer" data-shop-id="${s.id}">
                         Chat &rarr;
                       </button>
-                      <button class="btn-select-shop-quote rounded-lg bg-[#e8752d] text-white px-2.5 py-1 text-[11px] font-semibold hover:bg-[#d0631f] cursor-pointer" data-shop-id="${s.id}">
+                      <button class="btn-select-shop-quote btn-primary py-1 px-3 text-[11px] min-h-[30px] rounded-lg shadow-xs" data-shop-id="${s.id}">
                         Quote
                       </button>
                     </div>
@@ -1357,6 +1979,7 @@
         ${renderBottomNav("home")}
         ${renderUploadMenuModal()}
         ${renderChatDrawer()}
+        ${renderActiveModal()}
       `;
 
       // Event Listeners
@@ -1447,6 +2070,7 @@
 
       setupUploadMenuEvents();
       setupChatEvents();
+      setupSubmodalEvents();
       setupNavEvents();
 
       if (state.buyerHomeView === "map") {
@@ -1477,7 +2101,7 @@
               <label class="text-sm font-semibold text-[#0f2a4a]">Part Specification &amp; 3D Model</label>
               <button
                 id="btn-change-upload"
-                class="flex items-center gap-1 rounded-full bg-[#0f2a4a]/5 px-2.5 py-1 text-[11px] font-semibold text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer"
+                class="btn-outline py-1 px-2.5 text-[11px] rounded-full"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Upload Menu
@@ -1489,7 +2113,7 @@
               <input type="file" id="direct-photo-input" accept="image/*" class="hidden" />
               <button
                 id="btn-direct-upload-photo"
-                class="flex items-center justify-center gap-1.5 rounded-xl border border-[#e8752d]/30 bg-[#fdf5f0] py-2 px-2 text-xs font-semibold text-[#e8752d] hover:bg-[#faeae0] active:scale-[0.98] cursor-pointer shadow-xs"
+                class="btn-outline border-[#e8752d]/30 bg-[#fdf5f0] text-[#e8752d] py-2 px-2 text-xs"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -1501,7 +2125,7 @@
               <input type="file" id="direct-cad-input" accept=".stl,.obj,.step,.3mf" class="hidden" />
               <button
                 id="btn-direct-upload-cad"
-                class="flex items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-[#f4f8fc] py-2 px-2 text-xs font-semibold text-[#0f2a4a] hover:bg-[#e7eff8] active:scale-[0.98] cursor-pointer shadow-xs"
+                class="btn-outline py-2 px-2 text-xs"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -1642,10 +2266,10 @@
 
                 <!-- Refinement Chips -->
                 <div class="mt-2.5 flex flex-wrap gap-1.5">
-                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="thickness">+2mm thickness</button>
-                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="ribs">Reinforce ribs</button>
-                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="holes">Add mounting holes</button>
-                  <button class="btn-refine rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5 cursor-pointer" data-chip="fillet">Fillet corners</button>
+                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="thickness">+2mm thickness</button>
+                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="ribs">Reinforce ribs</button>
+                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="holes">Add mounting holes</button>
+                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="fillet">Fillet corners</button>
                 </div>
 
                 <div class="mt-2 flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-black/5">
@@ -1682,7 +2306,7 @@
             <label class="mb-2 block text-sm font-semibold text-[#0f2a4a]">Material</label>
             <div class="flex flex-wrap gap-2">
               ${["PLA", "PETG", "ABS", "TPU", "Nylon"].map(m => `
-                <button class="btn-material rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${state.material === m ? 'bg-[#0f2a4a] text-white' : 'bg-white text-[#0f2a4a]/70 ring-1 ring-black/5'}" data-mat="${m}">
+                <button class="btn-material btn-chip ${state.material === m ? 'bg-[#0f2a4a] text-white' : 'bg-white text-[#0f2a4a]/70 ring-1 ring-black/5'}" data-mat="${m}">
                   ${m}
                 </button>
               `).join('')}
@@ -1704,7 +2328,7 @@
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3.5">
           <button
             id="btn-goto-quotes"
-            class="w-full rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer"
+            class="btn-primary w-full text-sm"
           >
             Get quotes (Step 2 of 2)
           </button>
@@ -1712,6 +2336,7 @@
 
         ${renderUploadMenuModal()}
         ${renderChatDrawer()}
+        ${renderActiveModal()}
       `;
 
       // Event handlers
@@ -1834,6 +2459,7 @@
           } else if (chip === "fillet") {
             state.selectedPreset.agentSummary = "Applied 2.5mm radius stress-relief fillets to interior corner edges to prevent delamination.";
           }
+          saveAppState();
           render();
         };
       });
@@ -1843,6 +2469,7 @@
         if (!inp || !inp.value.trim()) return;
         state.selectedPreset.agentSummary = `AI Co-pilot updated geometry: "${inp.value.trim()}". Recalculated mesh volume & verified manifold integrity.`;
         inp.value = "";
+        saveAppState();
         render();
       };
       const btnSendPrompt = document.getElementById("btn-send-prompt");
@@ -1852,6 +2479,7 @@
 
       setupUploadMenuEvents();
       setupChatEvents();
+      setupSubmodalEvents();
 
       if (!state.isGenerating) {
         setTimeout(init3DViewer, 20);
@@ -1906,7 +2534,7 @@
                   <button class="btn-quote-chat text-xs text-[#0f2a4a]/70 hover:text-[#e8752d] font-semibold cursor-pointer" data-shop-id="${shop.id}">
                     Chat with ${shop.ownerName} &rarr;
                   </button>
-                  <button class="btn-checkout-shop rounded-xl bg-[#0f2a4a] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#17385f] active:scale-[0.98] cursor-pointer" data-shop-id="${shop.id}">
+                  <button class="btn-checkout-shop btn-secondary py-2 px-3.5 text-xs" data-shop-id="${shop.id}">
                     Accept quote &amp; checkout
                   </button>
                 </div>
@@ -1917,6 +2545,7 @@
 
         ${renderBottomNav("home")}
         ${renderChatDrawer()}
+        ${renderActiveModal()}
       `;
 
       document.getElementById("btn-back-request").onclick = () => {
@@ -1942,6 +2571,7 @@
       });
 
       setupChatEvents();
+      setupSubmodalEvents();
       setupNavEvents();
     }
 
@@ -2007,6 +2637,27 @@
                 <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">+$4.99 &bull; To your door</span>
               </button>
             </div>
+
+            <!-- Fulfillment Details Display -->
+            ${state.deliveryOption === 'pickup' ? `
+              <div class="mt-2 rounded-xl bg-white border border-black/5 p-3 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-[#0f2a4a]">Springfield Hub Locker #4</span>
+                  <span class="font-mono text-xs font-bold text-[#e8752d]">PIN: 7492</span>
+                </div>
+                <p class="text-[11px] text-[#0f2a4a]/60 mt-0.5">${shop.hubAddress}</p>
+                <p class="text-[10px] text-[#0f2a4a]/50 mt-1">Open 8:00 AM - 8:00 PM &bull; Contactless locker pickup</p>
+              </div>
+            ` : `
+              <div class="mt-2 rounded-xl bg-white border border-black/5 p-3 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-[#0f2a4a]">Courier Dispatch Address</span>
+                  <button id="btn-change-checkout-addr" class="text-[10px] font-semibold text-[#e8752d] hover:underline cursor-pointer">Change</button>
+                </div>
+                <p class="text-[11px] text-[#0f2a4a]/70 mt-0.5">${state.deliveryAddress}</p>
+                <p class="text-[10px] text-green-700 font-semibold mt-1">Same-day courier dispatch guaranteed upon print completion</p>
+              </div>
+            `}
           </div>
 
           <!-- Payment Plans -->
@@ -2018,7 +2669,7 @@
                   <input type="radio" name="payplan" value="full" ${state.paymentPlan === 'full' ? 'checked' : ''} class="text-[#e8752d]" />
                   <div>
                     <span class="text-xs font-bold text-[#0f2a4a]">Pay in Full ($${total})</span>
-                    <p class="text-[10px] text-[#0f2a4a]/50">Credit / Debit Card or Apple Pay</p>
+                    <p class="text-[10px] text-[#0f2a4a]/50">Credit Card or Apple Pay</p>
                   </div>
                 </div>
                 <span class="text-xs font-bold text-[#0f2a4a]">$${total}</span>
@@ -2049,6 +2700,42 @@
                 <span class="text-xs font-bold text-[#0f2a4a]/60">Net30</span>
               </label>
             </div>
+
+            <!-- Dynamic Payment Details -->
+            ${state.paymentPlan === 'split' ? `
+              <div class="mt-2.5 rounded-xl border border-[#e8752d]/20 bg-[#fdf5f0] p-3 text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-[#0f2a4a]">Installment Schedule (0% APR)</span>
+                  <span class="text-[10px] text-green-700 font-bold bg-green-100 px-1.5 py-0.2 rounded">Pre-Approved</span>
+                </div>
+                <div class="grid grid-cols-4 gap-1.5 text-center text-[10px]">
+                  <div class="rounded-lg bg-white p-1.5 border border-black/5">
+                    <span class="font-bold text-[#0f2a4a] block">$${splitAmount}</span>
+                    <span class="text-[#e8752d] font-semibold">Today</span>
+                  </div>
+                  <div class="rounded-lg bg-white p-1.5 border border-black/5">
+                    <span class="font-bold text-[#0f2a4a] block">$${splitAmount}</span>
+                    <span class="text-[#0f2a4a]/50">2 Weeks</span>
+                  </div>
+                  <div class="rounded-lg bg-white p-1.5 border border-black/5">
+                    <span class="font-bold text-[#0f2a4a] block">$${splitAmount}</span>
+                    <span class="text-[#0f2a4a]/50">4 Weeks</span>
+                  </div>
+                  <div class="rounded-lg bg-white p-1.5 border border-black/5">
+                    <span class="font-bold text-[#0f2a4a] block">$${splitAmount}</span>
+                    <span class="text-[#0f2a4a]/50">6 Weeks</span>
+                  </div>
+                </div>
+              </div>
+            ` : (state.paymentPlan === 'net30' ? `
+              <div class="mt-2.5 rounded-xl bg-white border border-black/10 p-3 space-y-2 text-xs">
+                <span class="font-bold text-[#0f2a4a] block">Commercial Invoicing (Net30)</span>
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="inp-po" value="${state.poNumber}" placeholder="Purchase Order #" class="bg-[#f4f8fc] px-2.5 py-1.5 rounded-lg border border-black/5 text-xs outline-none" />
+                  <input id="inp-billing-email" value="${state.billingEmail}" placeholder="AP Billing Email" class="bg-[#f4f8fc] px-2.5 py-1.5 rounded-lg border border-black/5 text-xs outline-none" />
+                </div>
+              </div>
+            ` : '')}
           </div>
 
           <!-- Price Breakdown -->
@@ -2075,11 +2762,13 @@
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3.5">
           <button
             id="btn-confirm-pay"
-            class="w-full rounded-2xl bg-[#e8752d] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#e8752d]/30 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+            class="btn-primary w-full text-sm flex items-center justify-center gap-2"
           >
             Authorize Escrow &amp; Place Order ($${total})
           </button>
         </div>
+
+        ${renderActiveModal()}
       `;
 
       document.getElementById("btn-back-quotes").onclick = () => {
@@ -2087,9 +2776,18 @@
         render();
       };
 
+      const btnChangeAddr = document.getElementById("btn-change-checkout-addr");
+      if (btnChangeAddr) {
+        btnChangeAddr.onclick = () => {
+          state.activeModal = "addresses";
+          render();
+        };
+      }
+
       document.querySelectorAll(".btn-delivery").forEach(btn => {
         btn.onclick = () => {
           state.deliveryOption = btn.getAttribute("data-opt");
+          saveAppState();
           render();
         };
       });
@@ -2097,6 +2795,7 @@
       document.querySelectorAll("input[name='payplan']").forEach(radio => {
         radio.onchange = (e) => {
           state.paymentPlan = e.target.value;
+          saveAppState();
           render();
         };
       });
@@ -2116,19 +2815,23 @@
             shop: shop.name,
             price: parseFloat(total),
             status: "Slicing",
-            statusText: "Verified & Sent to Slicer",
+            statusText: "Verified &amp; Sent to Slicer",
             layerCurrent: 0,
             layerTotal: 280,
             progressPct: 15,
             eta: "Today, 4:30 PM",
-            escrowStatus: "Protected in Escrow",
+            escrowStatus: "Funds Locked in Escrow",
+            isDelivered: false,
             pickupLocation: `${shop.name}, Springfield`
           };
           state.orders.unshift(newOrder);
+          saveAppState();
           state.screen = "orders";
           render();
         }, 1100);
       };
+
+      setupSubmodalEvents();
     }
 
     // 5. Orders Tracking Screen
@@ -2150,8 +2853,8 @@
                   <span class="text-xs font-bold text-[#0f2a4a]">${o.id}</span>
                   <span class="text-xs text-[#0f2a4a]/40">&bull; ${o.date}</span>
                 </div>
-                <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                <span class="text-[10px] font-bold ${o.status === 'Completed' ? 'bg-green-100 text-green-700' : (o.status === 'Dispute' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700')} px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="h-1.5 w-1.5 rounded-full ${o.status === 'Completed' ? 'bg-green-500' : (o.status === 'Dispute' ? 'bg-red-500' : 'bg-orange-500')}"></span>
                   ${o.status}
                 </span>
               </div>
@@ -2169,27 +2872,45 @@
               <div class="rounded-xl bg-white p-3 space-y-2 border border-black/5">
                 <div class="flex items-center justify-between text-xs">
                   <span class="font-semibold text-[#0f2a4a] flex items-center gap-1.5">
-                    <span class="animate-pulse h-2 w-2 rounded-full bg-[#e8752d]"></span>
+                    <span class="animate-pulse h-2 w-2 rounded-full ${o.status === 'Completed' ? 'bg-green-500' : 'bg-[#e8752d]'}"></span>
                     ${o.statusText}
                   </span>
-                  <span class="text-[#0f2a4a]/60 text-[11px]">ETA: ${o.eta}</span>
+                  <span class="text-[#0f2a4a]/60 text-[11px]">${o.eta}</span>
                 </div>
 
                 <div class="h-2 w-full overflow-hidden rounded-full bg-black/5">
-                  <div class="h-full rounded-full bg-gradient-to-r from-[#f28c4a] to-[#e8752d]" style="width: ${o.progressPct}%"></div>
+                  <div class="h-full rounded-full ${o.status === 'Completed' ? 'bg-green-500' : 'bg-gradient-to-r from-[#f28c4a] to-[#e8752d]'}" style="width: ${o.progressPct}%"></div>
                 </div>
 
                 <div class="flex justify-between text-[10px] text-[#0f2a4a]/50">
                   <span>Layer ${o.layerCurrent} of ${o.layerTotal}</span>
-                  <span class="font-bold text-green-700">${o.escrowStatus}</span>
+                  <span class="font-bold ${o.escrowStatus.includes('Frozen') ? 'text-red-600' : 'text-green-700'}">${o.escrowStatus}</span>
                 </div>
               </div>
 
+              <!-- Escrow Actions for Delivered / Completed Orders -->
+              ${o.isDelivered && o.status !== 'Completed' ? `
+                <div class="rounded-xl bg-[#e8752d]/10 border border-[#e8752d]/30 p-2.5 flex items-center justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <span class="text-[11px] font-bold text-[#0f2a4a] block">Part Delivered &bull; Verify Quality</span>
+                    <span class="text-[9px] text-[#0f2a4a]/60 block">Release funds or dispute within 48 hours</span>
+                  </div>
+                  <div class="flex gap-1.5">
+                    <button class="btn-open-dispute btn-outline py-1 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50" data-order-id="${o.id}">
+                      Dispute
+                    </button>
+                    <button class="btn-open-release btn-primary py-1 px-2.5 text-[10px] min-h-[30px]" data-order-id="${o.id}">
+                      Release Funds
+                    </button>
+                  </div>
+                </div>
+              ` : ''}
+
               <div class="flex gap-2">
-                <button class="btn-view-part-spec flex-1 rounded-xl bg-[#0f2a4a] py-2 text-xs font-semibold text-white hover:bg-[#17385f] cursor-pointer">
+                <button class="btn-view-part-spec btn-secondary flex-1 py-2 text-xs">
                   Inspect 3D Specs
                 </button>
-                <button class="btn-open-order-chat rounded-xl border border-black/10 bg-white px-3.5 py-2 text-xs font-semibold text-[#0f2a4a] hover:bg-black/5 cursor-pointer" data-shop-name="${o.shop}">
+                <button class="btn-open-order-chat btn-outline px-3.5 py-2 text-xs" data-shop-name="${o.shop}">
                   Chat Shop
                 </button>
               </div>
@@ -2199,6 +2920,7 @@
 
         ${renderBottomNav("orders")}
         ${renderChatDrawer()}
+        ${renderActiveModal()}
       `;
 
       document.querySelectorAll(".btn-view-part-spec").forEach(btn => {
@@ -2216,7 +2938,26 @@
         };
       });
 
+      document.querySelectorAll(".btn-open-release").forEach(btn => {
+        btn.onclick = () => {
+          const oId = btn.getAttribute("data-order-id");
+          state.selectedOrderForAction = state.orders.find(o => o.id === oId);
+          state.activeModal = "escrow-release";
+          render();
+        };
+      });
+
+      document.querySelectorAll(".btn-open-dispute").forEach(btn => {
+        btn.onclick = () => {
+          const oId = btn.getAttribute("data-order-id");
+          state.selectedOrderForAction = state.orders.find(o => o.id === oId);
+          state.activeModal = "escrow-dispute";
+          render();
+        };
+      });
+
       setupChatEvents();
+      setupSubmodalEvents();
       setupNavEvents();
     }
 
@@ -2240,7 +2981,7 @@
               <div class="mt-1 flex items-center gap-2 text-[10px] text-green-700 font-semibold">
                 <span>Escrow Protected</span>
                 <span>&bull;</span>
-                <span>4 Completed Orders</span>
+                <span>${state.orders.length} Completed / Active Orders</span>
               </div>
             </div>
           </div>
@@ -2265,7 +3006,7 @@
             <div class="flex items-center justify-between py-1">
               <div class="flex items-center gap-2 text-xs">
                 <span class="text-green-600 font-bold">&check;</span>
-                <span>Local Quality Tolerance Guarantee (0.15mm)</span>
+                <span>Local Quality Tolerance Guarantee (&plusmn;0.15mm)</span>
               </div>
               <span class="text-[10px] text-[#0f2a4a]/40 font-mono">Enforced</span>
             </div>
@@ -2273,24 +3014,64 @@
 
           <!-- Settings Options -->
           <div class="rounded-2xl bg-white p-2 border border-black/5 divide-y divide-black/5">
-            <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
-              <span>Saved Springfield Delivery Addresses</span>
+            <button id="btn-open-addr-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+              <div>
+                <span>Saved Springfield Delivery Addresses</span>
+                <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">${state.savedAddresses.length} saved locations</span>
+              </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
-            <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
-              <span>Payment Methods &amp; Split Billing</span>
+            <button id="btn-open-pay-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+              <div>
+                <span>Payment Methods &amp; Split Billing</span>
+                <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">Visa &bull;&bull;&bull;&bull; 4242 &bull; Pay in 4 active</span>
+              </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
-            <button class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl">
-              <span>CAD Slicer Export &amp; Mesh Preferences</span>
+            <button id="btn-open-slicer-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+              <div>
+                <span>CAD Slicer Export &amp; Mesh Preferences</span>
+                <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">${state.slicerPrefs.nozzleSize} &bull; ${state.slicerPrefs.infillPattern}</span>
+              </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
+            </button>
+          </div>
+
+          <!-- State Reset Button -->
+          <div class="pt-2 text-center">
+            <button id="btn-reset-demo-state" class="text-[11px] text-[#0f2a4a]/40 hover:text-red-600 underline cursor-pointer">
+              Reset App State to Initial Demo
             </button>
           </div>
         </div>
 
         ${renderBottomNav("account")}
+        ${renderActiveModal()}
       `;
 
+      document.getElementById("btn-open-addr-settings").onclick = () => {
+        state.activeModal = "addresses";
+        render();
+      };
+
+      document.getElementById("btn-open-pay-settings").onclick = () => {
+        state.activeModal = "payment";
+        render();
+      };
+
+      document.getElementById("btn-open-slicer-settings").onclick = () => {
+        state.activeModal = "slicer";
+        render();
+      };
+
+      document.getElementById("btn-reset-demo-state").onclick = () => {
+        if (confirm("Reset local storage and return app to default state?")) {
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        }
+      };
+
+      setupSubmodalEvents();
       setupNavEvents();
     }
 
@@ -2328,8 +3109,8 @@
           <div>
             <h3 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60 mb-2">Machine Status</h3>
             <div class="space-y-2">
-              ${hub.machines.map(m => `
-                <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-3 shadow-xs">
+              ${hub.machines.map((m, idx) => `
+                <div class="btn-view-machine rounded-2xl border border-black/5 bg-[#f4f8fc] p-3 shadow-xs cursor-pointer hover:border-[#e8752d]/40 transition" data-machine-idx="${idx}">
                   <div class="flex items-center justify-between">
                     <h4 class="font-bold text-xs text-[#0f2a4a]">${m.name}</h4>
                     <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${m.status.includes('Printing') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">
@@ -2362,10 +3143,10 @@
                 Reconstructed manifold 3D mesh &bull; ~${state.selectedPreset.estimatedGrams}g ${state.material} &bull; Downtown Springfield buyer
               </p>
               <div class="flex gap-2">
-                <button id="btn-owner-accept" class="flex-1 rounded-xl bg-[#0f2a4a] py-2 text-xs font-semibold text-white hover:bg-[#17385f] cursor-pointer">
+                <button id="btn-owner-accept" class="btn-secondary flex-1 py-2 text-xs">
                   Accept Job &amp; Send to Slicer
                 </button>
-                <button class="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0f2a4a] cursor-pointer">
+                <button id="btn-owner-decline" class="btn-outline px-3 py-2 text-xs text-red-600 border-red-200 hover:bg-red-50">
                   Decline
                 </button>
               </div>
@@ -2374,10 +3155,12 @@
         </div>
 
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3">
-          <button id="btn-return-buyer-mode" class="w-full rounded-2xl bg-[#0f2a4a] py-3 text-xs font-semibold text-white cursor-pointer">
+          <button id="btn-return-buyer-mode" class="btn-secondary w-full py-3 text-xs">
             Switch back to Buyer Marketplace
           </button>
         </div>
+
+        ${renderActiveModal()}
       `;
 
       const backBuyer = document.getElementById("owner-back-buyer");
@@ -2410,6 +3193,25 @@
           }, 800);
         };
       }
+
+      const btnDecline = document.getElementById("btn-owner-decline");
+      if (btnDecline) {
+        btnDecline.onclick = () => {
+          state.activeModal = "decline-job";
+          render();
+        };
+      }
+
+      document.querySelectorAll(".btn-view-machine").forEach(card => {
+        card.onclick = () => {
+          const idx = parseInt(card.getAttribute("data-machine-idx") || "0", 10);
+          state.selectedMachineDetail = state.printerHub.machines[idx];
+          state.activeModal = "machine-detail";
+          render();
+        };
+      });
+
+      setupSubmodalEvents();
     }
 
     // Bottom Navigation Bar
