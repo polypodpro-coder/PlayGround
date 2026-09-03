@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+﻿import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   orders as mockOrders,
   quotes as mockQuotes,
@@ -63,6 +63,18 @@ export function AppProvider({ children }) {
   const [favorites, setFavorites] = useState(() => new Set());
   const [addresses, setAddresses] = useState(mockAddresses);
   const [paymentMethods, setPaymentMethods] = useState(mockPaymentMethods);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type = "info", duration = 3500) => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast((curr) => (curr?.message === message ? null : curr));
+    }, duration);
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast(null);
+  }, []);
 
   const toggleRole = () =>
     setRole((r) => (r === "buyer" ? "owner" : "buyer"));
@@ -308,6 +320,9 @@ export function AppProvider({ children }) {
       paymentMethods,
       addPaymentMethod,
       removePaymentMethod,
+      toast,
+      showToast,
+      hideToast,
     }),
     [
       role,
@@ -339,6 +354,9 @@ export function AppProvider({ children }) {
       paymentMethods,
       addPaymentMethod,
       removePaymentMethod,
+      toast,
+      showToast,
+      hideToast,
     ]
   );
 

@@ -3,15 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Poly POD - Production On Demand</title>
-  <meta name="description" content="Distributed local 3D printing network with AI 2D-to-3D synthesis, instant quotes, and escrow protection." />
+  <title>Poly Pod Pro | PrintMatch Quotes &amp; 3D Engineering</title>
+  <meta name="description" content="Custom 3D printing, CAD design, and high-precision reverse engineering services by Poly Pod Pro. Instant PrintMatch quotes, Bambu Lab and Prusa XL fleet, and escrow-backed delivery." />
   <meta name="theme-color" content="#0f2a4a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Poly POD" />
+  <meta name="apple-mobile-web-app-title" content="Poly Pod Pro" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="printmatch/public/favicon.svg" />
   <link rel="apple-touch-icon" href="printmatch/public/favicon.svg" />
+
+  <!-- Open Graph / Facebook Ads Metadata -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://polypodpro-coder.github.io/PlayGround/preview.html" />
+  <meta property="og:title" content="Poly Pod Pro | PrintMatch Quotes &amp; 3D Engineering" />
+  <meta property="og:description" content="Instant 3D printing quotes and reverse-engineering services. Upload 2D photos or CAD for rapid fabrication across our Bambu Lab and Prusa XL fleet." />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&h=630&q=80" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://polypodpro-coder.github.io/PlayGround/preview.html" />
+  <meta name="twitter:title" content="Poly Pod Pro | PrintMatch Quotes &amp; 3D Engineering" />
+  <meta name="twitter:description" content="Instant 3D printing quotes, Bambu Lab X1-Carbon &amp; Prusa XL fleet, and escrow protection." />
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&h=630&q=80" />
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -231,9 +245,95 @@
         photoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80",
         dimensions: { x: 68, y: 44, z: 28 },
         estimatedGrams: 58,
-        recommendedMaterial: "ABS",
+        recommendedMaterial: "ABS-ESD",
         infillRecommendation: "30% cubic",
         agentSummary: "Protective shell with wire pass-through grommet channel and snap-latch rim for tool-less access.",
+      }
+    ];
+
+    // Material multiplier variables for instant quoting
+    const MATERIAL_MULTIPLIERS = {
+      PLA: { multiplier: 1.0, rate: 0.06, category: "Standard", desc: "Fast, rigid, versatile" },
+      PETG: { multiplier: 1.33, rate: 0.08, category: "Standard", desc: "Chemical, water & thermal resistance up to 75&deg;C" },
+      TPU: { multiplier: 1.65, rate: 0.13, category: "Specialty", desc: "Flexible 95A rubber-like vibration damping" },
+      "ABS-ESD": { multiplier: 1.85, rate: 0.145, category: "Specialty", desc: "Electrostatic discharge safe (10^6-10^9 ohms)" },
+      Polycarbonate: { multiplier: 2.20, rate: 0.175, category: "Engineering", desc: "Extreme impact strength & 110&deg;C heat deflection" },
+      Nylon: { multiplier: 2.00, rate: 0.16, category: "Engineering", desc: "High fatigue strength and low-friction wear resistance" }
+    };
+
+    // Fleet machine build volumes & capabilities
+    const FLEET_MACHINES = [
+      {
+        id: "bambu-x1c",
+        name: "Bambu Lab X1-Carbon",
+        badge: "Flagship Precision",
+        buildVolume: { x: 256, y: 256, z: 256, unit: "mm" },
+        maxTemp: "300&deg;C Nozzle / 120&deg;C Bed",
+        features: [
+          "Dual-gear direct drive extrusion",
+          "Micro-LiDAR first-layer inspection",
+          "Multi-material AMS (up to 16 colors)",
+          "AI spaghetti detection & chamber monitoring"
+        ],
+        materials: ["PLA", "PETG", "TPU", "Polycarbonate", "ABS-ESD"]
+      },
+      {
+        id: "bambu-p1p",
+        name: "Bambu Lab P1P",
+        badge: "High-Speed Rapid",
+        buildVolume: { x: 256, y: 256, z: 256, unit: "mm" },
+        maxTemp: "300&deg;C Nozzle / 100&deg;C Bed",
+        features: [
+          "CoreXY 500 mm/s acceleration",
+          "Direct-drive all-metal hotend",
+          "Active vibration compensation",
+          "Rapid turnaround functional prototypes"
+        ],
+        materials: ["PLA", "PETG", "TPU"]
+      },
+      {
+        id: "bambu-a1mini",
+        name: "Bambu Lab A1 mini",
+        badge: "Ultra-Fine Details",
+        buildVolume: { x: 180, y: 180, z: 180, unit: "mm" },
+        maxTemp: "300&deg;C Nozzle / 80&deg;C Bed",
+        features: [
+          "Active flow rate calibration",
+          "0.2mm high-resolution micro-nozzle capable",
+          "Whisper-quiet operation (<48dB)",
+          "Intricate miniature parts & tight snap-fits"
+        ],
+        materials: ["PLA", "PETG", "TPU"]
+      },
+      {
+        id: "prusa-xl",
+        name: "Prusa XL (Multi-Tool)",
+        badge: "Large-Format Industrial",
+        buildVolume: { x: 360, y: 360, z: 360, unit: "mm" },
+        maxTemp: "300&deg;C Nozzle / 100&deg;C Bed",
+        features: [
+          "Modular Nextruder toolchanger (up to 5 heads)",
+          "Zero-waste true multi-material printing",
+          "Segmented energy-efficient heated bed",
+          "Oversized structural enclosures & tooling"
+        ],
+        materials: ["PLA", "PETG", "ABS-ESD", "Polycarbonate"]
+      }
+    ];
+
+    // Post-processing add-on services
+    const POST_PROCESSING_ADDONS = [
+      {
+        id: "splitAndBond",
+        name: "Split-and-Bond Assembly",
+        cost: 12.50,
+        desc: "Industrial structural acrylic/solvent bonding for oversized geometry exceeding single build volumes."
+      },
+      {
+        id: "hardwareInstall",
+        name: "Hardware Installation",
+        cost: 8.00,
+        desc: "Heat-set brass threaded inserts (M3/M4/M5), press-fit precision bearings, and stainless dowel pins."
       }
     ];
 
@@ -252,7 +352,7 @@
         lng: -91.8120, 
         radiusMi: 10, 
         color: "#1F6F63",
-        machines: "2x Bambu Lab X1-Carbon",
+        machines: "2x Bambu Lab X1-Carbon, 1x P1P",
         hubAddress: "142 Main St, New Iberia, LA 70560",
         bio: "Specializing in fast functional prints, multi-color engineering prototypes, and same-day pickup."
       },
@@ -288,7 +388,7 @@
         lng: -91.8100, 
         radiusMi: 12, 
         color: "#B4562B",
-        machines: "3x Creality K1 Max",
+        machines: "3x Creality K1 Max, 1x A1 mini",
         hubAddress: "320 Admiral Doyle Dr, Ste 12, New Iberia, LA 70560",
         bio: "Fine-detail studio. We inspect every first layer, run reverse engineering photogrammetry, and do commercial batch runs."
       },
@@ -388,8 +488,6 @@
       }
     ];
 
-    const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, "ABS-ESD": 0.11, TPU: 0.13, Polycarbonate: 0.14, Nylon: 0.15 };
-
     // App State Management
     const STORAGE_KEY = "POLY_POD_V1_STORAGE";
 
@@ -404,12 +502,14 @@
       generationProgress: 100,
       generationStage: "Model synthesized! Ready for slicer inspection.",
       material: "PETG",
+      selectedMachineId: "bambu-x1c",
+      selectedAddons: [], // ["splitAndBond", "hardwareInstall"]
       wireframe: false,
       autoRotate: true,
       viewMode: "textured", // "textured" | "filament"
       showReferenceCompare: false,
       searchQuery: "",
-      activeQuickFilter: null, // "PLA" | "PETG" | "TPU" | "Polycarbonate" | "ABS-ESD" | "Commercial/Bulk" | "Reverse Engineering"
+      activeQuickFilter: null,
       selectedShop: PRINTER_SHOPS[0],
       paymentPlan: "full", // "full" | "split" | "net30"
       deliveryOption: "pickup", // "pickup" | "courier"
@@ -417,6 +517,7 @@
       poNumber: "PO-2026-849",
       billingEmail: "engineering@damondynamics.com",
       leafletMap: null,
+      toast: null, // { message, type }
 
       // Modals
       activeModal: null, // "addresses" | "payment" | "slicer" | "escrow-release" | "escrow-dispute" | "machine-detail" | "decline-job"
@@ -429,7 +530,7 @@
       chatMessages: [
         {
           sender: "shop",
-          text: "Hi Damian! I'm Dana from Riverside Rapid Prints here in New Iberia. I see you're checking out 3D parts. Let me know if you need advice on PETG vs PLA, wall thickness, or local pickup!",
+          text: "Hi Damian! I'm Dana from Riverside Rapid Prints in New Iberia. Let me know if you need advice on PETG vs Polycarbonate, build volumes on our Bambu Lab X1-Carbon, or same-day pickup!",
           time: "1:20 PM"
         }
       ],
@@ -441,6 +542,7 @@
           partName: "Angle Bracket with Gusset",
           photoUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
           material: "PETG",
+          machine: "Bambu Lab X1-Carbon",
           shop: "Riverside Rapid Prints",
           price: 16.50,
           status: "Printing",
@@ -459,6 +561,7 @@
           partName: "Multi-Color Trophy Base",
           photoUrl: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=400&q=80",
           material: "PLA",
+          machine: "Bambu Lab X1-Carbon",
           shop: "Poly Pod Pro",
           price: 28.50,
           status: "Delivered",
@@ -504,6 +607,49 @@
       }
     };
 
+    // Toast Notification System
+    function showToast(message, type = "info", duration = 3200) {
+      state.toast = { message, type };
+      const el = document.getElementById("global-toast");
+      if (el) {
+        el.innerHTML = renderToastHTML();
+        el.classList.remove("hidden");
+      }
+      setTimeout(() => {
+        if (state.toast && state.toast.message === message) {
+          state.toast = null;
+          const container = document.getElementById("global-toast");
+          if (container) container.classList.add("hidden");
+        }
+      }, duration);
+    }
+
+    function hideToast() {
+      state.toast = null;
+      const container = document.getElementById("global-toast");
+      if (container) container.classList.add("hidden");
+    }
+
+    function renderToastHTML() {
+      if (!state.toast) return '';
+      const t = state.toast;
+      const borderClass = t.type === 'error' ? 'border-red-200 bg-red-50 text-red-900' : (t.type === 'success' ? 'border-green-200 bg-green-50 text-green-900' : 'border-[#e8752d]/40 bg-white text-[#0f2a4a]');
+      const icon = t.type === 'error' ? '!' : (t.type === 'success' ? '&check;' : 'i');
+
+      return `
+        <div class="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-full max-w-[420px] px-4 pointer-events-none transition-all duration-300">
+          <div class="pointer-events-auto flex items-center justify-between gap-2.5 rounded-2xl border p-3.5 shadow-2xl backdrop-blur ${borderClass}">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${t.type === 'error' ? 'bg-red-600 text-white' : (t.type === 'success' ? 'bg-green-600 text-white' : 'bg-[#e8752d] text-white')}">${icon}</span>
+              <span class="text-xs font-semibold leading-tight truncate">${t.message}</span>
+            </div>
+            <button type="button" onclick="window.dismissToast()" class="h-6 w-6 rounded-full flex items-center justify-center text-[#0f2a4a]/40 hover:text-[#0f2a4a] hover:bg-black/5 cursor-pointer">&times;</button>
+          </div>
+        </div>
+      `;
+    }
+    window.dismissToast = hideToast;
+
     // Persistence Layer
     function saveAppState() {
       try {
@@ -517,6 +663,8 @@
           paymentPlan: state.paymentPlan,
           deliveryOption: state.deliveryOption,
           activeQuickFilter: state.activeQuickFilter,
+          selectedMachineId: state.selectedMachineId,
+          selectedAddons: state.selectedAddons,
           customPresets: state.customPresets.map(p => ({
             id: p.id,
             name: p.name,
@@ -552,6 +700,8 @@
         if (data.paymentPlan) state.paymentPlan = data.paymentPlan;
         if (data.deliveryOption) state.deliveryOption = data.deliveryOption;
         if (data.activeQuickFilter) state.activeQuickFilter = data.activeQuickFilter;
+        if (data.selectedMachineId) state.selectedMachineId = data.selectedMachineId;
+        if (data.selectedAddons) state.selectedAddons = data.selectedAddons;
         if (data.customPresets && data.customPresets.length > 0) {
           state.customPresets = data.customPresets;
           state.customPresets.forEach(p => {
@@ -984,8 +1134,8 @@
             <div style="font-size:11px;color:#e8752d;font-weight:600;margin-top:2px;">&#9733; ${s.rating} &bull; ${s.turnaround} ready</div>
             <div style="font-size:10px;color:#888;margin-top:3px;">${s.machines}</div>
             <div style="display:flex;gap:6px;margin-top:8px;">
-              <button onclick="window.requestQuoteFromMap('${s.id}')" style="flex:1;background:#e8752d;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Get Quote</button>
-              <button onclick="window.openChatWithShop('${s.id}')" style="background:#0f2a4a;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Chat</button>
+              <button type="button" onclick="window.requestQuoteFromMap('${s.id}')" style="flex:1;background:#e8752d;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Get Quote</button>
+              <button type="button" onclick="window.openChatWithShop('${s.id}')" style="background:#0f2a4a;color:white;border:none;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">Chat</button>
             </div>
           </div>
         `;
@@ -1065,6 +1215,7 @@
             state.isGenerating = false;
             saveAppState();
             render();
+            showToast("3D model synthesized successfully!", "success");
           }
         }, 450);
       };
@@ -1094,6 +1245,7 @@
       state.material = "PLA";
       saveAppState();
       render();
+      showToast(`Loaded CAD file "${file.name}" for PrintMatch quotes`, "info");
     }
 
     // Main Router
@@ -1123,7 +1275,7 @@
               <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-[#0f2a4a]">Saved Delivery Addresses</h3>
-                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="space-y-2.5 mb-4">
@@ -1136,19 +1288,18 @@
                       </div>
                       <p class="text-[11px] text-[#0f2a4a]/70 mt-0.5">${addr.address}</p>
                     </div>
-                    <button class="btn-set-default-addr text-[11px] font-semibold text-[#e8752d] hover:underline cursor-pointer" data-id="${addr.id}">
+                    <button type="button" class="btn-set-default-addr text-[11px] font-semibold text-[#e8752d] hover:underline cursor-pointer" data-id="${addr.id}">
                       ${addr.isDefault ? 'Selected' : 'Set default'}
                     </button>
                   </div>
                 `).join('')}
               </div>
 
-              <!-- Add New Address Form -->
               <div class="rounded-xl bg-[#f4f8fc] p-3.5 border border-black/5 space-y-2 mb-4">
                 <h4 class="text-xs font-bold text-[#0f2a4a]">Add New Iberia Location</h4>
                 <input id="inp-new-addr-label" placeholder="Address Label (e.g. Workshop, Office)" class="w-full bg-white text-xs px-3 py-2 rounded-lg border border-black/10 outline-none" />
                 <input id="inp-new-addr-street" placeholder="Street Address, Suite / Unit" class="w-full bg-white text-xs px-3 py-2 rounded-lg border border-black/10 outline-none" />
-                <button id="btn-save-new-addr" class="btn-secondary w-full py-2.5 text-xs">Save Address</button>
+                <button type="button" id="btn-save-new-addr" class="btn-secondary w-full py-2.5 text-xs">Save Address</button>
               </div>
             </div>
           </div>
@@ -1163,7 +1314,7 @@
               <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-[#0f2a4a]">Payment &amp; Split Billing</h3>
-                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="space-y-2.5 mb-4">
@@ -1186,7 +1337,6 @@
                 `).join('')}
               </div>
 
-              <!-- Pay-in-4 Installment Pre-Approval Badge -->
               <div class="rounded-xl border border-[#e8752d]/30 bg-[#fdf5f0] p-3.5 flex items-start gap-3 mb-4">
                 <div class="h-8 w-8 rounded-full bg-[#e8752d] text-white flex items-center justify-center font-bold text-xs shrink-0">
                   4x
@@ -1199,7 +1349,7 @@
                 </div>
               </div>
 
-              <button class="btn-outline w-full py-2.5 text-xs flex items-center justify-center gap-2">
+              <button type="button" class="btn-outline w-full py-2.5 text-xs flex items-center justify-center gap-2">
                 <span>+ Add New Payment Method</span>
               </button>
             </div>
@@ -1215,7 +1365,7 @@
               <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-black/20"></div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-[#0f2a4a]">CAD Slicer &amp; Mesh Preferences</h3>
-                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="space-y-3 mb-4">
@@ -1248,7 +1398,7 @@
                 </div>
               </div>
 
-              <button id="btn-save-slicer-prefs" class="btn-primary w-full py-3 text-xs">Save Slicer Settings</button>
+              <button type="button" id="btn-save-slicer-prefs" class="btn-primary w-full py-3 text-xs">Save Slicer Settings</button>
             </div>
           </div>
         `;
@@ -1289,8 +1439,8 @@
               </p>
 
               <div class="flex gap-2">
-                <button class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
-                <button id="btn-confirm-release-escrow" class="btn-primary flex-1 py-2.5 text-xs">Confirm &amp; Release Payout</button>
+                <button type="button" class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
+                <button type="button" id="btn-confirm-release-escrow" class="btn-primary flex-1 py-2.5 text-xs">Confirm &amp; Release Payout</button>
               </div>
             </div>
           </div>
@@ -1309,7 +1459,7 @@
                   <span class="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">!</span>
                   <h3 class="text-base font-bold text-[#0f2a4a]">Open Escrow Claim</h3>
                 </div>
-                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <p class="text-xs text-[#0f2a4a]/70 mb-3 leading-snug">
@@ -1334,8 +1484,8 @@
               </div>
 
               <div class="flex gap-2">
-                <button class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
-                <button id="btn-submit-dispute" class="btn-primary flex-1 py-2.5 text-xs bg-red-600 hover:bg-red-700">Submit Claim &amp; Freeze Escrow</button>
+                <button type="button" class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
+                <button type="button" id="btn-submit-dispute" class="btn-primary flex-1 py-2.5 text-xs bg-red-600 hover:bg-red-700">Submit Claim &amp; Freeze Escrow</button>
               </div>
             </div>
           </div>
@@ -1354,7 +1504,7 @@
                   <h3 class="text-base font-bold text-[#0f2a4a]">${m.name}</h3>
                   <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${m.status.includes('Printing') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${m.status}</span>
                 </div>
-                <button class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
+                <button type="button" class="btn-close-submodal h-8 w-8 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">&times;</button>
               </div>
 
               <div class="grid grid-cols-2 gap-2 text-xs mb-4">
@@ -1376,7 +1526,7 @@
                 </div>
               </div>
 
-              <button class="btn-close-submodal btn-secondary w-full py-2.5 text-xs">Close Machine Monitor</button>
+              <button type="button" class="btn-close-submodal btn-secondary w-full py-2.5 text-xs">Close Machine Monitor</button>
             </div>
           </div>
         `;
@@ -1407,8 +1557,8 @@
               </div>
 
               <div class="flex gap-2">
-                <button class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
-                <button id="btn-confirm-decline" class="btn-secondary flex-1 py-2.5 text-xs bg-red-700 hover:bg-red-800">Decline &amp; Re-route</button>
+                <button type="button" class="btn-close-submodal btn-outline flex-1 py-2.5 text-xs">Cancel</button>
+                <button type="button" id="btn-confirm-decline" class="btn-secondary flex-1 py-2.5 text-xs bg-red-700 hover:bg-red-800">Decline &amp; Re-route</button>
               </div>
             </div>
           </div>
@@ -1440,7 +1590,10 @@
         saveAddrBtn.onclick = () => {
           const label = document.getElementById("inp-new-addr-label")?.value.trim();
           const street = document.getElementById("inp-new-addr-street")?.value.trim();
-          if (!label || !street) return;
+          if (!label || !street) {
+            showToast("Please enter an address label and street address", "error");
+            return;
+          }
           state.savedAddresses.push({
             id: "a_" + Date.now(),
             label: label,
@@ -1449,6 +1602,7 @@
           });
           saveAppState();
           render();
+          showToast("Address saved successfully", "success");
         };
       }
 
@@ -1461,6 +1615,7 @@
           });
           saveAppState();
           render();
+          showToast("Default address updated", "success");
         };
       });
 
@@ -1476,6 +1631,7 @@
           state.slicerPrefs.autoRepairManifold = chkAuto;
           saveAppState();
           closeModal();
+          showToast("Slicer preferences saved", "success");
         };
       }
 
@@ -1489,6 +1645,7 @@
             state.selectedOrderForAction.escrowStatus = "Escrow Released to Shop";
             state.printerHub.earningsToday += state.selectedOrderForAction.price;
             saveAppState();
+            showToast(`Escrow released ($${state.selectedOrderForAction.price.toFixed(2)}) to ${state.selectedOrderForAction.shop}`, "success");
           }
           closeModal();
         };
@@ -1503,6 +1660,7 @@
             state.selectedOrderForAction.statusText = "Claim Active &bull; Free Reprint In Progress";
             state.selectedOrderForAction.escrowStatus = "Funds Frozen in Escrow";
             saveAppState();
+            showToast("Dispute submitted. Escrow funds safely frozen.", "info");
           }
           closeModal();
         };
@@ -1513,6 +1671,7 @@
       if (confirmDeclineBtn) {
         confirmDeclineBtn.onclick = () => {
           closeModal();
+          showToast("Job declined and re-routed to next available shop", "info");
         };
       }
     }
@@ -1542,7 +1701,7 @@
                   <p class="text-[10px] text-[#0f2a4a]/60">${shop.ownerName} &bull; Typically replies in ~3m</p>
                 </div>
               </div>
-              <button id="btn-close-chat" class="h-7 w-7 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">
+              <button type="button" id="btn-close-chat" class="h-7 w-7 rounded-full bg-black/5 flex items-center justify-center text-[#0f2a4a] hover:bg-black/10 cursor-pointer">
                 &times;
               </button>
             </div>
@@ -1567,13 +1726,13 @@
 
             <!-- Quick Suggestions -->
             <div class="px-3 py-2 bg-white border-t border-black/5 flex gap-1.5 overflow-x-auto no-scrollbar">
-              <button class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="Can you print this today in PETG?">
+              <button type="button" class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="Can you print this today in PETG?">
                 Can you print today in PETG?
               </button>
-              <button class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="What tolerances can you hit?">
+              <button type="button" class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="What tolerances can you hit?">
                 What tolerances can you hit?
               </button>
-              <button class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="Can I pick up locally in New Iberia?">
+              <button type="button" class="btn-quick-chat shrink-0 text-[10px] bg-[#0f2a4a]/5 hover:bg-[#0f2a4a]/10 text-[#0f2a4a] font-medium px-2.5 py-1 rounded-full cursor-pointer" data-msg="Can I pick up locally in New Iberia?">
                 Can I pick up locally in New Iberia?
               </button>
             </div>
@@ -1581,7 +1740,7 @@
             <!-- Input Bar -->
             <div class="p-3 bg-white border-t border-black/5 flex items-center gap-2">
               <input id="chat-input" placeholder="Message ${shop.ownerName}..." class="flex-1 bg-[#f4f8fc] text-xs px-3 py-2 rounded-xl border border-black/5 outline-none focus:border-[#e8752d]" />
-              <button id="btn-send-chat" class="h-8 w-8 rounded-xl bg-[#e8752d] text-white flex items-center justify-center cursor-pointer hover:bg-[#d0631f] active:scale-95 shadow-xs">
+              <button type="button" id="btn-send-chat" class="h-8 w-8 rounded-xl bg-[#e8752d] text-white flex items-center justify-center cursor-pointer hover:bg-[#d0631f] active:scale-95 shadow-xs">
                 &rarr;
               </button>
             </div>
@@ -1683,7 +1842,7 @@
                 <h3 class="text-base font-bold text-[#0f2a4a]">Upload Part for Printing</h3>
                 <p class="text-xs text-[#0f2a4a]/60">Choose how to submit your part to New Iberia print shops</p>
               </div>
-              <button id="btn-close-modal" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2a4a]/5 text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer">
+              <button type="button" id="btn-close-modal" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2a4a]/5 text-[#0f2a4a] hover:bg-[#0f2a4a]/10 cursor-pointer">
                 &times;
               </button>
             </div>
@@ -1694,7 +1853,7 @@
 
             <div class="space-y-3">
               <!-- Option 1: 2D Photo to 3D -->
-              <button id="btn-opt-photo" class="w-full text-left flex items-start gap-3.5 rounded-2xl border-2 border-[#e8752d] bg-[#fdf5f0] p-4 transition hover:bg-[#faeae0] active:scale-[0.99] cursor-pointer shadow-sm">
+              <button type="button" id="btn-opt-photo" class="w-full text-left flex items-start gap-3.5 rounded-2xl border-2 border-[#e8752d] bg-[#fdf5f0] p-4 transition hover:bg-[#faeae0] active:scale-[0.99] cursor-pointer shadow-sm">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f28c4a] to-[#e8752d] text-white shadow-md shadow-[#e8752d]/30">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -1718,7 +1877,7 @@
               </button>
 
               <!-- Option 2: High Precision 3D Scanning -->
-              <button id="btn-opt-scan" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
+              <button type="button" id="btn-opt-scan" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a] text-white">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -1738,7 +1897,7 @@
               </button>
 
               <!-- Option 3: Direct 3D CAD File -->
-              <button id="btn-opt-cad" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
+              <button type="button" id="btn-opt-cad" class="w-full text-left flex items-start gap-3.5 rounded-2xl border border-black/10 bg-[#f4f8fc] p-3.5 transition hover:bg-[#e7eff8] active:scale-[0.99] cursor-pointer">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#0f2a4a] border border-black/10">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="12 2 2 7 12 12 22 7 12 2"/>
@@ -1815,14 +1974,12 @@
       const quickFilters = ["PLA", "PETG", "TPU", "Polycarbonate", "ABS-ESD", "Commercial/Bulk", "Reverse Engineering"];
 
       const filteredShops = PRINTER_SHOPS.filter(s => {
-        // Query search
         let matchesQuery = true;
         if (state.searchQuery) {
           const q = state.searchQuery.toLowerCase();
           matchesQuery = s.name.toLowerCase().includes(q) || s.materials.some(m => m.toLowerCase().includes(q));
         }
 
-        // Quick filter pill
         let matchesPill = true;
         if (state.activeQuickFilter) {
           const qf = state.activeQuickFilter.toLowerCase();
@@ -1846,19 +2003,19 @@
               </div>
             </div>
 
-            <!-- Enhanced, Prominent Thumb-Friendly Segmented Control -->
+            <!-- Enhanced Segmented Control -->
             <div class="flex items-center gap-1.5 rounded-full bg-white/15 p-1 text-xs shadow-inner">
-              <button id="role-buyer-btn" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'buyer' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Buyer</button>
-              <button id="role-owner-btn" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'owner' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Owner</button>
+              <button type="button" id="role-buyer-btn" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'buyer' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Buyer</button>
+              <button type="button" id="role-owner-btn" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold cursor-pointer transition ${state.role === 'owner' ? 'bg-[#e8752d] text-white shadow-md' : 'text-white/70 hover:text-white'}">Owner</button>
             </div>
           </div>
 
-          <!-- Main Search Bar -->
+          <!-- Search Bar -->
           <div class="mt-4 flex items-center gap-2">
             <div class="flex flex-1 items-center gap-2 rounded-full bg-[#f4f8fc] px-4 py-2.5 text-sm text-[#0f2a4a] shadow-xs">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0f2a4a" stroke-width="2" class="opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input id="search-shops-input" value="${state.searchQuery}" placeholder="Search shops (e.g. Riverside, TPU, PETG)" class="w-full bg-transparent outline-none placeholder:text-[#0f2a4a]/40" />
-              ${state.searchQuery ? `<button id="clear-search-btn" class="text-xs text-[#0f2a4a]/50 cursor-pointer">&times;</button>` : ''}
+              ${state.searchQuery ? `<button type="button" id="clear-search-btn" class="text-xs text-[#0f2a4a]/50 cursor-pointer">&times;</button>` : ''}
             </div>
           </div>
 
@@ -1868,6 +2025,7 @@
               const isActive = state.activeQuickFilter === filter;
               return `
                 <button
+                  type="button"
                   class="btn-quick-filter shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer border ${isActive ? 'bg-[#e8752d] text-white border-[#e8752d] shadow-sm ring-1 ring-white/30' : 'bg-white/10 text-white/90 border-white/20 hover:bg-white/20 active:scale-95'}"
                   data-filter="${filter}"
                 >
@@ -1880,6 +2038,7 @@
 
         <!-- Primary Upload Button -->
         <button
+          type="button"
           id="btn-open-upload-menu"
           class="btn-primary mx-4 -mt-2.5 mb-2 py-3.5 text-sm"
         >
@@ -1888,9 +2047,9 @@
         </button>
 
         <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4 no-scrollbar">
-          <!-- Feature Cards (AI & Scanning Expansion) -->
+          <!-- Feature Cards -->
           <div class="space-y-2.5">
-            <!-- Feature Card 1: 2D Photo to 3D -->
+            <!-- 2D Photo to 3D -->
             <div id="banner-photo-to-3d" class="rounded-2xl border border-[#e8752d]/30 bg-gradient-to-br from-[#fdf5f0] to-[#f4f8fc] p-3.5 shadow-xs cursor-pointer hover:border-[#e8752d] transition">
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e8752d]/15 text-[#e8752d]">
@@ -1910,7 +2069,7 @@
               </div>
             </div>
 
-            <!-- Feature Card 2: High-Precision 3D Scanning (Parallel Card) -->
+            <!-- High-Precision 3D Scanning -->
             <div id="banner-3d-scanning" class="rounded-2xl border border-[#0f2a4a]/15 bg-gradient-to-br from-[#f4f8fc] to-[#e7eff8] p-3.5 shadow-xs cursor-pointer hover:border-[#0f2a4a]/40 transition">
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a]/10 text-[#0f2a4a]">
@@ -1932,7 +2091,7 @@
             </div>
           </div>
 
-          <!-- Completed Works Showcase by Local Printer Owners -->
+          <!-- Completed Works Showcase -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <div>
@@ -1960,7 +2119,6 @@
                       ${item.title}
                     </h3>
                     <p class="text-[10px] text-[#0f2a4a]/60 mt-0.5 truncate">${item.shopName} &bull; ${item.machine}</p>
-                    <!-- Improved contrast for mobile readability -->
                     <p class="text-[10px] text-[#0f2a4a]/80 font-medium mt-1 italic line-clamp-1">"${item.tagline}"</p>
                   </div>
 
@@ -1970,6 +2128,7 @@
                       <span class="text-[9px] text-[#0f2a4a]/40 block">${item.turnaround} ready</span>
                     </div>
                     <button 
+                      type="button"
                       class="btn-order-showcase btn-primary py-1 px-3 text-xs min-h-[32px] shadow-xs"
                       data-showcase-id="${item.id}"
                     >
@@ -1991,8 +2150,8 @@
               </p>
             </div>
             <div class="flex rounded-full bg-[#0f2a4a]/10 p-0.5 text-xs font-semibold">
-              <button id="btn-view-list" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'list' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">List</button>
-              <button id="btn-view-map" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'map' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">Map</button>
+              <button type="button" id="btn-view-list" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'list' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">List</button>
+              <button type="button" id="btn-view-map" class="rounded-full px-3 py-1 cursor-pointer transition ${state.buyerHomeView === 'map' ? 'bg-[#e8752d] text-white shadow-xs' : 'text-[#0f2a4a]/60 hover:text-[#0f2a4a]'}">Map</button>
             </div>
           </div>
 
@@ -2010,7 +2169,7 @@
                 <div class="text-center py-8 rounded-2xl bg-white border border-black/5 p-4">
                   <p class="text-xs font-bold text-[#0f2a4a]">No shops found matching "${state.activeQuickFilter || state.searchQuery}"</p>
                   <p class="text-[10px] text-[#0f2a4a]/50 mt-1">Try tapping another material filter pill above</p>
-                  <button id="btn-reset-filters" class="btn-outline mt-3 py-1.5 px-3 text-xs">Clear Filter</button>
+                  <button type="button" id="btn-reset-filters" class="btn-outline mt-3 py-1.5 px-3 text-xs">Clear Filter</button>
                 </div>
               ` : filteredShops.map(s => `
                 <div class="rounded-2xl border border-black/5 bg-[#f4f8fc] p-3.5 shadow-xs hover:border-[#e8752d]/40 transition">
@@ -2029,10 +2188,10 @@
                       ${s.materials.map(m => `<span class="rounded-md bg-[#0f2a4a]/5 px-2 py-0.5 text-[10px] text-[#0f2a4a]/70 font-medium">${m}</span>`).join('')}
                     </div>
                     <div class="flex items-center gap-2">
-                      <button class="btn-chat-with-shop text-[11px] font-semibold text-[#0f2a4a] hover:text-[#e8752d] cursor-pointer" data-shop-id="${s.id}">
+                      <button type="button" class="btn-chat-with-shop text-[11px] font-semibold text-[#0f2a4a] hover:text-[#e8752d] cursor-pointer" data-shop-id="${s.id}">
                         Chat &rarr;
                       </button>
-                      <button class="btn-select-shop-quote btn-primary py-1 px-3 text-[11px] min-h-[30px] rounded-lg shadow-xs" data-shop-id="${s.id}">
+                      <button type="button" class="btn-select-shop-quote btn-primary py-1 px-3 text-[11px] min-h-[30px] rounded-lg shadow-xs" data-shop-id="${s.id}">
                         Quote
                       </button>
                     </div>
@@ -2047,6 +2206,7 @@
         ${renderUploadMenuModal()}
         ${renderChatDrawer()}
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       // Event Listeners
@@ -2103,7 +2263,6 @@
         };
       }
 
-      // Quick filter pill handlers
       document.querySelectorAll(".btn-quick-filter").forEach(btn => {
         btn.onclick = () => {
           const filter = btn.getAttribute("data-filter");
@@ -2139,7 +2298,6 @@
         };
       }
 
-      // 1-Click Order Buttons from Showcase
       document.querySelectorAll(".btn-order-showcase").forEach(btn => {
         btn.onclick = () => {
           const sId = btn.getAttribute("data-showcase-id");
@@ -2181,16 +2339,37 @@
       }
     }
 
-    // 2. Request Screen (3D Preview & Meshy AI Co-pilot)
+    // 2. Request Screen (Instant Quoting, Machine Capabilities, Post-Processing Toggles)
     function renderRequest(app) {
       const p = state.selectedPreset;
-      const rate = AVG_MATERIAL_RATE[state.material] || 0.08;
-      const costLow = Math.max(6, Math.round(p.estimatedGrams * rate * 0.85));
-      const costHigh = Math.max(9, Math.round(p.estimatedGrams * rate * 1.3));
+
+      // Calculate Instant Quoting Breakdown
+      const matInfo = MATERIAL_MULTIPLIERS[state.material] || {
+        multiplier: 1.0,
+        rate: 0.08,
+        category: "Standard"
+      };
+
+      const grams = p.estimatedGrams || 40;
+      const baseMaterialCost = grams * matInfo.rate;
+
+      let addonTotal = 0;
+      const activeAddons = [];
+      state.selectedAddons.forEach(addonId => {
+        const found = POST_PROCESSING_ADDONS.find(a => a.id === addonId);
+        if (found) {
+          addonTotal += found.cost;
+          activeAddons.push(found);
+        }
+      });
+
+      const totalTarget = baseMaterialCost + addonTotal;
+      const costLow = Math.max(7, Math.round(totalTarget * 0.9));
+      const costHigh = Math.max(10, Math.round(totalTarget * 1.25));
 
       app.innerHTML = `
         <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
-          <button id="btn-back-home" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+          <button type="button" id="btn-back-home" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
             Request a print
           </button>
@@ -2203,6 +2382,7 @@
             <div class="mb-2 flex items-center justify-between">
               <label class="text-sm font-semibold text-[#0f2a4a]">Part Specification &amp; 3D Model</label>
               <button
+                type="button"
                 id="btn-change-upload"
                 class="btn-outline py-1 px-2.5 text-[11px] rounded-full"
               >
@@ -2215,6 +2395,7 @@
             <div class="mb-3 grid grid-cols-2 gap-2">
               <input type="file" id="direct-photo-input" accept="image/*" class="hidden" />
               <button
+                type="button"
                 id="btn-direct-upload-photo"
                 class="btn-outline border-[#e8752d]/30 bg-[#fdf5f0] text-[#e8752d] py-2 px-2 text-xs"
               >
@@ -2227,6 +2408,7 @@
 
               <input type="file" id="direct-cad-input" accept=".stl,.obj,.step,.3mf" class="hidden" />
               <button
+                type="button"
                 id="btn-direct-upload-cad"
                 class="btn-outline py-2 px-2 text-xs"
               >
@@ -2237,7 +2419,7 @@
               </button>
             </div>
 
-            <!-- Meshy AI Card -->
+            <!-- 3D Model Viewport Card -->
             <div class="space-y-3 rounded-2xl border-2 border-[#e8752d]/30 bg-[#f4f8fc] p-3.5 shadow-sm">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
@@ -2262,95 +2444,61 @@
                 </div>
                 <div class="flex flex-col items-end gap-1">
                   <span class="text-[10px] text-green-700 font-bold bg-green-100 px-2 py-0.5 rounded-full">Manifold OK</span>
-                  <button id="btn-toggle-compare" class="text-[10px] text-[#e8752d] font-semibold underline hover:text-[#d0631f] cursor-pointer">
+                  <button type="button" id="btn-toggle-compare" class="text-[10px] text-[#e8752d] font-semibold underline hover:text-[#d0631f] cursor-pointer">
                     ${state.showReferenceCompare ? 'Hide 2D image' : 'View 2D reference'}
                   </button>
                 </div>
               </div>
 
-              <!-- Collapsible 2D Reference Image Comparison Panel -->
               ${state.showReferenceCompare ? `
                 <div class="rounded-xl border border-[#e8752d]/20 bg-[#fdf5f0] p-3 text-xs">
                   <div class="flex items-center justify-between mb-2">
                     <span class="font-bold text-[#0f2a4a] flex items-center gap-1.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                       Original 2D Reference Source
                     </span>
                     <span class="text-[10px] text-[#0f2a4a]/50">${p.fileName || 'Reference Capture'}</span>
                   </div>
                   <div class="relative overflow-hidden rounded-lg border border-black/10 bg-black/5 max-h-48 flex items-center justify-center">
                     <img src="${p.photoUrl}" alt="2D Reference Preview" class="max-h-48 w-full object-contain" />
-                    <div class="absolute bottom-2 left-2 rounded bg-black/70 px-2 py-0.5 text-[9px] text-white backdrop-blur">
-                      Ground truth reference image
-                    </div>
                   </div>
                 </div>
               ` : ''}
 
-              <!-- 3D Viewport or In-Progress Scanning Card -->
-              ${state.isGenerating ? `
-                <div class="relative overflow-hidden rounded-xl border border-[#0f2a4a]/15 bg-gradient-to-b from-[#111f33] to-[#0c1828] p-5 text-center text-white shadow-inner min-h-[230px] flex flex-col justify-center items-center">
-                  <div class="relative mb-3 h-20 w-20 overflow-hidden rounded-xl border border-[#e8752d]/40 ring-2 ring-[#e8752d]/20">
-                    <img src="${p.photoUrl}" class="h-full w-full object-cover opacity-60 filter blur-[0.5px]" />
-                    <div class="animate-scan-laser absolute left-0 right-0 h-0.5 bg-[#e8752d] shadow-[0_0_8px_#e8752d]"></div>
-                  </div>
+              <!-- 3D Canvas -->
+              <div id="canvas-container" class="relative overflow-hidden rounded-xl border border-[#0f2a4a]/15 bg-gradient-to-b from-[#111f33] to-[#0c1828] shadow-inner">
+                <canvas id="three-canvas" class="block h-[230px] w-full cursor-grab active:cursor-grabbing"></canvas>
 
-                  <div class="w-full max-w-[280px]">
-                    <div class="flex items-center justify-between text-xs mb-1.5">
-                      <span class="font-bold text-[#e8752d] flex items-center gap-1.5">
-                        <svg class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
-                        AI 2D to 3D Reconstruction
-                      </span>
-                      <span id="gen-progress-pct" class="font-mono font-bold text-white">${state.generationProgress}%</span>
-                    </div>
-
-                    <div class="h-2 w-full overflow-hidden rounded-full bg-white/10 p-0.5">
-                      <div id="gen-progress-bar" class="h-full rounded-full bg-gradient-to-r from-[#f28c4a] to-[#e8752d] transition-all duration-300" style="width: ${state.generationProgress}%"></div>
-                    </div>
-
-                    <p id="gen-progress-stage" class="mt-2.5 text-[11px] text-white/70 font-medium leading-relaxed">
-                      ${state.generationStage}
-                    </p>
-                  </div>
+                <div class="absolute right-2.5 top-2.5 flex items-center gap-1.5">
+                  ${p.isCustomPhoto ? `
+                    <button type="button" id="btn-toggle-viewmode" title="Toggle Texture / Filament" class="flex h-7 px-2 text-[10px] items-center justify-center rounded-lg backdrop-blur font-semibold cursor-pointer ${state.viewMode === 'textured' ? 'bg-[#e8752d] text-white' : 'bg-white/15 text-white'}">
+                      ${state.viewMode === 'textured' ? 'Color' : 'Filament'}
+                    </button>
+                  ` : ''}
+                  <button type="button" id="btn-wireframe" title="Toggle Wireframe" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.wireframe ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  </button>
+                  <button type="button" id="btn-rotate" title="Auto Rotate" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.autoRotate ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  </button>
+                  <button type="button" id="btn-reset-cam" title="Reset View" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur bg-white/10 text-white/80 hover:bg-white/20 cursor-pointer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/></svg>
+                  </button>
                 </div>
-              ` : `
-                <div id="canvas-container" class="relative overflow-hidden rounded-xl border border-[#0f2a4a]/15 bg-gradient-to-b from-[#111f33] to-[#0c1828] shadow-inner">
-                  <canvas id="three-canvas" class="block h-[230px] w-full cursor-grab active:cursor-grabbing"></canvas>
 
-                  <!-- Top Right Controls -->
-                  <div class="absolute right-2.5 top-2.5 flex items-center gap-1.5">
-                    ${p.isCustomPhoto ? `
-                      <button id="btn-toggle-viewmode" title="Toggle Texture / Filament" class="flex h-7 px-2 text-[10px] items-center justify-center rounded-lg backdrop-blur font-semibold cursor-pointer ${state.viewMode === 'textured' ? 'bg-[#e8752d] text-white' : 'bg-white/15 text-white'}">
-                        ${state.viewMode === 'textured' ? 'Color' : 'Filament'}
-                      </button>
-                    ` : ''}
-                    <button id="btn-wireframe" title="Toggle Wireframe" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.wireframe ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
-                    </button>
-                    <button id="btn-rotate" title="Auto Rotate" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur cursor-pointer ${state.autoRotate ? 'bg-[#e8752d] text-white' : 'bg-white/10 text-white/80'}">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                    </button>
-                    <button id="btn-reset-cam" title="Reset View" class="flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur bg-white/10 text-white/80 hover:bg-white/20 cursor-pointer">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/></svg>
-                    </button>
+                <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                  <div class="flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
+                    <span>${p.dimensions.x} &times; ${p.dimensions.y} &times; ${p.dimensions.z} mm</span>
+                    <span class="text-white/40">&bull;</span>
+                    <span class="text-[#f28c4a]">~${p.estimatedGrams}g ${state.material}</span>
                   </div>
 
-                  <!-- Bottom Badges -->
-                  <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-                    <div class="flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur">
-                      <span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
-                      <span>${p.dimensions.x} &times; ${p.dimensions.y} &times; ${p.dimensions.z} mm</span>
-                      <span class="text-white/40">&bull;</span>
-                      <span class="text-[#f28c4a]">~${p.estimatedGrams}g ${state.material}</span>
-                    </div>
-
-                    <button id="btn-export-stl" class="pointer-events-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-semibold text-white shadow backdrop-blur hover:bg-white/30 cursor-pointer">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      STL
-                    </button>
-                  </div>
+                  <button type="button" id="btn-export-stl" class="pointer-events-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-semibold text-white shadow backdrop-blur hover:bg-white/30 cursor-pointer">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    STL
+                  </button>
                 </div>
-              `}
+              </div>
 
               <!-- AI Co-Pilot Card -->
               <div class="rounded-xl bg-[#0f2a4a]/5 p-3 text-xs text-[#0f2a4a]">
@@ -2367,17 +2515,16 @@
                   </div>
                 </div>
 
-                <!-- Refinement Chips -->
                 <div class="mt-2.5 flex flex-wrap gap-1.5">
-                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="thickness">+2mm thickness</button>
-                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="ribs">Reinforce ribs</button>
-                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="holes">Add mounting holes</button>
-                  <button class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="fillet">Fillet corners</button>
+                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="thickness">+2mm thickness</button>
+                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="ribs">Reinforce ribs</button>
+                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="holes">Add mounting holes</button>
+                  <button type="button" class="btn-refine btn-chip bg-white text-[#0f2a4a] shadow-xs hover:bg-[#0f2a4a]/5" data-chip="fillet">Fillet corners</button>
                 </div>
 
                 <div class="mt-2 flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-black/5">
                   <input id="inp-prompt" placeholder="Tell agent: e.g. make it stronger, smooth corners..." class="flex-1 bg-transparent text-[11px] text-[#0f2a4a] outline-none placeholder:text-[#0f2a4a]/35" />
-                  <button id="btn-send-prompt" class="flex h-5 w-5 items-center justify-center text-[#e8752d] cursor-pointer">
+                  <button type="button" id="btn-send-prompt" class="flex h-5 w-5 items-center justify-center text-[#e8752d] cursor-pointer">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
                 </div>
@@ -2392,7 +2539,7 @@
               </div>
               <div class="grid grid-cols-2 gap-1.5">
                 ${[...state.customPresets, ...SAMPLE_PRESETS].map(preset => `
-                  <button class="btn-select-preset flex items-center gap-2 rounded-lg p-1.5 text-left transition cursor-pointer ${preset.id === p.id ? 'bg-[#e8752d]/15 ring-1 ring-[#e8752d]' : 'bg-white hover:bg-white/80'}" data-id="${preset.id}">
+                  <button type="button" class="btn-select-preset flex items-center gap-2 rounded-lg p-1.5 text-left transition cursor-pointer ${preset.id === p.id ? 'bg-[#e8752d]/15 ring-1 ring-[#e8752d]' : 'bg-white hover:bg-white/80'}" data-id="${preset.id}">
                     <img src="${preset.photoUrl}" alt="${preset.name}" class="h-7 w-7 rounded object-cover" />
                     <div class="min-w-0 flex-1">
                       <p class="text-[11px] font-semibold text-[#0f2a4a] truncate">${preset.name}</p>
@@ -2404,32 +2551,172 @@
             </div>
           </div>
 
-          <!-- Material Selector -->
+          <!-- Feature 1: Material Selection with Multipliers -->
           <div>
-            <label class="mb-2 block text-sm font-semibold text-[#0f2a4a]">Material</label>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-semibold text-[#0f2a4a]">Material Selection</label>
+              <span class="text-[10px] text-[#0f2a4a]/50 font-medium">Standard &amp; Engineering Plastics</span>
+            </div>
             <div class="flex flex-wrap gap-2">
-              ${["PLA", "PETG", "ABS", "ABS-ESD", "TPU", "Polycarbonate", "Nylon"].map(m => `
-                <button class="btn-material btn-chip ${state.material === m ? 'bg-[#0f2a4a] text-white' : 'bg-white text-[#0f2a4a]/70 ring-1 ring-black/5'}" data-mat="${m}">
-                  ${m}
-                </button>
-              `).join('')}
+              ${Object.keys(MATERIAL_MULTIPLIERS).map(m => {
+                const info = MATERIAL_MULTIPLIERS[m];
+                const isSelected = state.material === m;
+                return `
+                  <button
+                    type="button"
+                    class="btn-material btn-chip flex items-center gap-1.5 ${isSelected ? 'bg-[#0f2a4a] text-white' : 'bg-white text-[#0f2a4a]/70 ring-1 ring-black/5 hover:bg-black/5'}"
+                    data-mat="${m}"
+                  >
+                    <span>${m}</span>
+                    <span class="rounded px-1.5 py-0.2 text-[9px] font-bold ${isSelected ? 'bg-white/20 text-white' : (info.category === 'Standard' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700')}">
+                      ${info.multiplier.toFixed(2)}x
+                    </span>
+                  </button>
+                `;
+              }).join('')}
             </div>
           </div>
 
-          <!-- Price Estimate Box -->
-          <div class="flex items-center gap-3 rounded-2xl bg-[#0f2a4a]/5 p-4">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#e8752d] shadow-xs font-bold text-base">
-              $
+          <!-- Feature 2: Instant Quoting Component (Itemized Multi-Variable Model) -->
+          <div class="rounded-2xl border-2 border-[#e8752d]/30 bg-surface p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-[#e8752d] text-white shadow-xs font-bold text-xs">
+                  $
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-[#0f2a4a]">Instant Quote Breakdown</h4>
+                  <p class="text-[10px] text-[#0f2a4a]/50">Dynamic multi-variable pricing</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-base font-extrabold text-[#e8752d]">$${costLow.toFixed(2)} - $${costHigh.toFixed(2)}</span>
+                <span class="block text-[9px] text-[#0f2a4a]/50">Target per-unit fabrication</span>
+              </div>
             </div>
-            <div>
-              <p class="text-sm font-semibold text-[#0f2a4a]">Est. $${costLow} - $${costHigh}</p>
-              <p class="text-xs text-[#0f2a4a]/50">~${p.estimatedGrams}g of ${state.material}, calculated from your 3D mesh volume &bull; New Iberia printers set final price</p>
+
+            <div class="rounded-xl bg-white p-3 border border-black/5 text-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-semibold text-[#0f2a4a]">Material Base:</span>
+                  <span class="text-[#0f2a4a]/70">${state.material}</span>
+                  <span class="rounded bg-accent/10 text-accent font-bold px-1.5 py-0.2 text-[9px]">${matInfo.multiplier.toFixed(2)}x ${matInfo.category}</span>
+                </div>
+                <span class="font-medium text-[#0f2a4a]">~${grams}g &times; $${matInfo.rate.toFixed(3)}/g = $${baseMaterialCost.toFixed(2)}</span>
+              </div>
+
+              ${activeAddons.length > 0 ? `
+                <div class="border-t border-black/5 pt-1.5 space-y-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-[#0f2a4a]/40 block">Post-Processing Add-ons:</span>
+                  ${activeAddons.map(a => `
+                    <div class="flex justify-between text-[11px] text-[#0f2a4a]/80">
+                      <span>&bull; ${a.name}</span>
+                      <span class="font-medium">+$${a.cost.toFixed(2)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+
+              <div class="border-t border-black/5 pt-2 flex items-center justify-between font-bold text-xs text-[#0f2a4a]">
+                <span>Calculated Baseline Total</span>
+                <span class="text-[#e8752d] font-extrabold text-sm">$${totalTarget.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 3: Post-Processing Add-on Toggles -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Post-Processing &amp; Hardware Add-ons</h3>
+                <p class="text-[10px] text-[#0f2a4a]/50">Select assembly or heat-set insertion services</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              ${POST_PROCESSING_ADDONS.map(addon => {
+                const active = state.selectedAddons.includes(addon.id);
+                return `
+                  <div
+                    class="btn-toggle-addon rounded-2xl border p-3.5 cursor-pointer transition-all duration-200 select-none flex items-start justify-between gap-3 ${active ? 'border-[#e8752d] bg-[#e8752d]/5 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white hover:border-black/20'}"
+                    data-addon-id="${addon.id}"
+                  >
+                    <div class="flex items-start gap-3 min-w-0">
+                      <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-bold text-xs ${active ? 'bg-[#e8752d]/15 text-[#e8752d]' : 'bg-[#0f2a4a]/5 text-[#0f2a4a]/60'}">
+                        ${addon.id === 'splitAndBond' ? 'AB' : 'HW'}
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                          <h4 class="text-xs font-bold text-[#0f2a4a]">${addon.name}</h4>
+                          <span class="rounded bg-[#e8752d]/10 px-1.5 py-0.2 text-[10px] font-bold text-[#e8752d]">+${addon.cost.toFixed(2)}</span>
+                        </div>
+                        <p class="text-[11px] text-[#0f2a4a]/65 mt-0.5 leading-snug">${addon.desc}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${active ? 'border-[#e8752d] bg-[#e8752d] text-white' : 'border-black/20 bg-white'}"
+                    >
+                      ${active ? '&check;' : ''}
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Feature 4: Machine Capabilities Fleet Section -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Machine Capability Fleet</h3>
+                <p class="text-[10px] text-[#0f2a4a]/50">Build volumes &amp; toolhead specifications</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              ${FLEET_MACHINES.map(m => {
+                const isSelected = state.selectedMachineId === m.id;
+                return `
+                  <div
+                    class="btn-select-fleet rounded-2xl border p-3.5 cursor-pointer transition ${isSelected ? 'border-[#e8752d] bg-[#e8752d]/5 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white hover:border-black/20'}"
+                    data-machine-id="${m.id}"
+                  >
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2.5">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0f2a4a] text-white text-xs font-bold shadow-xs">
+                          ${m.name.includes("Bambu") ? "BL" : "PR"}
+                        </div>
+                        <div>
+                          <div class="flex items-center gap-1.5">
+                            <h4 class="text-xs font-bold text-[#0f2a4a]">${m.name}</h4>
+                            <span class="rounded bg-[#0f2a4a]/10 px-1.5 py-0.2 text-[9px] font-bold text-[#0f2a4a]">${m.badge}</span>
+                          </div>
+                          <div class="flex items-center gap-2 text-[11px] text-[#0f2a4a]/60 mt-0.5">
+                            <span class="font-mono font-semibold text-[#e8752d]">${m.buildVolume.x} &times; ${m.buildVolume.y} &times; ${m.buildVolume.z} ${m.buildVolume.unit}</span>
+                            <span>&bull;</span>
+                            <span>${m.maxTemp}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${isSelected ? 'bg-[#e8752d] text-white' : 'bg-[#0f2a4a]/10 text-[#0f2a4a]'}">
+                        ${isSelected ? 'Selected' : 'Select'}
+                      </span>
+                    </div>
+
+                    <div class="mt-2.5 border-t border-black/5 pt-2 text-[11px] text-[#0f2a4a]/75 space-y-1">
+                      ${m.features.map(f => `<div class="flex items-center gap-1.5"><span class="text-green-600 font-bold">&check;</span><span>${f}</span></div>`).join('')}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
             </div>
           </div>
         </div>
 
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3.5">
           <button
+            type="button"
             id="btn-goto-quotes"
             class="btn-primary w-full text-sm"
           >
@@ -2440,6 +2727,7 @@
         ${renderUploadMenuModal()}
         ${renderChatDrawer()}
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       // Event handlers
@@ -2449,6 +2737,10 @@
       };
 
       document.getElementById("btn-goto-quotes").onclick = () => {
+        if (!state.selectedPreset) {
+          showToast("Please upload a CAD file or choose a 3D model", "error");
+          return;
+        }
         state.screen = "quotes";
         render();
       };
@@ -2543,6 +2835,28 @@
       document.querySelectorAll(".btn-material").forEach(btn => {
         btn.onclick = () => {
           state.material = btn.getAttribute("data-mat");
+          saveAppState();
+          render();
+        };
+      });
+
+      document.querySelectorAll(".btn-toggle-addon").forEach(card => {
+        card.onclick = () => {
+          const addonId = card.getAttribute("data-addon-id");
+          if (state.selectedAddons.includes(addonId)) {
+            state.selectedAddons = state.selectedAddons.filter(id => id !== addonId);
+          } else {
+            state.selectedAddons.push(addonId);
+          }
+          saveAppState();
+          render();
+        };
+      });
+
+      document.querySelectorAll(".btn-select-fleet").forEach(card => {
+        card.onclick = () => {
+          state.selectedMachineId = card.getAttribute("data-machine-id");
+          saveAppState();
           render();
         };
       });
@@ -2564,6 +2878,7 @@
           }
           saveAppState();
           render();
+          showToast("Geometry updated by AI co-pilot", "success");
         };
       });
 
@@ -2574,6 +2889,7 @@
         inp.value = "";
         saveAppState();
         render();
+        showToast("Co-pilot instruction applied", "success");
       };
       const btnSendPrompt = document.getElementById("btn-send-prompt");
       const inpPrompt = document.getElementById("inp-prompt");
@@ -2592,10 +2908,16 @@
     // 3. Quotes Screen
     function renderQuotes(app) {
       const p = state.selectedPreset;
+      const matInfo = MATERIAL_MULTIPLIERS[state.material] || { rate: 0.08, multiplier: 1.0 };
+      let addonCost = 0;
+      state.selectedAddons.forEach(aId => {
+        const a = POST_PROCESSING_ADDONS.find(item => item.id === aId);
+        if (a) addonCost += a.cost;
+      });
 
       app.innerHTML = `
         <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
-          <button id="btn-back-request" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+          <button type="button" id="btn-back-request" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
             Quotes for your part
           </button>
@@ -2603,13 +2925,12 @@
         </header>
 
         <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3 no-scrollbar">
-          <!-- Meshy AI Badge -->
           <div class="flex items-center gap-2.5 rounded-xl border border-[#e8752d]/30 bg-[#e8752d]/10 p-3 text-xs text-[#0f2a4a]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8752d" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
             <div class="min-w-0 flex-1">
               <p class="font-semibold truncate">3D Model: ${p.name}</p>
               <p class="text-[10px] text-[#0f2a4a]/60">
-                ${p.dimensions.x} &times; ${p.dimensions.y} &times; ${p.dimensions.z} mm &bull; ~${p.estimatedGrams}g ${state.material}
+                ${p.dimensions.x} &times; ${p.dimensions.y} &times; ${p.dimensions.z} mm &bull; ~${p.estimatedGrams}g ${state.material} (${matInfo.multiplier.toFixed(2)}x) ${addonCost > 0 ? `&bull; +$${addonCost.toFixed(2)} add-ons` : ''}
               </p>
             </div>
             <span class="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Slicer Ready</span>
@@ -2618,26 +2939,27 @@
           <p class="text-xs text-[#0f2a4a]/50">3 nearby New Iberia printers ready for production:</p>
 
           ${PRINTER_SHOPS.map((shop, idx) => {
-            const price = Math.round(shop.rate * p.estimatedGrams * 1.25 * 10) / 10;
+            const base = Math.round(shop.rate * (matInfo.multiplier / 1.0) * p.estimatedGrams * 1.25 * 10) / 10;
+            const price = (base + addonCost).toFixed(2);
             return `
               <div class="rounded-2xl border ${idx === 0 ? 'border-[#e8752d] ring-1 ring-[#e8752d]/30' : 'border-black/5'} bg-[#f4f8fc] p-4 shadow-sm space-y-2">
                 ${idx === 0 ? `<div class="inline-block rounded-full bg-[#e8752d] px-2 py-0.5 text-[9px] font-bold uppercase text-white tracking-wider">Best Match</div>` : ''}
                 <div class="flex items-center justify-between">
                   <div>
                     <h3 class="font-semibold text-sm text-[#0f2a4a]">${shop.name}</h3>
-                    <p class="text-xs text-[#0f2a4a]/60">${shop.distance} &bull; ${shop.turnaround} ready</p>
+                    <p class="text-xs text-[#0f2a4a]/60">${shop.distance} &bull; ${shop.turnaround} ready &bull; ${shop.machines.split(',')[0]}</p>
                   </div>
                   <div class="text-right">
-                    <span class="text-lg font-bold text-[#0f2a4a]">$${price.toFixed(2)}</span>
+                    <span class="text-lg font-bold text-[#0f2a4a]">$${price}</span>
                     <p class="text-[10px] text-[#0f2a4a]/50">${state.material}</p>
                   </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-1">
-                  <button class="btn-quote-chat text-xs text-[#0f2a4a]/70 hover:text-[#e8752d] font-semibold cursor-pointer" data-shop-id="${shop.id}">
+                  <button type="button" class="btn-quote-chat text-xs text-[#0f2a4a]/70 hover:text-[#e8752d] font-semibold cursor-pointer" data-shop-id="${shop.id}">
                     Chat with ${shop.ownerName} &rarr;
                   </button>
-                  <button class="btn-checkout-shop btn-secondary py-2 px-3.5 text-xs" data-shop-id="${shop.id}">
+                  <button type="button" class="btn-checkout-shop btn-secondary py-2 px-3.5 text-xs" data-shop-id="${shop.id}">
                     Accept quote &amp; checkout
                   </button>
                 </div>
@@ -2649,6 +2971,7 @@
         ${renderBottomNav("home")}
         ${renderChatDrawer()}
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       document.getElementById("btn-back-request").onclick = () => {
@@ -2682,15 +3005,22 @@
     function renderCheckout(app) {
       const p = state.selectedPreset;
       const shop = state.selectedShop || PRINTER_SHOPS[0];
-      const basePrice = Math.round(shop.rate * p.estimatedGrams * 1.25 * 10) / 10;
+      const matInfo = MATERIAL_MULTIPLIERS[state.material] || { rate: 0.08, multiplier: 1.0 };
+      let addonCost = 0;
+      state.selectedAddons.forEach(aId => {
+        const a = POST_PROCESSING_ADDONS.find(item => item.id === aId);
+        if (a) addonCost += a.cost;
+      });
+
+      const basePrice = Math.round(shop.rate * (matInfo.multiplier / 1.0) * p.estimatedGrams * 1.25 * 10) / 10;
       const courierFee = state.deliveryOption === "courier" ? 4.99 : 0;
       const serviceFee = 1.85;
-      const total = (basePrice + courierFee + serviceFee).toFixed(2);
+      const total = (basePrice + addonCost + courierFee + serviceFee).toFixed(2);
       const splitAmount = (parseFloat(total) / 4).toFixed(2);
 
       app.innerHTML = `
         <header class="flex items-center justify-between border-b border-black/5 bg-[#eaf1f9] px-4 py-3.5">
-          <button id="btn-back-quotes" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
+          <button type="button" id="btn-back-quotes" class="flex items-center gap-1 text-sm font-semibold text-[#0f2a4a] cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
             Secure Checkout
           </button>
@@ -2707,12 +3037,12 @@
               <div class="min-w-0 flex-1">
                 <h4 class="font-bold text-sm text-[#0f2a4a] truncate">${p.name}</h4>
                 <p class="text-xs text-[#0f2a4a]/60">${state.material} &bull; ~${p.estimatedGrams}g &bull; ${shop.name}</p>
-                <span class="text-[10px] text-[#e8752d] font-semibold">${shop.turnaround} ready</span>
+                <span class="text-[10px] text-[#e8752d] font-semibold">${shop.turnaround} ready &bull; ${state.selectedMachineId}</span>
               </div>
             </div>
           </div>
 
-          <!-- Escrow & Security Trust Card -->
+          <!-- Escrow Trust Card -->
           <div class="rounded-2xl border border-green-600/20 bg-green-50/70 p-3.5 text-xs text-[#0f2a4a]">
             <div class="flex items-start gap-2.5">
               <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-bold text-xs">
@@ -2731,17 +3061,16 @@
           <div>
             <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-[#0f2a4a]/60">Fulfillment Method</label>
             <div class="grid grid-cols-2 gap-2">
-              <button class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'pickup' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="pickup">
+              <button type="button" class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'pickup' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="pickup">
                 <span class="text-xs font-bold text-[#0f2a4a]">Local Hub Pickup</span>
                 <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">Free &bull; Ready today</span>
               </button>
-              <button class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'courier' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="courier">
+              <button type="button" class="btn-delivery flex flex-col items-start p-3 rounded-xl border text-left cursor-pointer transition ${state.deliveryOption === 'courier' ? 'border-[#e8752d] bg-[#e8752d]/10 ring-1 ring-[#e8752d]' : 'border-black/10 bg-white'}" data-opt="courier">
                 <span class="text-xs font-bold text-[#0f2a4a]">Courier Delivery</span>
                 <span class="text-[10px] text-[#0f2a4a]/60 mt-0.5">+$4.99 &bull; To your door</span>
               </button>
             </div>
 
-            <!-- Fulfillment Details Display -->
             ${state.deliveryOption === 'pickup' ? `
               <div class="mt-2 rounded-xl bg-white border border-black/5 p-3 text-xs">
                 <div class="flex items-center justify-between">
@@ -2755,7 +3084,7 @@
               <div class="mt-2 rounded-xl bg-white border border-black/5 p-3 text-xs">
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-[#0f2a4a]">Courier Dispatch Address</span>
-                  <button id="btn-change-checkout-addr" class="text-[10px] font-semibold text-[#e8752d] hover:underline cursor-pointer">Change</button>
+                  <button type="button" id="btn-change-checkout-addr" class="text-[10px] font-semibold text-[#e8752d] hover:underline cursor-pointer">Change</button>
                 </div>
                 <p class="text-[11px] text-[#0f2a4a]/70 mt-0.5">${state.deliveryAddress}</p>
                 <p class="text-[10px] text-green-700 font-semibold mt-1">Same-day courier dispatch guaranteed upon print completion</p>
@@ -2804,7 +3133,6 @@
               </label>
             </div>
 
-            <!-- Dynamic Payment Details -->
             ${state.paymentPlan === 'split' ? `
               <div class="mt-2.5 rounded-xl border border-[#e8752d]/20 bg-[#fdf5f0] p-3 text-xs space-y-2">
                 <div class="flex items-center justify-between">
@@ -2847,6 +3175,12 @@
               <span class="text-[#0f2a4a]/70">3D Part Manufacture (${state.material})</span>
               <span>$${basePrice.toFixed(2)}</span>
             </div>
+            ${addonCost > 0 ? `
+              <div class="flex justify-between">
+                <span class="text-[#0f2a4a]/70">Post-Processing Add-ons</span>
+                <span>+$${addonCost.toFixed(2)}</span>
+              </div>
+            ` : ''}
             <div class="flex justify-between">
               <span class="text-[#0f2a4a]/70">Fulfillment (${state.deliveryOption === 'pickup' ? 'Hub Pickup' : 'Courier'})</span>
               <span>${courierFee === 0 ? 'Free' : '$' + courierFee.toFixed(2)}</span>
@@ -2864,6 +3198,7 @@
 
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3.5">
           <button
+            type="button"
             id="btn-confirm-pay"
             class="btn-primary w-full text-sm flex items-center justify-center gap-2"
           >
@@ -2872,6 +3207,7 @@
         </div>
 
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       document.getElementById("btn-back-quotes").onclick = () => {
@@ -2915,6 +3251,7 @@
             partName: p.name,
             photoUrl: p.photoUrl,
             material: state.material,
+            machine: state.selectedMachineId,
             shop: shop.name,
             price: parseFloat(total),
             status: "Slicing",
@@ -2931,6 +3268,7 @@
           saveAppState();
           state.screen = "orders";
           render();
+          showToast("Order authorized & escrow funds secured!", "success");
         }, 1100);
       };
 
@@ -2971,7 +3309,6 @@
                 </div>
               </div>
 
-              <!-- Live Progress Stepper -->
               <div class="rounded-xl bg-white p-3 space-y-2 border border-black/5">
                 <div class="flex items-center justify-between text-xs">
                   <span class="font-semibold text-[#0f2a4a] flex items-center gap-1.5">
@@ -2991,7 +3328,6 @@
                 </div>
               </div>
 
-              <!-- Escrow Actions for Delivered / Completed Orders -->
               ${o.isDelivered && o.status !== 'Completed' ? `
                 <div class="rounded-xl bg-[#e8752d]/10 border border-[#e8752d]/30 p-2.5 flex items-center justify-between gap-2">
                   <div class="min-w-0 flex-1">
@@ -2999,10 +3335,10 @@
                     <span class="text-[9px] text-[#0f2a4a]/60 block">Release funds or dispute within 48 hours</span>
                   </div>
                   <div class="flex gap-1.5">
-                    <button class="btn-open-dispute btn-outline py-1 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50 cursor-pointer" data-order-id="${o.id}">
+                    <button type="button" class="btn-open-dispute btn-outline py-1 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50 cursor-pointer" data-order-id="${o.id}">
                       Dispute
                     </button>
-                    <button class="btn-open-release btn-primary py-1 px-2.5 text-[10px] min-h-[30px] cursor-pointer" data-order-id="${o.id}">
+                    <button type="button" class="btn-open-release btn-primary py-1 px-2.5 text-[10px] min-h-[30px] cursor-pointer" data-order-id="${o.id}">
                       Release Funds
                     </button>
                   </div>
@@ -3010,10 +3346,10 @@
               ` : ''}
 
               <div class="flex gap-2">
-                <button class="btn-view-part-spec btn-secondary flex-1 py-2 text-xs">
+                <button type="button" class="btn-view-part-spec btn-secondary flex-1 py-2 text-xs">
                   Inspect 3D Specs
                 </button>
-                <button class="btn-open-order-chat btn-outline px-3.5 py-2 text-xs cursor-pointer" data-shop-name="${o.shop}">
+                <button type="button" class="btn-open-order-chat btn-outline px-3.5 py-2 text-xs cursor-pointer" data-shop-name="${o.shop}">
                   Chat Shop
                 </button>
               </div>
@@ -3024,6 +3360,7 @@
         ${renderBottomNav("orders")}
         ${renderChatDrawer()}
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       document.querySelectorAll(".btn-view-part-spec").forEach(btn => {
@@ -3117,21 +3454,21 @@
 
           <!-- Settings Options -->
           <div class="rounded-2xl bg-white p-2 border border-black/5 divide-y divide-black/5">
-            <button id="btn-open-addr-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+            <button type="button" id="btn-open-addr-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
               <div>
                 <span>Saved New Iberia Delivery Addresses</span>
                 <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">${state.savedAddresses.length} saved locations</span>
               </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
-            <button id="btn-open-pay-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+            <button type="button" id="btn-open-pay-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
               <div>
                 <span>Payment Methods &amp; Split Billing</span>
                 <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">Visa &bull;&bull;&bull;&bull; 4242 &bull; Pay in 4 active</span>
               </div>
               <span class="text-[#0f2a4a]/40">&rsaquo;</span>
             </button>
-            <button id="btn-open-slicer-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
+            <button type="button" id="btn-open-slicer-settings" class="w-full text-left p-3 text-xs font-semibold text-[#0f2a4a] flex justify-between items-center cursor-pointer hover:bg-black/5 rounded-xl transition">
               <div>
                 <span>CAD Slicer Export &amp; Mesh Preferences</span>
                 <span class="block text-[10px] text-[#0f2a4a]/50 font-normal">${state.slicerPrefs.nozzleSize} &bull; ${state.slicerPrefs.infillPattern}</span>
@@ -3142,7 +3479,7 @@
 
           <!-- State Reset Button -->
           <div class="pt-2 text-center">
-            <button id="btn-reset-demo-state" class="text-[11px] text-[#0f2a4a]/40 hover:text-red-600 underline cursor-pointer">
+            <button type="button" id="btn-reset-demo-state" class="text-[11px] text-[#0f2a4a]/40 hover:text-red-600 underline cursor-pointer">
               Reset App State to Initial Demo
             </button>
           </div>
@@ -3150,6 +3487,7 @@
 
         ${renderBottomNav("account")}
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       document.getElementById("btn-open-addr-settings").onclick = () => {
@@ -3190,8 +3528,8 @@
               <h2 class="text-sm font-bold text-white">${hub.name}</h2>
             </div>
             <div class="flex items-center gap-1.5 rounded-full bg-white/15 p-1 text-xs shadow-inner">
-              <button id="owner-back-buyer" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold text-white/70 hover:text-white cursor-pointer transition">Buyer</button>
-              <button class="rounded-full bg-[#e8752d] px-4.5 py-2 min-h-[38px] font-bold text-white shadow-md">Owner</button>
+              <button type="button" id="owner-back-buyer" class="rounded-full px-4.5 py-2 min-h-[38px] font-bold text-white/70 hover:text-white cursor-pointer transition">Buyer</button>
+              <button type="button" class="rounded-full bg-[#e8752d] px-4.5 py-2 min-h-[38px] font-bold text-white shadow-md">Owner</button>
             </div>
           </div>
 
@@ -3246,10 +3584,10 @@
                 Reconstructed manifold 3D mesh &bull; ~${state.selectedPreset.estimatedGrams}g ${state.material} &bull; New Iberia buyer
               </p>
               <div class="flex gap-2">
-                <button id="btn-owner-accept" class="btn-secondary flex-1 py-2 text-xs">
+                <button type="button" id="btn-owner-accept" class="btn-secondary flex-1 py-2 text-xs">
                   Accept Job &amp; Send to Slicer
                 </button>
-                <button id="btn-owner-decline" class="btn-outline px-3 py-2 text-xs text-red-600 border-red-200 hover:bg-red-50 cursor-pointer">
+                <button type="button" id="btn-owner-decline" class="btn-outline px-3 py-2 text-xs text-red-600 border-red-200 hover:bg-red-50 cursor-pointer">
                   Decline
                 </button>
               </div>
@@ -3258,12 +3596,13 @@
         </div>
 
         <div class="border-t border-black/5 bg-[#f4f8fc] px-4 py-3">
-          <button id="btn-return-buyer-mode" class="btn-secondary w-full py-3 text-xs">
+          <button type="button" id="btn-return-buyer-mode" class="btn-secondary w-full py-3 text-xs">
             Switch back to Buyer Marketplace
           </button>
         </div>
 
         ${renderActiveModal()}
+        <div id="global-toast" class="hidden"></div>
       `;
 
       const backBuyer = document.getElementById("owner-back-buyer");
@@ -3293,6 +3632,7 @@
             state.role = "buyer";
             state.screen = "orders";
             render();
+            showToast("Job accepted and queued on Bambu Lab #1", "success");
           }, 800);
         };
       }
@@ -3321,16 +3661,16 @@
     function renderBottomNav(activeTab) {
       return `
         <nav class="sticky bottom-0 z-20 flex items-stretch border-t border-black/5 bg-white/95 backdrop-blur">
-          <button id="nav-home" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'home' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+          <button type="button" id="nav-home" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'home' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Home
           </button>
-          <button id="nav-orders" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'orders' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+          <button type="button" id="nav-orders" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'orders' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
             Orders
             ${state.orders.length > 0 ? `<span class="absolute top-2 right-6 h-1.5 w-1.5 rounded-full bg-[#e8752d]"></span>` : ''}
           </button>
-          <button id="nav-account" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'account' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
+          <button type="button" id="nav-account" class="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium cursor-pointer ${activeTab === 'account' ? 'text-[#e8752d]' : 'text-[#0f2a4a]/40'}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Account
           </button>

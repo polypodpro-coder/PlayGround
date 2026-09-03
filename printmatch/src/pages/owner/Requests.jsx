@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import { jobs } from "../../data/mockData";
@@ -13,6 +13,7 @@ export default function Requests() {
       <div className="flex-1 space-y-2.5 px-4 py-5">
         {jobs.map((job) => (
           <button
+            type="button"
             key={job.id}
             onClick={() => navigate(`/owner/requests/${job.id}`)}
             className="flex w-full items-center justify-between rounded-2xl bg-surface p-4 text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"

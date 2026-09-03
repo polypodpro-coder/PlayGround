@@ -2,9 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar,
-  Calculator,
   File as FileIcon,
-  Image as ImageIcon,
   Store,
   UploadCloud,
   X,
@@ -12,19 +10,18 @@ import {
   Bot,
   Send,
   RefreshCw,
-  CheckCircle2,
+  Cpu,
 } from "lucide-react";
 import ScreenHeader from "../../components/ScreenHeader";
 import MaterialChipSelector from "../../components/MaterialChipSelector";
 import ShopLogo from "../../components/ShopLogo";
 import ModelPreviewer from "../../components/ModelPreviewer";
+import InstantQuoteCalculator from "../../components/InstantQuoteCalculator";
+import MachineCapabilities from "../../components/MachineCapabilities";
+import PostProcessingToggles from "../../components/PostProcessingToggles";
 import { useApp } from "../../context/AppContext";
 import { SAMPLE_PRESETS, createImageTo3DTask, pollTaskStatus } from "../../services/meshyService";
-
-// Rough average $/gram across nearby shops, used only to give buyers a
-// ballpark before quotes come in — the printer they pick sets the real
-// price.
-const AVG_MATERIAL_RATE = { PLA: 0.06, PETG: 0.08, ABS: 0.085, TPU: 0.13, Nylon: 0.15 };
+import { MATERIAL_MULTIPLIERS } from "../../data/mockData";
 
 export default function RequestUpload() {
   const navigate = useNavigate();
@@ -35,16 +32,21 @@ export default function RequestUpload() {
     selectedDesign,
     setSelectedDesign,
     printers,
+    showToast,
   } = useApp();
   const targetShop = printers.find((p) => p.id === directRequestPrinterId);
 
   const [file, setFile] = useState(null);
   const [material, setMaterial] = useState(
-    selectedDesign?.defaultMaterial ?? targetShop?.materials[0] ?? "PLA"
+    selectedDesign?.defaultMaterial ?? targetShop?.materials[0] ?? "PETG"
   );
   const [neededBy, setNeededBy] = useState("");
   const [notes, setNotes] = useState("");
   const [dragOver, setDragOver] = useState(false);
+
+  // New Intake Features: Fleet selection & Post-Processing Addons
+  const [selectedMachineId, setSelectedMachineId] = useState("bambu-x1c");
+  const [selectedAddons, setSelectedAddons] = useState([]);
 
   // Meshy AI Image-to-3D State
   const [meshyModel, setMeshyModel] = useState(null);
@@ -55,16 +57,22 @@ export default function RequestUpload() {
 
   const isModel = file && /\.(stl|obj)$/i.test(file.name);
 
+  const handleToggleAddon = (id) => {
+    setSelectedAddons((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   // Ballpark estimate grounded in actual 3D mesh volume when available
   const estimate = useMemo(() => {
-    const rate = AVG_MATERIAL_RATE[material] ?? 0.08;
+    const matRate = MATERIAL_MULTIPLIERS[material]?.rate ?? 0.08;
     let grams = null;
     if (meshyModel) grams = meshyModel.estimatedGrams;
     else if (selectedDesign) grams = selectedDesign.estimatedGrams;
     else if (file) grams = Math.min(420, Math.max(8, Math.round(file.size / 350)));
     if (!grams) return null;
 
-    const base = Math.max(5, grams * rate);
+    const base = Math.max(5, grams * matRate);
     return { grams, low: base * 0.85, high: base * 1.3 };
   }, [file, selectedDesign, material, meshyModel]);
 
@@ -106,8 +114,10 @@ export default function RequestUpload() {
       };
       setMeshyModel(newModel);
       setMaterial(newModel.recommendedMaterial);
+      if (showToast) showToast("3D model synthesized successfully from reference photo!", "success");
     } else {
       setMeshyModel(null);
+      if (showToast) showToast(`CAD file "${f.name}" loaded for quoting`, "info");
     }
   };
 
@@ -127,6 +137,7 @@ export default function RequestUpload() {
     setIsGenerating(false);
     setMeshyModel({ ...preset });
     setMaterial(preset.recommendedMaterial);
+    if (showToast) showToast(`Loaded "${preset.name}" preset`, "info");
   };
 
   const handleRefine = (instruction) => {
@@ -157,10 +168,20 @@ export default function RequestUpload() {
       }));
     }
     setAgentPrompt("");
+    if (showToast) showToast("Applied geometry refinement", "success");
   };
 
   const submit = (e) => {
     e.preventDefault();
+
+    // Prevent silent failure: Check if a model is selected
+    if (!meshyModel && !selectedDesign && !file) {
+      if (showToast) {
+        showToast("Please upload a CAD file, reference photo, or select a sample part.", "error");
+      }
+      return;
+    }
+
     setRequest({
       fileName: meshyModel
         ? `${meshyModel.name}.stl`
@@ -170,10 +191,12 @@ export default function RequestUpload() {
       designId: selectedDesign?.id ?? null,
       material,
       neededBy,
+      selectedMachineId,
+      selectedAddons,
       notes: meshyModel
-        ? `${notes ? notes + "\n\n" : ""}[Meshy AI Model: ${meshyModel.name} · ${meshyModel.dimensions.x}×${meshyModel.dimensions.y}×${meshyModel.dimensions.z}mm · ${meshyModel.infillRecommendation}]`
+        ? `${notes ? notes + "\n\n" : ""}[Meshy AI Model: ${meshyModel.name} • ${meshyModel.dimensions.x}x${meshyModel.dimensions.y}x${meshyModel.dimensions.z}mm • ${meshyModel.infillRecommendation}]`
         : notes,
-      estimatedGrams: estimate?.grams ?? null,
+      estimatedGrams: estimate?.grams ?? (meshyModel?.estimatedGrams || 40),
       meshyModel: meshyModel ?? null,
     });
     navigate("/quotes");
@@ -218,7 +241,7 @@ export default function RequestUpload() {
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-navy">{selectedDesign.name}</p>
-                <p className="text-xs text-navy/40">From featured designs · Concept</p>
+                <p className="text-xs text-navy/40">From featured designs • Concept</p>
               </div>
               <button
                 type="button"
@@ -251,7 +274,6 @@ export default function RequestUpload() {
           {/* Case 3: Meshy AI 3D Model Generated & Ready */}
           {!isGenerating && meshyModel && (
             <div className="space-y-3 rounded-2xl border-2 border-accent/20 bg-surface p-3.5 shadow-sm">
-              {/* Photo header with Meshy badge & remove button */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
@@ -369,6 +391,7 @@ export default function RequestUpload() {
                 type="button"
                 onClick={() => setFile(null)}
                 className="text-navy/40 hover:text-navy"
+                aria-label="Remove uploaded file"
               >
                 <X size={16} />
               </button>
@@ -434,7 +457,7 @@ export default function RequestUpload() {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-navy">{preset.name}</p>
-                        <p className="text-[10px] text-navy/50">{preset.recommendedMaterial} · ~{preset.estimatedGrams}g</p>
+                        <p className="text-[10px] text-navy/50">{preset.recommendedMaterial} • ~{preset.estimatedGrams}g</p>
                       </div>
                     </button>
                   ))}
@@ -444,10 +467,14 @@ export default function RequestUpload() {
           )}
         </div>
 
+        {/* Material Selection with Multipliers */}
         <div>
-          <label className="mb-2 block text-sm font-semibold text-navy">
-            Material
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-semibold text-navy">
+              Material Selection
+            </label>
+            <span className="text-[10px] text-navy/50 font-medium">Standard &amp; Engineering</span>
+          </div>
           <MaterialChipSelector
             materials={targetShop?.materials}
             selected={material}
@@ -455,27 +482,24 @@ export default function RequestUpload() {
           />
         </div>
 
-        {estimate && (
-          <div className="flex items-center gap-3 rounded-2xl bg-navy/5 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-xs">
-              <Calculator size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-navy">
-                Est. ${estimate.low.toFixed(0)}–${estimate.high.toFixed(0)}
-              </p>
-              <p className="text-xs text-navy/50">
-                ~{estimate.grams}g of {material},{" "}
-                {meshyModel
-                  ? "calculated from your Meshy 3D mesh"
-                  : selectedDesign
-                  ? "based on this design"
-                  : "based on your file"}{" "}
-                · printers set final price
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Feature 1: Instant Quoting Component with Multiplier Variables */}
+        <InstantQuoteCalculator
+          grams={estimate?.grams || (meshyModel?.estimatedGrams ?? 42)}
+          material={material}
+          selectedAddons={selectedAddons}
+        />
+
+        {/* Feature 2: Post-Processing Toggles */}
+        <PostProcessingToggles
+          selectedAddons={selectedAddons}
+          onToggleAddon={handleToggleAddon}
+        />
+
+        {/* Feature 3: Machine Capabilities Section */}
+        <MachineCapabilities
+          selectedMachineId={selectedMachineId}
+          onSelectMachine={setSelectedMachineId}
+        />
 
         <div>
           <label className="mb-2 block text-sm font-semibold text-navy">
@@ -494,27 +518,24 @@ export default function RequestUpload() {
 
         <div>
           <label className="mb-2 block text-sm font-semibold text-navy">
-            Notes <span className="font-normal text-navy/40">(optional)</span>
+            Notes for printer <span className="font-normal text-navy/40">(optional)</span>
           </label>
           <textarea
+            rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={4}
-            placeholder="Color preference, tolerances, infill, anything the printer should know..."
-            className="w-full resize-none rounded-xl bg-surface px-3.5 py-3 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35"
+            placeholder="e.g. infill preference, tolerances, surface finish..."
+            className="w-full rounded-xl bg-surface p-3.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-2 focus:ring-accent"
           />
         </div>
-      </form>
 
-      <div className="border-t border-black/5 bg-surface px-4 py-3.5">
         <button
-          onClick={submit}
           type="submit"
-          className="w-full rounded-2xl bg-accent py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/30 active:scale-[0.98]"
+          className="w-full rounded-2xl bg-accent py-4 text-center text-sm font-semibold text-white shadow-md shadow-accent/25 transition active:scale-[0.98]"
         >
-          Get quotes
+          Get quotes (Step 2 of 2)
         </button>
-      </div>
+      </form>
     </div>
   );
 }

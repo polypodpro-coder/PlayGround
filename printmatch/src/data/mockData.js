@@ -1,7 +1,90 @@
-// Mock data model for Poly POD. No backend — everything lives here and in
+﻿// Mock data model for Poly POD. No backend — everything lives here and in
 // AppContext at runtime.
 
-export const MATERIALS = ["PLA", "PETG", "ABS", "TPU", "Nylon"];
+export const MATERIALS = ["PLA", "PETG", "TPU", "Polycarbonate", "ABS-ESD", "Nylon"];
+
+export const MATERIAL_MULTIPLIERS = {
+  PLA: { multiplier: 1.0, rate: 0.06, category: "Standard", desc: "Fast, rigid, versatile" },
+  PETG: { multiplier: 1.33, rate: 0.08, category: "Standard", desc: "Chemical, water & thermal resistance up to 75°C" },
+  TPU: { multiplier: 1.65, rate: 0.13, category: "Specialty", desc: "Flexible 95A rubber-like vibration damping" },
+  "ABS-ESD": { multiplier: 1.85, rate: 0.145, category: "Specialty", desc: "Electrostatic discharge safe (10^6-10^9 ohms)" },
+  Polycarbonate: { multiplier: 2.20, rate: 0.175, category: "Engineering", desc: "Extreme impact strength & 110°C heat deflection" },
+  Nylon: { multiplier: 2.00, rate: 0.16, category: "Engineering", desc: "High fatigue strength and low-friction wear resistance" }
+};
+
+export const POST_PROCESSING_ADDONS = [
+  {
+    id: "splitAndBond",
+    name: "Split-and-Bond Assembly",
+    cost: 12.50,
+    desc: "Industrial structural acrylic/solvent bonding for oversized geometry exceeding build volume."
+  },
+  {
+    id: "hardwareInstall",
+    name: "Hardware Installation",
+    cost: 8.00,
+    desc: "Heat-set brass threaded inserts (M3/M4/M5), press-fit precision bearings, and dowel pins."
+  }
+];
+
+export const FLEET_MACHINES = [
+  {
+    id: "bambu-x1c",
+    name: "Bambu Lab X1-Carbon",
+    badge: "Flagship Precision",
+    buildVolume: { x: 256, y: 256, z: 256, unit: "mm" },
+    maxTemp: "300°C Nozzle / 120°C Bed",
+    features: [
+      "Dual-gear direct drive extrusion",
+      "Micro-LiDAR first-layer inspection",
+      "Multi-material AMS (up to 16 colors)",
+      "AI spaghetti detection & chamber monitoring"
+    ],
+    materials: ["PLA", "PETG", "TPU", "Polycarbonate", "ABS-ESD"]
+  },
+  {
+    id: "bambu-p1p",
+    name: "Bambu Lab P1P",
+    badge: "High-Speed Rapid",
+    buildVolume: { x: 256, y: 256, z: 256, unit: "mm" },
+    maxTemp: "300°C Nozzle / 100°C Bed",
+    features: [
+      "CoreXY 500 mm/s acceleration",
+      "Direct-drive all-metal hotend",
+      "Active vibration compensation",
+      "Rapid turnaround functional prototypes"
+    ],
+    materials: ["PLA", "PETG", "TPU"]
+  },
+  {
+    id: "bambu-a1mini",
+    name: "Bambu Lab A1 mini",
+    badge: "Ultra-Fine Details",
+    buildVolume: { x: 180, y: 180, z: 180, unit: "mm" },
+    maxTemp: "300°C Nozzle / 80°C Bed",
+    features: [
+      "Active flow rate calibration",
+      "0.2mm high-resolution micro-nozzle capable",
+      "Whisper-quiet operation (<48dB)",
+      "Intricate miniature parts & tight snap-fits"
+    ],
+    materials: ["PLA", "PETG", "TPU"]
+  },
+  {
+    id: "prusa-xl",
+    name: "Prusa XL (Multi-Tool)",
+    badge: "Large-Format Industrial",
+    buildVolume: { x: 360, y: 360, z: 360, unit: "mm" },
+    maxTemp: "300°C Nozzle / 100°C Bed",
+    features: [
+      "Modular Nextruder toolchanger (up to 5 heads)",
+      "Zero-waste true multi-material printing",
+      "Segmented energy-efficient heated bed",
+      "Oversized structural enclosures & tooling"
+    ],
+    materials: ["PLA", "PETG", "ABS-ESD", "Polycarbonate"]
+  }
+];
 
 // Self-contained SVG shop-logo marks — no network dependency, so the app
 // (and any static preview of it) never depends on an image host being

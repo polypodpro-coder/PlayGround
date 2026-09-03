@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ChevronRight, Moon, TrendingUp } from "lucide-react";
 import RoleToggle from "../../components/RoleToggle";
 import StatusBadge from "../../components/StatusBadge";
@@ -47,6 +47,7 @@ export default function Dashboard() {
               {myShop.pausedUntil && ` until ${new Date(myShop.pausedUntil).toLocaleDateString()}`} —
               buyers can't send new requests.{" "}
               <button
+                type="button"
                 onClick={() => navigate("/owner/settings")}
                 className="font-semibold underline underline-offset-2"
               >
@@ -68,6 +69,7 @@ export default function Dashboard() {
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-navy">Incoming requests</h2>
             <button
+              type="button"
               onClick={() => navigate("/owner/requests")}
               className="flex items-center text-xs font-semibold text-accent"
             >
@@ -78,6 +80,7 @@ export default function Dashboard() {
           <div className="space-y-2.5">
             {pendingJobs.map((job) => (
               <button
+                type="button"
                 key={job.id}
                 onClick={() => navigate(`/owner/requests/${job.id}`)}
                 className="flex w-full items-center justify-between rounded-2xl bg-surface p-4 text-left shadow-sm ring-1 ring-black/5 active:scale-[0.98]"

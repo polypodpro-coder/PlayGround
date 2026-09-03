@@ -1,5 +1,6 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+﻿import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
+import Toast from "./components/Toast";
 import { useApp } from "./context/AppContext";
 
 import Login from "./pages/auth/Login";
@@ -30,7 +31,7 @@ const AUTH_PATHS = ["/login", "/signup"];
 
 export default function App() {
   const { pathname } = useLocation();
-  const { isAuthenticated, role } = useApp();
+  const { isAuthenticated, role, toast, hideToast } = useApp();
 
   const isAuthPath = AUTH_PATHS.includes(pathname);
   if (!isAuthenticated && !isAuthPath) {
@@ -77,6 +78,7 @@ export default function App() {
         </Routes>
       </div>
       {!hideNav && <BottomNav />}
+      <Toast toast={toast} onClose={hideToast} />
     </div>
   );
 }
