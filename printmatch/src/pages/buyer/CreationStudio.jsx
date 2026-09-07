@@ -7,6 +7,7 @@ import { useApp } from "../../context/AppContext";
 import { useCreations } from "../../context/CreationContext";
 import { MESHY_PORTAL } from "../../config/meshyPortal";
 import MeshyTools from "../../components/MeshyTools";
+import MeshyGenerator from "../../components/MeshyGenerator";
 
 const money = (cents) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 const createdLabel = (value) => Number.isNaN(new Date(value).getTime()) ? "" : new Date(value).toLocaleDateString();
@@ -85,6 +86,14 @@ export default function CreationStudio() {
     }
     setSourceUnits("mm"); setFile(selected); setTitle(selected.name.replace(/\.stl$/i, "").slice(0, 100));
   }
+  function applyGeneratedFile(generated) {
+    resetImport(); setLocalError(""); setMessage(""); clearError();
+    if (!(generated instanceof File) || !/\.stl$/i.test(generated.name) || !generated.size || generated.size > MAX_STL_BYTES) {
+      setLocalError("The generated model was not a valid STL under 10 MB. Try generating again."); return;
+    }
+    setSourceUnits("mm"); setFile(generated); setTitle(generated.name.replace(/\.stl$/i, "").slice(0, 100) || "Meshy creation");
+    setMessage("Generated model loaded. Confirm its source units and dimensions below, then save it to your library.");
+  }
   async function save(event) {
     event.preventDefault();
     if (saveLock.current) return;
@@ -130,13 +139,15 @@ export default function CreationStudio() {
     {(localError || error) && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm leading-6 text-red-800">{localError || error}</div>}
     {message && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">{message}</p>}
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
-      <section className="panel stack">
-        <div><p className="eyebrow">01 / CREATE WITH MESHY</p><h2 className="section-heading mt-2">Your account. Your creative control.</h2></div>
-        <ol className="list-decimal space-y-4 pl-5 text-sm leading-6 text-navy/75"><li>Open Meshy and sign in to your own account. Any Meshy usage or plan fees are managed there.</li><li>Create from your image or prompt, then inspect the result. Check the plan's export options and your rights to use the model.</li><li>Download an STL and return here to check its size and prepare a farm review request.</li></ol>
-        <a href={MESHY_PORTAL.workspaceUrl} target="_blank" rel="noopener noreferrer" className="button">Open Meshy workspace <ExternalLink size={17} /></a>
-        <p className="text-sm leading-6 text-navy/65">Create in Meshy's own tab using your account and credits. Check your plan's download options, then bring back the STL file.</p>
-        {MESHY_PORTAL.referralUrl && <div className="border-t border-navy/10 pt-4"><a href={MESHY_PORTAL.referralUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-accent">New to Meshy? Create an account through our associate link <ExternalLink size={15} /></a><p className="mt-2 text-sm leading-6 text-navy/65">We may earn Meshy credits if you sign up through this link.</p></div>}
-      </section>
+      <div className="stack min-w-0">
+        <MeshyGenerator onGenerated={applyGeneratedFile} disabled={saving} />
+        <details className="panel text-sm text-navy/70">
+          <summary className="cursor-pointer font-semibold">Prefer to use Meshy's website instead?</summary>
+          <p className="mt-3 leading-6">You can also create on Meshy directly with your own account, then import the exported STL on the right.</p>
+          <a href={MESHY_PORTAL.workspaceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 button button-secondary">Open Meshy workspace <ExternalLink size={17} /></a>
+          {MESHY_PORTAL.referralUrl && <div className="mt-4 border-t border-navy/10 pt-4"><a href={MESHY_PORTAL.referralUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-accent">New to Meshy? Create an account through our associate link <ExternalLink size={15} /></a><p className="mt-2 leading-6 text-navy/65">We may earn Meshy credits if you sign up through this link.</p></div>}
+        </details>
+      </div>
       <form onSubmit={save} className="panel stack">
         <div><p className="eyebrow">02 / IMPORT AND REVIEW</p><h2 className="section-heading mt-2">Check the model that comes back.</h2></div>
         <div className="rounded-xl border border-dashed border-navy/25 p-5 text-center"><UploadCloud size={30} className="mx-auto mb-3 text-accent" /><p className="mb-4 text-sm leading-6 text-navy/65">Choose the STL you downloaded from Meshy.<br />One file · up to 10 MB · viewed locally before save</p><button type="button" className="button button-secondary" disabled={saving} onClick={() => inputRef.current?.click()}>{file ? "Choose another STL" : "Choose an STL"}</button><input ref={inputRef} type="file" accept=".stl" className="sr-only" aria-label="Choose your Meshy STL" disabled={saving} onChange={(event) => { chooseFile(event.target.files); event.target.value = ""; }} /></div>
