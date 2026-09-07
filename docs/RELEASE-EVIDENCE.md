@@ -54,6 +54,15 @@ Audited `/#/`, `/#/?view=map`, `/#/create`, `/#/request`, `/#/owner/creations`, 
 ### Error and edge states
 Oversized (>10 MB) files rejected on `/#/create`; unsupported extensions rejected on `/#/request`; a malformed `.stl` produces a clear viewer validation error ("This STL is incomplete or has an invalid binary length"); the `*` route renders the 404 page ("This page moved off the print bed.", title "Page not found | Poly Pod Pro").
 
+### Network and map-failure review
+Simulated failure by blocking all external (non-localhost) requests in the browser, then by taking the whole context offline.
+- Map view (`/#/?view=map`) with OpenStreetMap tiles blocked: the Leaflet container still renders and page content is intact; the only logged failures are the aborted tile fetches. Shop profiles render normally under the same block.
+- Reload on the map route (local assets available) recovers cleanly.
+- Fully offline, navigating to a not-yet-loaded code-split route fails to fetch its chunk and is caught by the app's `ErrorBoundary`, which shows a friendly recovery screen with a "Reload preview" button rather than a blank page.
+- Across the whole sweep there were **no unhandled JavaScript exceptions**; every logged error was a network resource failure (`ERR_FAILED` for blocked tiles, `ERR_INTERNET_DISCONNECTED` when offline), i.e. handled degradation, not a crash.
+
+While reviewing the fallback, corrected confusing `ErrorBoundary` copy that read "Your browser has not sent a payment." on a generic render-error screen (payments are not part of this preview); it now reads "A display error interrupted this view. No payment or order was affected. Reload the preview to start again."
+
 ### Connected-sharing boundary (reviewed, not enabled)
 Ran the prepared backend status service with no provider variables set: `node server/index.mjs` starts with `identityConfigured:false, paymentsEnabled:false` and needs no provider dependencies. `GET /api/status` and `GET /api/creation-status` (`{configured:false, enabled:false}`) report disabled; `POST /api/creations` fails closed with **503 `identity_unavailable`**. No provider dependencies were installed, no database was migrated, and no service was enabled.
 
@@ -62,9 +71,17 @@ Ran the prepared backend status service with no provider variables set: `node se
 - The stale `printmatch/package-lock.json` (older package name, missing the direct Three dependency) was removed so `pnpm-lock.yaml` is the single frontend lockfile; the README states the pnpm-only policy. No dependency versions were changed.
 
 ### Still gated (unchanged by this checkpoint)
-Real Auth0/PostgreSQL/Stripe integration, live migrations, payments, publication/deployment, Meshy referral attribution, storage retention/backups, and large-inbox pagination remain unexercised and gated. Relevant server tests still use doubles. A configured server is not a launched marketplace, and this checkpoint did not deploy anything or open commerce. The static-preview release archive and hash below were produced in the earlier Windows checkpoint and were not regenerated here.
+Real Auth0/PostgreSQL/Stripe integration, live migrations, payments, publication/deployment, Meshy referral attribution, storage retention/backups, and large-inbox pagination remain unexercised and gated. Relevant server tests still use doubles. A configured server is not a launched marketplace, and this checkpoint did not deploy anything or open commerce.
 
-Archive: `Z:\PolyPodPro\release\poly-pod-pro-preview.zip`
+### Cloud release archive (this checkpoint)
+Packaged `dist/` only (no server source, env files, dependencies, or historical root HTML) after the green build above:
+- Files: **52**
+- Bytes: **410202**
+- SHA-256: `515df1d11571e840d1e7ac55ca462d48dbb9ad56085bcc409410b6248510c716`
+
+The archive is a build artifact and is not committed (it is git-ignored). The byte count and hash differ from the earlier Windows archive because this is a fresh build that includes the `ErrorBoundary` copy fix and different per-file asset hashes; the 52-file count matches. Publication to a public destination still requires the separate approval and destination verification in the release checklist.
+
+Archive (earlier Windows checkpoint): `Z:\PolyPodPro\release\poly-pod-pro-preview.zip`
 Files: 52
 Bytes: 414113
 SHA-256: d52cd130992c44680b8cc55eda747e80f82a2e895f87eaf4d3a0652d80fe650b
