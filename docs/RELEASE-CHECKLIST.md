@@ -8,10 +8,10 @@ This checklist separates publication of the **static sample preview** from openi
 - [x] Run `pnpm lint`, `pnpm test`, and `pnpm build`; record the actual final results and any remaining warnings.
 - [x] Serve `dist/` over HTTP and review desktop/mobile layouts, keyboard focus, navigation, and empty search states. Reviewed widths/pages are recorded in release evidence.
 - [x] Verify farm quote revisions across navigation, STL source units and quote-summary restoration, and service-radius maps linked from profiles/settings.
-- [ ] Repeat the complete sample request → quotes → checkout → order flow and end-user STL download at the intended publication destination.
-- [ ] Simulate map/network failures and complete broader error-state review; map loading and reload recovery were checked.
-- [ ] Confirm visible sample labeling; no real login prompts, card/bank/address collection, sent messages, live onboarding, or payable orders in the static build.
-- [ ] Confirm refresh/hash routes, relative assets, and the intended hosting subdirectory work. Review map loading and local-file limits.
+- [ ] Repeat the complete sample request → quotes → checkout → order flow and end-user STL download at the intended publication destination. (Both sample flows and STL unit/download handling pass in the cloud production-build preview — see RELEASE-EVIDENCE.md — but verification at the published destination is still pending.)
+- [ ] Simulate map/network failures and complete broader error-state review; map loading and reload recovery were checked. (Oversized/unsupported/malformed-file rejection and the 404 route are verified in the cloud checkpoint; deliberate map/network-failure simulation is still pending.)
+- [ ] Confirm visible sample labeling; no real login prompts, card/bank/address collection, sent messages, live onboarding, or payable orders in the static build. (Cloud checkpoint observed the preview labeling and a checkout that collects no card/address and creates only a sample order; a full sweep across every surface is still pending.)
+- [ ] Confirm refresh/hash routes, relative assets, and the intended hosting subdirectory work. Review map loading and local-file limits. (Hash routes and relative `./` assets confirmed in the cloud preview; subdirectory hosting at the destination is still pending.)
 - [x] Package only reviewed static build files. Exclude server source, secrets, environment files, source dependencies, and all historical root HTML.
 - [x] Prepare `Z:\PolyPodPro\release\poly-pod-pro-preview.zip` and verify its contents match the reviewed `dist/` build.
 - [ ] Obtain publication approval for the concrete preview and destination; publish only `dist/` contents, then verify the public URL and hash routes.
@@ -40,6 +40,6 @@ See [LAUNCH-PLAN.md](LAUNCH-PLAN.md) for decisions and [BACKEND-SETUP.md](BACKEN
 ## Meshy creation checkpoint
 - [x] Actual local STL → selected sample farm → nonbinding estimate → buyer review and revocation verified.
 - [x] Supplied associate link and nearby credit disclosure included; external preparation and slicer guides reviewed.
-- [ ] New creation pages checked on a verified narrow mobile viewport; current browser ignored the requested width.
+- [x] New creation pages checked on a verified narrow mobile viewport. Verified in the cloud checkpoint at actual 320/375/768/1280 px with zero horizontal overflow and no console errors (see RELEASE-EVIDENCE.md, "Cloud verification"). The earlier Windows browser had ignored the requested width.
 - [ ] Connected private sharing tested against real hosted identity and PostgreSQL before enabling its separate write flag.
 See [MESHY-PORTAL.md](MESHY-PORTAL.md) and the current release evidence.

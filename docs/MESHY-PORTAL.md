@@ -39,7 +39,7 @@ Meshy's [export restrictions](https://help.meshy.ai/en/articles/10421033-why-can
 No Meshy API key, generation endpoint, mock generation result or platform credit balance exists in this flow. The unused legacy simulated Meshy service was replaced with a portal configuration export.
 
 - Static default: `VITE_API_ENABLED=false`; no creation API calls, uploads or persistent storage.
-- Connected deployment: existing hosted identity/session/database setup, `server/creations.sql` after `server/schema.sql`, same-origin API routing, and `CREATION_SHARING_ENABLED=true`. Build with `VITE_API_ENABLED=true` only on that host. Missing identity or schema keeps writes closed. Server startup does not run migrations.
+- Connected deployment: existing hosted identity/session/database setup, `server/creations.sql` after `server/schema.sql` (apply both with `node server/migrate.mjs --with-creations`), same-origin API routing, and `CREATION_SHARING_ENABLED=true`. Build with `VITE_API_ENABLED=true` only on that host. Missing identity or schema keeps writes closed. Server startup does not run migrations.
 - Session and verified active account checks protect all private routes. Mutations require matching Origin and CSRF token. Identity comes from the server session, never client role or farm identifiers alone.
 - Strict base64 and complete ASCII/binary STL validation, finite bounded coordinates, SHA-256 integrity, immutable model bytes/source units, private PostgreSQL bytea storage. Upload JSON is bounded at 14 MB for the 10 MB STL envelope.
 - Five imports per UTC day and 100 total models per buyer, enforced under one user transaction lock. Up to ten active farm shares per creation; only approved US farms may receive/access them.

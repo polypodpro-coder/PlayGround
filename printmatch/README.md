@@ -17,6 +17,8 @@ pnpm preview --host 127.0.0.1
 
 The development server binds to `127.0.0.1`. The preview server serves the production build. Keep `VITE_API_ENABLED=false`, as shown in `.env.example`; no environment file is required for the static sample. `VITE_ENABLE_DEMO` is no longer used.
 
+This project uses **pnpm**. `pnpm-lock.yaml` is the single source of truth for the frontend; there is no npm lockfile, so do not run `npm ci` or `npm install` here. The separate backend in `server/` declares its own dependencies and generates its own lockfile only after installation is authorized (see [backend setup](../docs/BACKEND-SETUP.md)).
+
 ## Features and boundaries
 
 | Experience | Available in this release |

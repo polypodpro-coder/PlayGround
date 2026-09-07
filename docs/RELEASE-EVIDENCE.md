@@ -29,6 +29,41 @@ Next publication checks: new-page narrow mobile review, end-user downloads and c
 
 This is a stable stopping point. All changes and research are saved; resume from these notes without repeating successful checks unless code or conditions change.
 
+## Cloud verification — September 7, 2026 (Claude handoff continuation)
+
+Continued from the Codex handoff (`docs/CLAUDE-HANDOFF.md`) in an isolated Linux cloud container. Environment: Node 22.22.2, pnpm 10.33.0. Frozen install (`pnpm install --frozen-lockfile --ignore-scripts`) succeeded from `pnpm-lock.yaml` (lockfile v9). This checkpoint reflects the first clean-Linux baseline; earlier checkpoints ran on Windows.
+
+### Automated checks (cloud)
+- **146 tests pass**, zero failures/skips (`pnpm test`). This is the prior 141 plus 5 new `tests/migrate-plan.test.mjs` checks covering which schema files the migration runner applies.
+- Full oxlint clean (`pnpm lint`, exit 0). Vite production build passes with **1,927 modules** (`pnpm build`), matching the prior checkpoint. Main JS bundle unchanged at 217.14 KB (69.84 KB gzip).
+
+### STL units and downloads (actual `tests/fixtures/unit-cube.stl`, 12 triangles)
+Verified through `src/lib/stlUnits.js`: source **mm → 1 mm**, **cm → 10 mm**, **in → 25.4 mm** cube. Source geometry coordinates are unchanged after conversion (original-file download preserves source units). A normalized cm export re-imports as a valid 12-triangle 10 mm cube and stays 10 mm when reopened as mm. `isCurrentModelInfo` invalidates size confirmation when source units change (cm → in).
+
+### Responsive and accessibility (headless Chromium, Playwright)
+Audited `/#/`, `/#/?view=map`, `/#/create`, `/#/request`, `/#/owner/creations`, `/#/account` at **320, 375, 768 and 1280 px**.
+- **Zero horizontal overflow at every viewport on every page**, including the new creation pages. This closes the previously-unverified 320 px narrow-mobile check that the earlier Windows browser could not emulate.
+- Zero JavaScript console/page errors on all routes.
+- Small raw-element sizes flagged by the audit are not real target-size failures: consent checkboxes are wrapped in full-width `<label>` rows (confirmed by clicking the label text, away from the 16 px box, which toggles the control), file inputs are `sr-only` and triggered by visible buttons, and the remaining items are inline text links plus third-party Leaflet/OpenStreetMap attribution.
+- Keyboard: "Skip to content" is the first tab stop and moves focus to `#main-content`; route changes move focus to the main region and reset scroll.
+
+### Sample workflows (headless Chromium, end-to-end)
+- Creation → estimate → revoke: imported the actual `unit-cube.stl`, set source units to cm (10 × 10 × 10 mm shown), confirmed rights and dimensions, saved to the tab library, requested review from the sample farm (Riverside Rapid Prints), and confirmed the farm inbox showed the same file, source units and dimensions. The estimate form rejected `12.345` ("must be a dollar amount with at most two decimal places"), accepted `$12.50` production / `$0.00` fulfillment, and the buyer then saw a $12.50 nonbinding estimate at three business days. Removing the sample request returned the farm inbox to zero requests.
+- Request → quotes → sample checkout → order: configured a procedural sample part, quantity 2, and compared three example quotes showing per-order fulfillment charges (farm pickup $0.00, local drop-off $5.00, US shipping $6.00) with a "Lowest example subtotal" badge. Checkout listed three delivery options; selecting local drop-off surfaced the farm's "10-mile example service radius" note; the sample subtotal computed to $35.78. Creating the sample order routed to `/orders/demo-…`, which renders the order-tracking workspace ("Sample · Queued"), not a payable order.
+
+### Error and edge states
+Oversized (>10 MB) files rejected on `/#/create`; unsupported extensions rejected on `/#/request`; a malformed `.stl` produces a clear viewer validation error ("This STL is incomplete or has an invalid binary length"); the `*` route renders the 404 page ("This page moved off the print bed.", title "Page not found | Poly Pod Pro").
+
+### Connected-sharing boundary (reviewed, not enabled)
+Ran the prepared backend status service with no provider variables set: `node server/index.mjs` starts with `identityConfigured:false, paymentsEnabled:false` and needs no provider dependencies. `GET /api/status` and `GET /api/creation-status` (`{configured:false, enabled:false}`) report disabled; `POST /api/creations` fails closed with **503 `identity_unavailable`**. No provider dependencies were installed, no database was migrated, and no service was enabled.
+
+### Documentation/release gaps addressed this checkpoint
+- The private-creation migration now has an explicit command: `node server/migrate.mjs --with-creations` (or `CREATION_SHARING_ENABLED=true node server/migrate.mjs`) applies `schema.sql` then `creations.sql`, each under its own advisory lock; the default command still applies only `schema.sql`. Covered by `tests/migrate-plan.test.mjs`; the actual PostgreSQL application still requires the authorized dependency install and staging verification.
+- The stale `printmatch/package-lock.json` (older package name, missing the direct Three dependency) was removed so `pnpm-lock.yaml` is the single frontend lockfile; the README states the pnpm-only policy. No dependency versions were changed.
+
+### Still gated (unchanged by this checkpoint)
+Real Auth0/PostgreSQL/Stripe integration, live migrations, payments, publication/deployment, Meshy referral attribution, storage retention/backups, and large-inbox pagination remain unexercised and gated. Relevant server tests still use doubles. A configured server is not a launched marketplace, and this checkpoint did not deploy anything or open commerce. The static-preview release archive and hash below were produced in the earlier Windows checkpoint and were not regenerated here.
+
 Archive: `Z:\PolyPodPro\release\poly-pod-pro-preview.zip`
 Files: 52
 Bytes: 414113
