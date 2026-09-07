@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - claude/3d-model-generator-stl-IifOO
+      - claude/polypodpro-codex-handoff-kr80na
     paths:
       - printmatch/**
       - .github/workflows/deploy-pages.yml
