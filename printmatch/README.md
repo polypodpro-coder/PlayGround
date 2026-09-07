@@ -29,7 +29,7 @@ This project uses **pnpm**. `pnpm-lock.yaml` is the single source of truth for t
 | CAD/photos | Local references; Meshy portal for external buyer-account generation and model preparation |
 | Quote to order | Build-envelope and fulfillment matching; example subtotals including farm fulfillment charges; sample checkout, local orders, and progress |
 | Communication | Sample conversations and local drafts; no messages sent |
-| Creation studio | Buyer-owned Meshy portal, associate link, external preparation tools/slicer guides, actual STL library, selected-farm requests and nonbinding estimates in tab preview |
+| Creation studio | Buyer-owned Meshy portal, associate link, external preparation tools/slicer guides, actual STL library, selected-farm requests and nonbinding estimates in tab preview. Optional native **Bring-Your-Own-Key** generation (Text/Image to 3D) that reads the user's own Meshy key from `localStorage` and calls Meshy through a user-deployed proxy — see [`serverless-proxy.js`](../serverless-proxy.js) and [Meshy portal notes](../docs/MESHY-PORTAL.md). |
 | Farm workspace | Dashboard, request filtering, revisioned quote drafts saved across navigation, illustrative gross sales, and sample settings |
 | Account | Sample personas; provider readiness and optional hosted sign-in integration code |
 

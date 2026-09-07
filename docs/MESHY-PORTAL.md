@@ -1,6 +1,6 @@
 # Meshy portal and farm review — September 7, 2026
 
-The buyer creates in their own Meshy account and pays Meshy directly for any plan or credit use. Poly Pod Pro supplies a tool portal, reviews an exported STL, and supports explicit selected-farm requests for nonbinding estimates. An associate link does not fund generation or authenticate a buyer.
+The buyer creates in their own Meshy account and pays Meshy directly for any plan or credit use. Poly Pod Pro supplies a tool portal, reviews an exported STL, and supports explicit selected-farm requests for nonbinding estimates. An associate link does not fund generation or authenticate a buyer. Generation can happen on Meshy's website (import the STL back) or, optionally, natively in the Creation Studio using the buyer's own API key (Bring Your Own Key) — see "Optional native generation" below.
 
 ## Available workflow
 
@@ -36,7 +36,19 @@ Meshy's [export restrictions](https://help.meshy.ai/en/articles/10421033-why-can
 
 ## Prepared connected service
 
-No Meshy API key, generation endpoint, mock generation result or platform credit balance exists in this flow. The unused legacy simulated Meshy service was replaced with a portal configuration export.
+Poly Pod Pro stores no Meshy API key server-side and never pays for credits. Generation is available two ways: (a) the classic portal — create on Meshy's website and import the STL; and (b) optional **native Bring-Your-Own-Key (BYOK)** generation in the Creation Studio, described below. There is still no platform-funded generation or mock/simulated result.
+
+## Optional native generation (Bring Your Own Key)
+
+The Creation Studio can generate a printable STL from a text prompt or a local image without leaving `#/create`. It is strictly buyer-owned and off by default until the user supplies their own credentials.
+
+- **Credentials stay in the browser.** The user enters their own Meshy API key and a proxy URL in a settings panel; both are saved only in `localStorage` (`ppp.meshy.apiKey`, `ppp.meshy.proxyUrl`). They are never sent to Poly Pod Pro and never embedded in the static build.
+- **A user-deployed proxy is required.** Browsers cannot call `api.meshy.ai` directly (CORS), and the key must not sit in a static site, so requests go through `serverless-proxy.js` (a Cloudflare Worker the user deploys). The proxy reads the `X-User-Meshy-Key` header and forwards it to Meshy as `Authorization: Bearer <key>`, so Meshy bills the user's account. It allow-lists only the text-to-3d and image-to-3d endpoints and restricts result downloads to Meshy hosts; set its `ALLOWED_ORIGIN` env var to the site origin.
+- **Local image handling.** For Image-to-3D, the reference image is read in the browser and converted to a Base64 data URI, passed as `image_url` — no external image hosting needed. Images are capped (PNG/JPG/WebP, 8 MB).
+- **Workflow.** Text-to-3D `POST /openapi/v2/text-to-3d` (`{ mode:"preview", prompt, art_style:"realistic", target_formats:["stl"] }`); Image-to-3D `POST /openapi/v1/image-to-3d` (`{ image_url, target_formats:["stl"] }`). The frontend polls `GET .../{task_id}` every few seconds, showing a progress bar, until `SUCCEEDED`.
+- **Handoff.** On success the STL from `model_urls.stl` is downloaded through the proxy and loaded into the existing viewer as a normal imported file, so the same unit confirmation, bounding-box/dimension review, save, and farm-quote steps apply. A generated mesh is not printable or quoted until the user confirms units and a farm reviews it.
+
+The unused legacy simulated Meshy service was previously replaced with a portal configuration export; BYOK generation adds a real, user-funded path on top of that portal.
 
 - Static default: `VITE_API_ENABLED=false`; no creation API calls, uploads or persistent storage.
 - Connected deployment: existing hosted identity/session/database setup, `server/creations.sql` after `server/schema.sql` (apply both with `node server/migrate.mjs --with-creations`), same-origin API routing, and `CREATION_SHARING_ENABLED=true`. Build with `VITE_API_ENABLED=true` only on that host. Missing identity or schema keeps writes closed. Server startup does not run migrations.
