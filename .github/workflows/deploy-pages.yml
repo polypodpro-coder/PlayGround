@@ -1,0 +1,59 @@
+name: Deploy PrintMatch preview to GitHub Pages
+
+# Builds the printmatch/ static sample preview and publishes it to GitHub Pages.
+# Requires repo Settings -> Pages -> Source = "GitHub Actions".
+# Trigger it manually from the Actions tab (Run workflow), or it runs automatically
+# when printmatch/ changes land on the default branch.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/3d-model-generator-stl-IifOO
+      - claude/polypodpro-codex-handoff-kr80na
+    paths:
+      - printmatch/**
+      - .github/workflows/deploy-pages.yml
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: printmatch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: printmatch/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm build
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: printmatch/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

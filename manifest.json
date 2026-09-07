@@ -1,0 +1,17 @@
+﻿{
+  "name": "Poly POD - Production On Demand",
+  "short_name": "Poly POD",
+  "description": "Distributed local 3D printing network with AI 2D-to-3D synthesis and escrow protection.",
+  "start_url": "./preview.html",
+  "display": "standalone",
+  "background_color": "#eaf1f9",
+  "theme_color": "#0f2a4a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "printmatch/public/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
