@@ -1,4 +1,4 @@
-import { Wrench, Scissors, Check, Info } from "lucide-react";
+import { Wrench, Scissors, Check } from "lucide-react";
 import { POST_PROCESSING_ADDONS } from "../data/mockData";
 
 export default function PostProcessingToggles({ selectedAddons = [], onToggleAddon }) {
@@ -80,3 +80,4 @@ export default function PostProcessingToggles({ selectedAddons = [], onToggleAdd
     </div>
   );
 }
+

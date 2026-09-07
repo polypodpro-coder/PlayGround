@@ -1,104 +1,33 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Star } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Package, Plus, Search } from "lucide-react";
 import ShopLogo from "../../components/ShopLogo";
-import StatusBadge from "../../components/StatusBadge";
 import { useApp } from "../../context/AppContext";
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+const STATUS = { queued: "Queued", printing: "Printing", ready: "Ready", completed: "Completed", cancelled: "Cancelled" };
+function dateLabel(iso) { const date = new Date(iso); return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
 
 export default function OrderHistory() {
   const navigate = useNavigate();
   const { orders, printers } = useApp();
-
-  const sorted = [...orders].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
-
-  return (
-    <div className="flex flex-1 flex-col">
-      <header className="bg-navy px-4 pb-5 pt-5 text-white">
-        <h1 className="text-lg font-semibold">Your orders</h1>
-        <p className="text-xs text-white/60">
-          {orders.filter((o) => !["completed", "cancelled"].includes(o.status)).length} in
-          progress · {orders.filter((o) => o.status === "completed").length} completed
-        </p>
-      </header>
-
-      <div className="flex-1 space-y-2.5 px-4 py-4">
-        {sorted.map((order) => {
-          const printer = printers.find((p) => p.id === order.printerId);
-          if (!printer) return null;
-          const total =
-            order.printCost +
-            order.serviceFee +
-            (order.shippingFee ?? 0) +
-            (order.tip ?? 0) -
-            (order.creditsUsed ?? 0);
-          const isCompleted = order.status === "completed";
-
-          return (
-            <div
-              key={order.id}
-              className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5"
-            >
-              <button
-                type="button"
-                onClick={() => navigate(`/orders/${order.id}`)}
-                className="flex w-full items-center gap-3 text-left active:scale-[0.98]"
-              >
-                <div className="relative shrink-0">
-                  <ShopLogo src={printer.logoUrl} alt={`${printer.name} logo`} />
-                  {order.viewed === false && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-navy">{printer.name}</p>
-                  <p className="text-xs text-navy/50">
-                    {order.material} · {order.color} · {formatDate(order.createdAt)}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <StatusBadge status={order.status} />
-                  <span className="text-xs font-semibold text-navy/70">
-                    ${total.toFixed(2)}
-                  </span>
-                </div>
-                <ChevronRight size={16} className="shrink-0 text-navy/30" />
-              </button>
-
-              {isCompleted && (
-                <div className="mt-3 flex gap-2">
-                  {order.rated === false && (
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/orders/${order.id}`)}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-accent/10 py-2 text-xs font-semibold text-accent active:scale-[0.98]"
-                    >
-                      <Star size={13} /> Rate this order
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => navigate("/request")}
-                    className="flex-1 rounded-full border border-navy/15 py-2 text-xs font-semibold text-navy active:scale-[0.98]"
-                  >
-                    Reorder
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {orders.length === 0 && (
-          <p className="py-10 text-center text-sm text-navy/40">
-            No orders yet — request a print to get started.
-          </p>
-        )}
-      </div>
-    </div>
-  );
+  const [filter, setFilter] = useState("all"), [search, setSearch] = useState("");
+  const activeCount = orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length;
+  const completedCount = orders.filter((order) => order.status === "completed").length;
+  const filtered = useMemo(() => [...orders].filter((order) => {
+    const farm = printers.find((item) => item.id === order.printerId);
+    const matchesStatus = filter === "all" || (filter === "active" ? !["completed", "cancelled"].includes(order.status) : order.status === filter);
+    return matchesStatus && `${order.fileName || ""} ${order.id} ${farm?.name || ""} ${order.material}`.toLowerCase().includes(search.toLowerCase().trim());
+  }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), [orders, printers, filter, search]);
+  return <div className="app-page">
+    <header className="page-intro"><div><p className="eyebrow">The print workspace</p><h1 className="page-heading">Keep your projects moving.</h1><p className="body-copy">Follow example orders, explore conversations, and review finished samples.</p></div><button type="button" className="button" onClick={() => navigate("/request")}><Plus size={17} /> New request</button></header>
+    <div className="mb-7 grid gap-3 sm:grid-cols-3">{[{ label: "Sample orders", value: orders.length, Icon: Package }, { label: "In progress · simulated", value: activeCount, Icon: Clock }, { label: "Completed · simulated", value: completedCount, Icon: CheckCircle2 }].map(({ label, value, Icon }) => <div key={label} className="panel flex items-center justify-between"><div><p className="text-sm text-navy/60">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></div><Icon size={26} className="text-accent" /></div>)}</div>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-4"><div className="flex flex-wrap gap-2">{[{ id: "all", label: "All orders" }, { id: "active", label: "In progress" }, { id: "completed", label: "Completed" }, { id: "cancelled", label: "Cancelled" }].map(({ id, label }) => <button type="button" className={`chip ${filter === id ? "chip-active" : ""}`} key={id} aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div><label className="flex min-h-11 items-center gap-2 rounded-xl border border-navy/15 bg-white px-3"><Search size={16} className="text-navy/50" /><span className="sr-only">Search sample orders</span><input className="min-w-0 bg-transparent text-sm outline-none" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search your samples" /></label></div>
+    <div className="stack">{filtered.map((order) => {
+      const farm = printers.find((item) => item.id === order.printerId);
+      const total = order.total ?? ((order.printCost || 0) + (order.serviceFee || 0) + (order.shippingFee || 0) + (order.tip || 0) - (order.creditsUsed || 0));
+      return <article key={order.id} className="panel"><div className="flex flex-wrap items-center justify-between gap-4 border-b border-navy/10 pb-4"><div className="flex items-center gap-3">{farm && <ShopLogo src={farm.logoUrl} alt="" size="sm" />}<div><p className="font-semibold">{farm?.name || "Example farm"}</p><p className="mt-1 text-xs text-navy/55">{dateLabel(order.createdAt)} · {order.id}</p></div></div><span className="badge">Sample · {STATUS[order.status] || order.status}</span></div><div className="flex flex-wrap items-center justify-between gap-5 pt-5"><div><h2 className="break-words text-lg font-semibold">{order.fileName || `${order.material} decorative print`}</h2><p className="mt-2 text-sm text-navy/60">{order.quantity || 1} {(order.quantity || 1) === 1 ? "piece" : "pieces"} · {order.material} · {order.color || "Color to be agreed"}</p><p className="mt-2 text-xs text-navy/55">${total.toFixed(2)} sample subtotal · no payment collected</p></div><button type="button" className="button-secondary" onClick={() => navigate(`/orders/${order.id}`)}>{order.status === "completed" && !order.rated ? "View & try a review" : "Open order"}<ArrowRight size={16} /></button></div></article>;
+    })}</div>
+    {!filtered.length && <div className="empty-state"><Package size={34} className="mx-auto mb-4" /><h2 className="mb-2 text-xl font-bold">No sample orders match.</h2><p className="mb-5">{orders.length ? "Try another search or status filter." : "Configure a part to explore your first sample order."}</p><button type="button" className="button-secondary" onClick={() => { if (orders.length) { setSearch(""); setFilter("all"); } else navigate("/request"); }}>{orders.length ? "Clear filters" : "Start a sample request"}</button></div>}
+    <p className="mt-6 text-center text-xs leading-relaxed text-navy/55">All orders on this page are examples. Preview changes are temporary and reset when the app reloads.</p>
+  </div>;
 }

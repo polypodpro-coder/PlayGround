@@ -1,1 +1,41 @@
-﻿*.bak
+*.bak
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+
+# Local credentials, private keys, and provider configuration.
+.npmrc
+.netrc
+_netrc
+.pypirc
+credentials.json
+credentials-*.json
+client_secret*.json
+service-account*.json
+secrets.json
+secrets/
+.secrets/
+.aws/
+.ssh/
+id_rsa
+id_ed25519
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.tfstate
+*.tfstate.*
+
+# Rebuildable local output, caches, and release packages.
+build/
+coverage/
+.cache/
+.vite/
+release/
+
+# Personal companion artwork is separate from application source.
+pet-art/

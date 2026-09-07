@@ -18,20 +18,21 @@ export default function Toast({ toast, onClose }) {
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-[420px] px-4 pointer-events-none transition-all duration-300">
       <div
+        role={toast.type === "error" ? "alert" : "status"}
         className={`pointer-events-auto flex items-center justify-between gap-2.5 rounded-2xl border p-3.5 shadow-xl backdrop-blur ${
           borderColors[toast.type || "info"]
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           {icons[toast.type || "info"]}
-          <span className="text-xs font-semibold leading-tight truncate">
+          <span className="text-sm font-semibold leading-relaxed break-words">
             {toast.message}
           </span>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="h-6 w-6 rounded-full flex items-center justify-center text-navy/40 hover:text-navy hover:bg-black/5"
+          className="h-11 w-11 shrink-0 rounded-full flex items-center justify-center text-navy/40 hover:text-navy hover:bg-black/5"
           aria-label="Close notification"
         >
           <X size={14} />
@@ -40,3 +41,4 @@ export default function Toast({ toast, onClose }) {
     </div>
   );
 }
+

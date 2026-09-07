@@ -1,4 +1,4 @@
-﻿// Mock data model for Poly POD. No backend — everything lives here and in
+// Mock data model for Poly POD. No backend — everything lives here and in
 // AppContext at runtime.
 
 export const MATERIALS = ["PLA", "PETG", "TPU", "Polycarbonate", "ABS-ESD", "Nylon"];
@@ -149,6 +149,7 @@ function portfolioImage(bg, seed) {
   return "data:image/svg+xml;base64," + btoa(svg);
 }
 
+// SAMPLE farm-controlled fulfillment terms below are integer cents per order, not actual offers.
 export const printers = [
   {
     id: "p1",
@@ -157,6 +158,11 @@ export const printers = [
     distanceMi: 0.8,
     location: [39.786, -89.644], // [lat, lng]
     serviceRadiusMi: 10,
+    fulfillmentOptions: {
+      pickup: { enabled: true, feeCents: 0 },
+      dropoff: { enabled: true, feeCents: 500 },
+      ship: { enabled: true, feeCents: 600 },
+    },
     logoUrl: LOGO_RIVERSIDE,
     buildVolume: { x: 220, y: 220, z: 250 },
     materials: ["PLA", "PETG", "TPU"],
@@ -169,8 +175,8 @@ export const printers = [
     shopPaused: false,
     pausedUntil: null,
     portfolio: [
-      { id: "p1-1", imageUrl: portfolioImage("#1F6F63", 1), caption: "Articulated robot arm, PETG" },
-      { id: "p1-2", imageUrl: portfolioImage("#1F6F63", 2), caption: "Custom drone mount, TPU" },
+      { id: "p1-1", imageUrl: portfolioImage("#1F6F63", 1), caption: "Articulated desktop sculpture, PETG" },
+      { id: "p1-2", imageUrl: portfolioImage("#1F6F63", 2), caption: "Decorative display stand, TPU" },
       { id: "p1-3", imageUrl: portfolioImage("#1F6F63", 3), caption: "Cable organizer set, PLA" },
     ],
     reviews: [
@@ -186,6 +192,11 @@ export const printers = [
     distanceMi: 1.4,
     location: [39.791, -89.66],
     serviceRadiusMi: 6,
+    fulfillmentOptions: {
+      pickup: { enabled: true, feeCents: 0 },
+      dropoff: { enabled: false, feeCents: 0 },
+      ship: { enabled: false, feeCents: 0 },
+    },
     logoUrl: LOGO_OAKHILL,
     buildVolume: { x: 300, y: 300, z: 400 },
     materials: ["PLA", "ABS", "Nylon"],
@@ -213,6 +224,11 @@ export const printers = [
     distanceMi: 2.1,
     location: [39.765, -89.625],
     serviceRadiusMi: 12,
+    fulfillmentOptions: {
+      pickup: { enabled: true, feeCents: 200 },
+      dropoff: { enabled: false, feeCents: 0 },
+      ship: { enabled: true, feeCents: 800 },
+    },
     logoUrl: LOGO_CUBE_COIL,
     buildVolume: { x: 250, y: 210, z: 210 },
     materials: ["PLA", "PETG", "ABS", "TPU"],
@@ -242,6 +258,11 @@ export const printers = [
     distanceMi: 3.5,
     location: [39.81, -89.61],
     serviceRadiusMi: 5,
+    fulfillmentOptions: {
+      pickup: { enabled: true, feeCents: 0 },
+      dropoff: { enabled: false, feeCents: 0 },
+      ship: { enabled: false, feeCents: 0 },
+    },
     logoUrl: LOGO_GARAGE,
     buildVolume: { x: 180, y: 180, z: 200 },
     materials: ["PLA", "PETG"],
@@ -267,6 +288,11 @@ export const printers = [
     distanceMi: 4.2,
     location: [39.825, -89.67],
     serviceRadiusMi: 15,
+    fulfillmentOptions: {
+      pickup: { enabled: false, feeCents: 0 },
+      dropoff: { enabled: true, feeCents: 700 },
+      ship: { enabled: true, feeCents: 500 },
+    },
     logoUrl: LOGO_NORTH_END,
     buildVolume: { x: 350, y: 350, z: 400 },
     materials: ["PLA", "PETG", "ABS", "Nylon", "TPU"],
@@ -296,10 +322,10 @@ export const jobs = [
     id: "j1",
     buyerName: "Jamie L.",
     buyerNotes:
-      "Need a replacement bracket for a shelf mount. Should be rigid and hold ~5kg.",
+      "Decorative desk organizer trays. Non-load-bearing, for stationery only.",
     material: "PETG",
     color: "Black",
-    fileName: "shelf_bracket_v2.stl",
+    fileName: "desk_tray_v2.stl",
     fileType: "stl",
     dimensions: { x: 80, y: 60, z: 20 },
     quantity: 2,
@@ -309,7 +335,7 @@ export const jobs = [
   {
     id: "j2",
     buyerName: "Alex C.",
-    buyerNotes: "Cosplay prop piece, needs to look clean — photo attached for reference.",
+    buyerNotes: "Cosplay prop piece, needs to look clean — visual reference would be needed before a real quote.",
     material: "PLA",
     color: "Gold",
     fileName: "helmet_ref_photo.jpg",
@@ -322,10 +348,10 @@ export const jobs = [
   {
     id: "j3",
     buyerName: "Morgan P.",
-    buyerNotes: "Drone arm replacement, must be strong. Nylon preferred if available.",
+    buyerNotes: "Decorative display tiles for an indoor art project. No structural or safety use.",
     material: "Nylon",
     color: "Natural",
-    fileName: "drone_arm.stl",
+    fileName: "display_tile.stl",
     fileType: "stl",
     dimensions: { x: 120, y: 30, z: 15 },
     quantity: 4,
@@ -507,7 +533,7 @@ export const users = [
   {
     id: "u2",
     name: "Dana K.",
-    email: "dana@riversiderapid.com",
+    email: "farm@example.com",
     role: "owner",
     phone: "(555) 044-8871",
     referralCode: "DANA8820",
@@ -525,15 +551,15 @@ export const REFERRAL_BONUS = 10;
 export const featuredDesigns = [
   {
     id: "d1",
-    name: "Articulated Fox",
-    category: "Toys & Props",
+    name: "Faceted Sculpture",
+    category: "Decor",
     designer: "Community Maker",
     license: "Free · personal use",
     imageUrl: portfolioImage("#8A5A44", 4),
     defaultMaterial: "PLA",
     estimatedGrams: 45,
     description:
-      "Print-in-place articulated toy — no supports, no assembly. Joints are printed fully connected and move right off the plate.",
+      "A decorative geometric study for a desk or display shelf. Geometry and print settings need review.",
   },
   {
     id: "d2",
@@ -548,14 +574,14 @@ export const featuredDesigns = [
   },
   {
     id: "d3",
-    name: "Cable Clip 5-Pack",
+    name: "Geometric Display Tile",
     category: "Home & Office",
     designer: "Community Maker",
     license: "Free · personal use",
     imageUrl: portfolioImage("#5A7A3E", 6),
     defaultMaterial: "PLA",
     estimatedGrams: 18,
-    description: "Adhesive-back cable clips in five widths, for desk and wall cable management.",
+    description: "A geometric relief tile for decorative indoor displays.",
   },
   {
     id: "d4",
@@ -601,3 +627,8 @@ export const savedPaymentMethods = [
   { id: "visa", label: "Visa •••• 4242" },
   { id: "wallet", label: "Poly POD Wallet ($42.10)" },
 ];
+
+
+
+
+

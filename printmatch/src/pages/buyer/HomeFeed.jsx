@@ -1,359 +1,63 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Heart, MapPin, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import PrinterCard from "../../components/PrinterCard";
-import PrinterMapView from "../../components/PrinterMapView";
-import RoleToggle from "../../components/RoleToggle";
-import MaterialChipSelector from "../../components/MaterialChipSelector";
-import ServicesSection from "../../components/ServicesSection";
-import CustomScanningShowcase from "../../components/CustomScanningShowcase";
-import { useApp } from "../../context/AppContext";
-import { featuredDesigns } from "../../data/mockData";
-
-const SORT_OPTIONS = [
-  { id: "distance", label: "Nearest" },
-  { id: "rating", label: "Top rated" },
-  { id: "turnaround", label: "Fastest" },
-];
-
-const QUICK_FILTERS = [
-  "PLA",
-  "PETG",
-  "TPU",
-  "Polycarbonate",
-  "ABS-ESD",
-  "Commercial/Bulk",
-  "Reverse Engineering",
-];
-
-const TURNAROUND_HOURS = { "Same day": 8, "24hr": 24, "48hr": 48 };
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight, ArrowRight, Search, Heart, MapPin, Factory, Box, LayoutGrid, Map } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import PartIllustration from '../../components/PartIllustration';
+import { featuredDesigns } from '../../data/mockData';
+import { FULFILLMENT_METHODS, getFulfillmentOptions } from '../../lib/fulfillment';
+const PrinterMapView = lazy(() => import('../../components/PrinterMapView'));
 
 export default function HomeFeed() {
+  const { printers, favorites, toggleFavorite, setDirectRequestPrinterId, setSelectedDesign } = useApp();
   const navigate = useNavigate();
-  const { printers, favorites, setDirectRequestPrinterId, setSelectedDesign, showToast } = useApp();
-  const [query, setQuery] = useState("");
-  const [view, setView] = useState("list"); // 'list' | 'map'
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [materialFilter, setMaterialFilter] = useState([]);
-  const [activePill, setActivePill] = useState(null);
-  const [sortBy, setSortBy] = useState("distance");
+  const [query, setQuery] = useState(''), [material, setMaterial] = useState('All materials'), [saved, setSaved] = useState(false), [fulfillment, setFulfillment] = useState('any');
+  const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'map' ? 'map' : 'list', farmId = params.get('farm') || '';
+  function setMapView(nextView, nextFarm = '') {
+    const next = new URLSearchParams(params);
+    if (nextView === 'map') next.set('view', 'map'); else next.delete('view');
+    if (nextFarm) next.set('farm', nextFarm); else next.delete('farm');
+    setParams(next, { preventScrollReset: true });
+  }
+  const materials = useMemo(() => ['All materials', ...new Set(printers.flatMap((farm) => farm.materials).sort())], [printers]);
+  const filtered = useMemo(() => printers.filter((farm) =>
+    (!saved || favorites.has(farm.id)) &&
+    (material === 'All materials' || farm.materials.includes(material)) &&
+    (fulfillment === 'any' || getFulfillmentOptions(farm).some((method) => method.id === fulfillment)) &&
+    `${farm.name} ${farm.materials.join(' ')} ${farm.bio}`.toLowerCase().includes(query.trim().toLowerCase())
+  ), [printers, favorites, query, material, saved, fulfillment]);
+  function newRequest() { setSelectedDesign(null); setDirectRequestPrinterId(null); navigate('/request'); }
+  function clearFilters() { setQuery(''); setMaterial('All materials'); setSaved(false); setFulfillment('any'); }
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = printers;
-    if (favoritesOnly) list = list.filter((p) => favorites.has(p.id));
-    if (materialFilter.length > 0) {
-      list = list.filter((p) => materialFilter.every((m) => p.materials.includes(m)));
-    }
-    if (activePill) {
-      const pLower = activePill.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.materials.some((m) => m.toLowerCase().includes(pLower)) ||
-          p.name.toLowerCase().includes(pLower) ||
-          p.bio?.toLowerCase().includes(pLower) ||
-          (pLower.includes("commercial") || pLower.includes("reverse"))
-      );
-    }
-    if (q) {
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.materials.some((m) => m.toLowerCase().includes(q)) ||
-          p.city?.toLowerCase().includes(q)
-      );
-    }
-    const sorted = [...list];
-    if (sortBy === "rating") {
-      sorted.sort((a, b) => b.rating - a.rating);
-    } else if (sortBy === "turnaround") {
-      sorted.sort(
-        (a, b) =>
-          (TURNAROUND_HOURS[a.turnaroundLabel] ?? 99) -
-          (TURNAROUND_HOURS[b.turnaroundLabel] ?? 99)
-      );
-    } else {
-      sorted.sort((a, b) => a.distanceMi - b.distanceMi);
-    }
-    return sorted;
-  }, [printers, query, favoritesOnly, favorites, materialFilter, activePill, sortBy]);
-
-  const activeFilterCount = materialFilter.length + (activePill ? 1 : 0) + (sortBy !== "distance" ? 1 : 0);
-
-  const handlePillClick = (pill) => {
-    setActivePill((curr) => (curr === pill ? null : pill));
-  };
-
-  const handleServiceSelect = (serviceId) => {
-    setDirectRequestPrinterId(null);
-    setSelectedDesign(null);
-    navigate("/request");
-    if (showToast) {
-      showToast(
-        serviceId === "scan"
-          ? "Upload photos or dimensions of your physical part for 3D scanning"
-          : "Select your required material and build tolerances",
-        "info"
-      );
-    }
-  };
-
-  return (
-    <div className="flex flex-1 flex-col">
-      <header className="bg-navy px-4 pb-4 pt-5 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-white/60">Manufacturing near</p>
-            <div className="flex items-center gap-1.5 text-sm font-bold">
-              <MapPin size={15} className="text-accent shrink-0" />
-              <span>New Iberia, LA &bull; Acadiana Hub</span>
-            </div>
-          </div>
-          <RoleToggle />
-        </div>
-
-        {/* Search Bar */}
-        <div className="mt-4 flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-inner">
-            <Search size={17} className="text-navy/40 shrink-0" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search Acadiana shops or materials"
-              aria-label="Search print shops or materials in the Acadiana area"
-              className="flex-1 text-sm text-navy outline-none placeholder:text-navy/40"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Clear search query"
-                className="text-navy/40 hover:text-navy"
-              >
-                <X size={15} />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className="relative p-1 text-navy/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-full"
-              aria-label="Toggle filters and sorting options"
-              aria-pressed={showFilters}
-            >
-              <SlidersHorizontal
-                size={17}
-                className={showFilters ? "text-accent" : "text-navy/40"}
-              />
-              {activeFilterCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[8px] font-bold text-white">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setFavoritesOnly((v) => !v)}
-            className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full transition-all duration-150 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              favoritesOnly ? "bg-accent text-white shadow-md shadow-accent/25" : "bg-white/10 text-white/75 hover:bg-white/15"
-            }`}
-            aria-label={favoritesOnly ? "Show all print shops" : "Show favorited print shops only"}
-            aria-pressed={favoritesOnly}
-          >
-            <Heart size={18} className={favoritesOnly ? "fill-white" : ""} />
-          </button>
-        </div>
-
-        {/* Quick Filter Horizontal Scrolling Row */}
-        <div
-          role="region"
-          aria-label="Quick material and service filters"
-          className="mt-3 -mx-4 flex gap-1.5 overflow-x-auto px-4 no-scrollbar pb-0.5"
-        >
-          {QUICK_FILTERS.map((pill) => {
-            const isActive = activePill === pill;
-            return (
-              <button
-                key={pill}
-                type="button"
-                onClick={() => handlePillClick(pill)}
-                aria-pressed={isActive}
-                className={`btn-chip shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  isActive
-                    ? "bg-accent text-white shadow-xs border border-accent"
-                    : "bg-white/10 text-white/90 border border-white/20 hover:bg-white/20 active:scale-95"
-                }`}
-              >
-                {pill}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Filter Drawer */}
-        {showFilters && (
-          <div className="mt-3 space-y-3 rounded-2xl bg-white/10 p-3.5 backdrop-blur-xs">
-            <div>
-              <p className="mb-1.5 text-xs font-semibold text-white/75">Material Filter</p>
-              <MaterialChipSelector
-                selected={materialFilter}
-                onChange={setMaterialFilter}
-                multi
-              />
-            </div>
-            <div>
-              <p className="mb-1.5 text-xs font-semibold text-white/75">Sort by</p>
-              <div className="flex flex-wrap gap-1.5">
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setSortBy(opt.id)}
-                    aria-pressed={sortBy === opt.id}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-150 hover:brightness-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                      sortBy === opt.id
-                        ? "border-accent bg-accent text-white"
-                        : "border-white/20 text-white/80 hover:bg-white/10"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Primary Hero CTA */}
-      <button
-        type="button"
-        onClick={() => {
-          setDirectRequestPrinterId(null);
-          setSelectedDesign(null);
-          navigate("/request");
-        }}
-        aria-label="Upload a part, 3D CAD file, or reference photo to start quoting"
-        className="mx-4 -mt-2.5 mb-2 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent-light py-3.5 text-sm font-bold text-white shadow-lg shadow-accent/30 transition-all duration-150 hover:brightness-105 hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <Sparkles size={17} />
-        <span>Upload a part, 3D file, or reference photo</span>
-      </button>
-
-      <div className="flex-1 space-y-5 px-4 py-3">
-        {/* Track 1: Regional Services Section */}
-        <ServicesSection onSelectService={handleServiceSelect} />
-
-        {/* Track 1: Custom 3D Scanning & Replication Component */}
-        <CustomScanningShowcase onRequestScan={handleServiceSelect} />
-
-        {/* Featured Community Designs */}
-        <section aria-label="Featured Community 3D Models">
-          <div className="mb-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-navy">Featured Designs</h2>
-              <span className="rounded-full bg-navy/10 px-2 py-0.2 text-[10px] font-bold uppercase tracking-wide text-navy/60">
-                Verified CAD
-              </span>
-            </div>
-          </div>
-
-          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {featuredDesigns.map((design) => (
-              <button
-                key={design.id}
-                type="button"
-                onClick={() => navigate(`/design/${design.id}`)}
-                aria-label={`Inspect ${design.name} 3D design specifications`}
-                className="w-32 shrink-0 overflow-hidden rounded-2xl bg-surface text-left shadow-sm ring-1 ring-black/5 transition-all duration-150 hover:ring-accent/40 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                <img src={design.imageUrl} alt={design.name} className="h-24 w-full object-cover" />
-                <div className="p-2.5">
-                  <p className="truncate text-xs font-bold text-navy">{design.name}</p>
-                  <p className="truncate text-[10px] text-navy/50">{design.category}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Local Print Shops List / Map */}
-        <section aria-label="Acadiana Local Print Shops">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-sm font-bold text-navy">Nearby Acadiana Print Shops</h2>
-              <p className="text-[10px] text-navy/50">
-                {filtered.length} verified printers {favoritesOnly ? "favorited" : "in your local area"}
-              </p>
-            </div>
-            <div className="flex rounded-full bg-navy/10 p-0.5">
-              {["list", "map"].map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  aria-pressed={view === v}
-                  aria-label={`Switch to ${v} view`}
-                  className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                    view === v ? "bg-white text-navy shadow-xs" : "text-navy/60 hover:text-navy"
-                  }`}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {view === "map" ? (
-            <div className="space-y-2">
-              <PrinterMapView printers={filtered} />
-              <p className="text-center text-xs text-navy/50">
-                Tap a marker to view shop profile, equipment fleet, and delivery radius.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((printer) => (
-                <PrinterCard
-                  key={printer.id}
-                  printer={printer}
-                  onClick={() => navigate(`/shop/${printer.id}`)}
-                />
-              ))}
-            </div>
-          )}
-
-          {filtered.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-navy/20 bg-surface p-8 text-center">
-              <p className="text-sm font-bold text-navy">
-                {favoritesOnly
-                  ? "No favorited shops yet."
-                  : activePill || materialFilter.length > 0
-                  ? `No print shops matching active filters.`
-                  : `No printers found matching "${query}"`}
-              </p>
-              <p className="mt-1 text-xs text-navy/50">
-                Try clearing filters or selecting another plastic material.
-              </p>
-              {(activePill || materialFilter.length > 0 || query) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActivePill(null);
-                    setMaterialFilter([]);
-                    setQuery("");
-                  }}
-                  className="btn-outline mt-3 py-1.5 px-3.5 text-xs font-semibold"
-                >
-                  Clear all filters
-                </button>
-              )}
-            </div>
-          )}
-        </section>
+  return <div className="app-page">
+    <section className="home-lead">
+      <div><p className="eyebrow" style={{ marginBottom: 15 }}>A better way to make it</p><h1>Your next idea.<br /><span style={{ color: '#c4491f' }}>Made layer by layer.</span></h1><p className="body-copy">Find the right print farm, explore materials, and turn a design into a clear manufacturing request.</p><div className="home-actions"><button type="button" className="button" onClick={newRequest}><Box size={17} />Start a print request<ArrowRight size={17} /></button><Link className="button-secondary" to="/create">Create with Meshy<ArrowUpRight size={17} /></Link></div></div>
+      <div className="workbench"><span className="workbench-label">DESIGN STUDY / 001</span><PartIllustration /><span className="workbench-caption">FDM · LAYERED SURFACES · DECORATIVE CONCEPT</span></div>
+    </section>
+    <section aria-labelledby="farms-title">
+      <div className="section-row"><div><p className="eyebrow" style={{ marginBottom: 7 }}>Find your manufacturing match</p><h2 className="section-heading" id="farms-title">Independent print farms</h2></div><span className="badge"><MapPin size={13} style={{ marginRight: 5 }} />Sample network · Springfield, IL</span></div>
+      <div className="discovery-toolbar">
+        <label className="search-field"><Search size={19} /><input aria-label="Search farms or materials" type="search" placeholder="Search farms, materials, specialties..." value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+        <select className="chip" aria-label="Filter by material" value={material} onChange={(event) => setMaterial(event.target.value)}>{materials.map((name) => <option key={name}>{name}</option>)}</select>
+        <label className="field w-full sm:w-auto"><span className="text-xs">Fulfillment preference</span><select value={fulfillment} onChange={(event) => setFulfillment(event.target.value)}><option value="any">Any method</option>{FULFILLMENT_METHODS.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
+        <button type="button" className={'icon-button ' + (saved ? 'chip-active' : '')} aria-label="Show saved farms" aria-pressed={saved} onClick={() => setSaved(!saved)}><Heart size={18} /></button>
+        <button type="button" className="button-secondary" aria-label={view === 'list' ? 'Show coverage map' : 'Show farm list'} onClick={() => setMapView(view === 'list' ? 'map' : 'list')}>{view === 'list' ? <Map size={18} /> : <LayoutGrid size={18} />}{view === 'list' ? 'Coverage map' : 'Farm list'}</button>
       </div>
-    </div>
-  );
+      <p role="status" className="muted mb-4 text-xs">{filtered.length} sample {filtered.length === 1 ? 'farm' : 'farms'} · Offered methods and fees are examples; farms confirm actual arrangements.</p>
+      {view === 'map' && filtered.length ? <Suspense fallback={<div className="empty-state" role="status">Loading sample map…</div>}><PrinterMapView key={filtered.map((farm) => farm.id).join(',')} printers={filtered} selectedFarmId={farmId} onSelectFarm={(id) => setMapView('map', id)} /></Suspense> : filtered.length ? <div className="farm-grid">{filtered.map((farm) => {
+        const methods = getFulfillmentOptions(farm);
+        return <article className="farm-card" key={farm.id}>
+          <div className="farm-card-head"><span className="farm-icon"><Factory size={22} /></span><button type="button" className="icon-button" onClick={() => toggleFavorite(farm.id)} aria-label={`${favorites.has(farm.id) ? 'Unsave' : 'Save'} ${farm.name}`} aria-pressed={favorites.has(farm.id)}><Heart size={16} fill={favorites.has(farm.id) ? 'currentColor' : 'none'} /></button></div>
+          <div><Link to={'/shop/' + farm.id}><h3>{farm.name}</h3></Link><p className="farm-meta"><MapPin size={12} />{farm.distanceMi} mi · Sample farm</p></div>
+          <p className="body-copy">{farm.bio}</p>
+          <Link to={'/?view=map&farm=' + farm.id} className="inline-flex items-center gap-2 text-sm font-semibold text-accent"><MapPin size={15} />{farm.serviceRadiusMi}-mile example service area<ArrowUpRight size={14} /></Link>
+          <div className="rounded-lg bg-navy/5 p-3"><p className="mb-2 text-xs font-semibold">Offered fulfillment · preview</p>{methods.length ? <ul className="space-y-2 text-xs">{methods.map((method) => <li key={method.id} className="flex flex-wrap justify-between gap-x-3 gap-y-1"><span>{method.label}</span><span className="font-semibold">${(method.feeCents / 100).toFixed(2)} example</span></li>)}</ul> : <p className="text-xs text-navy/60">No fulfillment methods offered in this sample.</p>}</div>
+          <div className="filter-row">{farm.materials.slice(0, 3).map((name) => <span className="badge" key={name}>{name}</span>)}{farm.materials.length > 3 && <span className="badge">+{farm.materials.length - 3}</span>}</div>
+          <div className="farm-card-footer"><span className="muted">{farm.turnaroundLabel} example</span><Link to={'/shop/' + farm.id} className="inline-flex items-center gap-1 font-semibold">View farm<ArrowUpRight size={16} /></Link></div>
+        </article>;
+      })}</div> : <div className="empty-state"><h3>No farms match these filters.</h3><button type="button" className="button-secondary mt-4" onClick={clearFilters}>Clear filters</button></div>}
+    </section>
+    <section className="catalog-section"><div className="section-row"><div><p className="eyebrow" style={{ marginBottom: 7 }}>A little inspiration</p><h2 className="section-heading">Start with a concept</h2></div><span className="muted text-xs">Illustrative designs</span></div><div className="catalog-grid">{['d5', 'd2', 'd3'].map((id, index) => { const design = featuredDesigns.find((item) => item.id === id); return <Link to={'/design/' + id} className="design-tile" key={id}><div className="design-art"><PartIllustration kind={['planter', 'organizer', 'tile'][index]} label={design.name + ' concept'} /></div><div className="design-copy"><h3>{design.name}</h3><p className="muted text-sm">{design.category} · {design.defaultMaterial}</p></div></Link>; })}</div></section>
+  </div>;
 }
+

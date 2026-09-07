@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Scan, Sparkles, CheckCircle2, ArrowRight, Layers, Shield, Wrench, Eye } from "lucide-react";
+import { Scan, Sparkles } from "lucide-react";
 
 export default function CustomScanningShowcase({ onRequestScan }) {
   const [activeCategory, setActiveCategory] = useState("automotive");
@@ -220,3 +220,4 @@ export default function CustomScanningShowcase({ onRequestScan }) {
     </section>
   );
 }
+

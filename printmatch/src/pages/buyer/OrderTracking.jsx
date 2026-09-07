@@ -1,160 +1,53 @@
-﻿import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Star, X } from "lucide-react";
-import ScreenHeader from "../../components/ScreenHeader";
-import ProgressStepper from "../../components/ProgressStepper";
-import ChatThread from "../../components/ChatThread";
-import StatusBadge from "../../components/StatusBadge";
-import { use•pp } from "../../context/•ppContext";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Clock, Layers, MessageSquare, Package, Send, Star, X } from "lucide-react";
+import { useApp } from "../../context/AppContext";
+
+import { fulfillmentLabel } from "../../lib/fulfillment";
+
+const STAGES = [{ id: "queued", title: "Queued", copy: "The request joins the farm’s queue.", Icon: Clock }, { id: "printing", title: "Printing", copy: "The farm shares production updates.", Icon: Layers }, { id: "ready", title: "Ready", copy: "The part is ready for delivery or pickup.", Icon: Package }, { id: "completed", title: "Complete", copy: "The completed order is ready for review.", Icon: CheckCircle2 }];
+function formatTime(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
 
 export default function OrderTracking() {
-  const { orderId } = useParams();
-  const { orders, updateOrder, printers, rateOrder } = use•pp();
-  const order = orders.find((o) => o.id === orderId) ?? orders[0];
-  const printer = printers.find((p) => p.id === order.printerId) ?? printers[0];
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const [ratingValue, setRatingValue] = useState(0);
-  const [ratingText, setRatingText] = useState("");
-
-  // Opening the order clears its "new" indicator in the order history list.
-  useEffect(() => {
-    if (order.viewed === false) updateOrder(order.id, { viewed: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order.id]);
-
-  const handleSend = (text) => {
-    updateOrder(order.id, {
-      messages: [
-        ...order.messages,
-        {
-          id: `local-${Date.now()}`,
-          senderRole: "buyer",
-          text,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    });
-  };
-
-  const handleCancel = () => {
-    updateOrder(order.id, { status: "cancelled", etaLabel: "Cancelled" });
-    setConfirmingCancel(false);
-  };
-
-  const canCancel = order.status === "queued";
-  const needsRating = order.status === "completed" && order.rated === false;
-
-  const submitRating = () => {
-    if (ratingValue === 0) return;
-    rateOrder(order.id, order.printerId, { rating: ratingValue, text: ratingText.trim() });
-  };
-
-  return (
-    <div className="flex flex-1 flex-col">
-      <ScreenHeader
-        title={printer.name}
-        subtitle="Your order"
-        right={<StatusBadge status={order.status} />}
-      />
-
-      <div className="space-y-4 bg-surface px-4 py-5">
-        <ProgressStepper status={order.status} />
-        <div className="flex items-center justify-between rounded-xl bg-navy/5 px-4 py-3">
-          <div>
-            <p className="text-xs text-navy/50">Progress</p>
-            <p className="text-lg font-bold text-navy">{order.progressPct}%</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-navy/50">Estimated</p>
-            <p className="text-sm font-semibold text-accent">{order.etaLabel}</p>
-          </div>
+  const { orderId } = useParams(), navigate = useNavigate();
+  const { orders, updateOrder, printers, rateOrder } = useApp();
+  const order = orders.find((item) => item.id === orderId);
+  const farm = printers.find((item) => item.id === order?.printerId);
+  const [confirmCancel, setConfirmCancel] = useState(false), [rating, setRating] = useState(0), [review, setReview] = useState(""), [message, setMessage] = useState("");
+  useEffect(() => { if (order?.viewed === false) updateOrder(order.id, { viewed: true }); }, [order?.id, order?.viewed, updateOrder]);
+  if (!order || !farm) return <div className="app-page"><div className="empty-state"><Package size={36} className="mx-auto mb-4" /><h1 className="page-heading">This sample order isn’t here.</h1><p className="mb-6">Preview orders are temporary and may have been reset or removed.</p><button type="button" className="button" onClick={() => navigate("/orders")}>View sample orders</button></div></div>;
+  const stageIndex = STAGES.findIndex((stage) => stage.id === order.status), cancelled = order.status === "cancelled";
+  const activeStage = STAGES[stageIndex];
+  const subtotal = order.total ?? ((order.printCost || 0) + (order.serviceFee || 0) + (order.shippingFee || 0) + (order.tip || 0) - (order.creditsUsed || 0));
+  function saveMessage(event) {
+    event.preventDefault(); if (!message.trim()) return;
+    updateOrder(order.id, { messages: [...(order.messages || []), { id: crypto.randomUUID(), senderRole: "buyer", text: message.trim(), timestamp: new Date().toISOString() }] });
+    setMessage("");
+  }
+  function advance() {
+    const next = STAGES[stageIndex + 1]; if (!next) return;
+    updateOrder(order.id, { status: next.id, progressPct: next.id === "printing" ? 50 : next.id === "ready" ? 95 : 100, etaLabel: `Sample: ${next.title}`, rated: false });
+  }
+  return <div className="app-page">
+    <button type="button" className="button-secondary mb-5" onClick={() => navigate("/orders")}><ArrowLeft size={16} /> All sample orders</button>
+    <header className="page-intro"><div><p className="eyebrow">Your order workspace</p><h1 className="page-heading">From the first layer onward.</h1><p className="body-copy">Follow an example order, explore updates, and try a local conversation.</p></div><span className="badge">Sample · {cancelled ? "Cancelled" : activeStage?.title || order.status}</span></header>
+    <section className="panel mb-7"><div className="section-row"><div><p className="eyebrow">{farm.name}</p><h2 className="mt-2 break-words text-xl font-bold">{order.fileName || `${order.material} decorative print`}</h2></div><p className="break-all font-mono text-xs text-navy/55">{order.id}</p></div>
+      {cancelled ? <div className="flex items-center gap-3 rounded-xl bg-navy/5 p-5"><X size={24} /><div><h3 className="font-semibold">Sample order cancelled</h3><p className="mt-1 text-sm text-navy/65">No payment, refund, or print job was processed.</p></div></div> : <ol className="grid gap-4 sm:grid-cols-4">{STAGES.map(({ id, title, copy, Icon }, index) => <li key={id} aria-current={stageIndex === index ? "step" : undefined} className={`rounded-xl border p-4 ${stageIndex === index ? "border-accent bg-accent/5" : "border-navy/10"}`}><span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full ${stageIndex >= index ? "bg-navy text-white" : "bg-navy/5 text-navy/45"}`}>{stageIndex > index ? <Check size={17} /> : <Icon size={17} />}</span><p className="text-sm font-bold">{title}</p><p className="mt-1 text-xs leading-relaxed text-navy/60">{copy}</p></li>)}</ol>}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-navy/10 pt-5"><p className="max-w-xl text-sm leading-relaxed text-navy/65">This timeline is simulated. No real production or delivery is underway, and payment has not been collected.</p>{!cancelled && stageIndex >= 0 && stageIndex < STAGES.length - 1 && <button type="button" className="button-secondary" onClick={advance}>Try next sample stage <ArrowRight size={16} /></button>}</div>
+    </section>
+    <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)]">
+      <section className="panel"><div className="section-row"><h2 className="section-heading">Conversation</h2><MessageSquare size={21} className="text-accent" /></div><p className="mb-5 text-sm leading-relaxed text-navy/60">Sample messages stay in this browser session. They are not sent to the farm. Please use sample information.</p>
+        <div className="mb-5 max-h-[440px] space-y-5 overflow-y-auto rounded-xl bg-navy/[.025] p-4" role="log" aria-label="Sample order conversation" aria-live="polite">
+          {!(order.messages || []).length && <p className="py-8 text-center text-sm text-navy/50">No sample messages yet. Try asking about color or finish.</p>}
+          {(order.messages || []).map((item) => <div key={item.id} className={`flex flex-col ${item.senderRole === "buyer" ? "items-end" : "items-start"}`}><p className="mb-1 text-xs font-semibold text-navy/55">{item.senderRole === "buyer" ? "You · sample" : `${farm.name} · sample`}</p><div className={`max-w-[90%] break-words rounded-xl px-4 py-3 text-sm leading-relaxed ${item.senderRole === "buyer" ? "bg-navy text-white" : "border border-navy/10 bg-white"}`}>{item.imageUrl && <img src={item.imageUrl} alt="Illustrative print update" className="mb-2 max-h-48 rounded-lg" />}{item.text}</div><p className="mt-1 text-xs text-navy/50">{formatTime(item.timestamp)}</p></div>)}
         </div>
-
-        {order.ship•ddress && (
-          <p className="text-xs text-navy/50">
-            Shipping to <span className="font-medium text-navy">{order.ship•ddress.label}</span> ·{" "}
-            {order.ship•ddress.line}
-          </p>
-        )}
-
-        {needsRating && (
-          <div className="rounded-2xl bg-navy/5 p-4">
-            <h2 className="text-sm font-semibold text-navy">How was your print?</h2>
-            <p className="mt-0.5 text-xs text-navy/50">Rate {printer.name} to help other buyers.</p>
-            <div className="mt-2.5 flex gap-1">
-              {•rray.from({ length: 5 }, (_, i) => {
-                const value = i + 1;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setRatingValue(value)}
-                    aria-label={`Rate ${value} star${value > 1 ? "s" : ""}`}
-                  >
-                    <Star
-                      size={26}
-                      className={value <= ratingValue ? "fill-accent text-accent" : "text-navy/20"}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-            {ratingValue > 0 && (
-              <>
-                <textarea
-                  value={ratingText}
-                  onChange={(e) => setRatingText(e.target.value)}
-                  rows={2}
-                  placeholder="Optional — what stood out?"
-                  className="mt-3 w-full resize-none rounded-xl bg-surface px-3.5 py-2.5 text-sm text-navy outline-none ring-1 ring-black/5 placeholder:text-navy/35 focus:ring-accent"
-                />
-                <button
-                  type="button"
-                  onClick={submitRating}
-                  className="mt-2.5 w-full rounded-xl bg-accent py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
-                >
-                  Submit rating
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {canCancel && !confirmingCancel && (
-          <button
-            type="button"
-            onClick={() => setConfirmingCancel(true)}
-            className="w-full text-center text-xs font-semibold text-red-500"
-          >
-            Cancel order
-          </button>
-        )}
-        {canCancel && confirmingCancel && (
-          <div className="flex items-center justify-between rounded-xl bg-red-50 px-4 py-3">
-            <p className="text-xs text-red-600">Cancel this order? This can't be undone.</p>
-            <div className="flex shrink-0 gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmingCancel(false)}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-navy/50"
-              >
-                Keep it
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="flex items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-xs font-semibold text-white"
-              >
-                <X size={12} /> Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="min-h-0 flex-1 bg-surface-alt">
-        <ChatThread messages={order.messages} currentRole="buyer" onSend={handleSend} />
-      </div>
+        <form onSubmit={saveMessage}><label className="field"><span>Try a sample message</span><textarea rows={3} maxLength={2000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Could you show how the orange finish looks?" /></label><div className="mt-3 flex justify-end"><button type="submit" className="button" disabled={!message.trim()}><Send size={16} /> Save sample message</button></div></form>
+      </section>
+      <aside className="stack"><section className="panel"><p className="eyebrow">Order details</p><h2 className="mb-5 mt-2 text-xl font-bold">The agreed details, together.</h2><dl className="space-y-4 text-sm"><div className="flex justify-between gap-3"><dt className="text-navy/55">Material</dt><dd className="font-semibold">{order.material}</dd></div><div className="flex justify-between gap-3"><dt className="text-navy/55">Color</dt><dd className="font-semibold">{order.color || "To be agreed"}</dd></div><div className="flex justify-between gap-3"><dt className="text-navy/55">Quantity</dt><dd className="font-semibold">{order.quantity || 1}</dd></div><div className="flex justify-between gap-3"><dt className="text-navy/55">Delivery</dt><dd className="font-semibold">{fulfillmentLabel(order.deliveryMethod)} example</dd></div><div className="flex justify-between gap-3"><dt className="text-navy/55">Fulfillment charge</dt><dd className="font-semibold">${((order.fulfillmentFeeCents ?? Math.round((order.shippingFee || 0) * 100)) / 100).toFixed(2)}</dd></div><div className="flex justify-between gap-3"><dt className="text-navy/55">Sample subtotal</dt><dd className="font-semibold">${subtotal.toFixed(2)}</dd></div><div className="flex justify-between gap-3"><dt className="text-navy/55">Payment</dt><dd className="font-semibold">Not collected</dd></div></dl><p className="mt-5 border-t border-navy/10 pt-4 text-xs leading-relaxed text-navy/55">Example amounts exclude calculated sales tax. Real order terms, seller details, and accepted file revisions must be recorded before checkout.</p></section>
+        {order.status === "completed" && !order.rated && <section className="panel"><h2 className="mb-2 text-lg font-bold">How was the sample experience?</h2><p className="mb-4 text-sm text-navy/60">Try a review. It is stored locally and not published.</p><fieldset><legend className="sr-only">Sample rating</legend><div className="flex gap-1">{[1, 2, 3, 4, 5].map((value) => <button type="button" key={value} className="rounded-lg p-2" aria-label={`${value} ${value === 1 ? "star" : "stars"}`} aria-pressed={rating === value} onClick={() => setRating(value)}><Star size={23} className={value <= rating ? "fill-accent text-accent" : "text-navy/25"} /></button>)}</div></fieldset><label className="field mt-4"><span>Sample review</span><textarea rows={3} maxLength={1000} value={review} onChange={(e) => setReview(e.target.value)} placeholder="What worked well?" /></label><button type="button" className="button mt-4 w-full" disabled={!rating} onClick={() => rateOrder(order.id, farm.id, { rating, text: review.trim() })}>Save sample review</button></section>}
+        {order.status === "completed" && order.rated && <div className="rounded-xl bg-[#eaf5f0] p-5 text-sm text-[#27664d]"><CheckCircle2 size={20} className="mb-2" />This sample order has a local review.</div>}
+        {order.status === "queued" && <section className="panel"><h2 className="mb-2 text-lg font-bold">Changed your mind?</h2><p className="mb-4 text-sm text-navy/60">Try cancelling this queued sample. Real cancellation and refund requests follow the seller’s accepted terms.</p>{!confirmCancel ? <button type="button" className="button-secondary" onClick={() => setConfirmCancel(true)}>Cancel sample order</button> : <div><p className="mb-3 text-sm font-semibold">Cancel this sample order?</p><div className="flex flex-wrap gap-2"><button type="button" className="button-secondary" onClick={() => setConfirmCancel(false)}>Keep it</button><button type="button" className="button" onClick={() => { updateOrder(order.id, { status: "cancelled", etaLabel: "Sample cancelled" }); setConfirmCancel(false); }}>Yes, cancel sample</button></div></div>}</section>}
+      </aside>
     </div>
-  );
+  </div>;
 }

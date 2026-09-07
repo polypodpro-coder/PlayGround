@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Calculator, Tag, ShieldCheck, Zap } from "lucide-react";
+import { Calculator, ShieldCheck, Zap } from "lucide-react";
 import { MATERIAL_MULTIPLIERS, POST_PROCESSING_ADDONS } from "../data/mockData";
 
 export default function InstantQuoteCalculator({
@@ -115,8 +115,10 @@ export default function InstantQuoteCalculator({
 
       <div className="flex items-center gap-1.5 text-[10px] text-green-700 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
         <ShieldCheck size={13} className="shrink-0" />
-        <span>100% Escrow Protection &bull; Zero charge until quality tolerances verified</span>
+        <span>Illustrative estimate only. No payment is collected.</span>
       </div>
     </div>
   );
 }
+
+

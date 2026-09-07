@@ -1,299 +1,52 @@
-import { useState, useMemo } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, MapPin, Package, Plus, Sparkles, Store, ShieldCheck, CheckCircle2 } from "lucide-react";
-import ScreenHeader from "../../components/ScreenHeader";
+import { ArrowLeft, ArrowRight, Check, CreditCard, Package, Store, Truck } from "lucide-react";
+import ShopLogo from "../../components/ShopLogo";
 import { useApp } from "../../context/AppContext";
 import { FLEET_MACHINES, POST_PROCESSING_ADDONS } from "../../data/mockData";
 
-const DELIVERY_METHODS = [
-  { id: "pickup", label: "Pick up from local shop hub", icon: Store, fee: 0 },
-  { id: "ship", label: "Local courier dispatch", icon: Package, fee: 4.99 },
-];
-const TIP_PRESETS = [0, 10, 15, 20];
-const SERVICE_FEE = 2.5;
-
 export default function Checkout() {
   const navigate = useNavigate();
-  const {
-    selectedQuote,
-    placeOrder,
-    printers,
-    paymentMethods,
-    addresses,
-    currentUser,
-    selectedMaterial,
-    selectedMachineId,
-    selectedAddons,
-  } = useApp();
-
-  const [method, setMethod] = useState(paymentMethods[0]?.id);
-  const [delivery, setDelivery] = useState("pickup");
-  const [addressId, setAddressId] = useState(addresses[0]?.id);
-  const [tipPercent, setTipPercent] = useState(15);
-  const [useCredit, setUseCredit] = useState(true);
-
-  const quote = selectedQuote ?? {
-    printerId: printers[0].id,
-    price: 18.5,
-    material: selectedMaterial || "PETG",
-    color: "Black",
-    machineId: selectedMachineId || "bambu-x1c",
-    addons: selectedAddons || [],
-  };
-
-  const printer = printers.find((p) => p.id === quote.printerId) ?? printers[0];
-  const activeMachine = FLEET_MACHINES.find((m) => m.id === (quote.machineId || selectedMachineId)) || FLEET_MACHINES[0];
-
-  const activeAddonsList = useMemo(() => {
-    const ids = quote.addons?.length ? quote.addons : selectedAddons;
-    return (ids || [])
-      .map((id) => POST_PROCESSING_ADDONS.find((a) => a.id === id))
-      .filter(Boolean);
-  }, [quote.addons, selectedAddons]);
-
-  const serviceFee = SERVICE_FEE;
-  const shippingFee = DELIVERY_METHODS.find((d) => d.id === delivery)?.fee ?? 0;
-  const tip = Math.round(quote.price * (tipPercent / 100) * 100) / 100;
-  const subtotal = quote.price + tip + serviceFee + shippingFee;
-  const availableCredit = currentUser?.credits ?? 0;
-  const creditsUsed = useCredit ? Math.min(availableCredit, subtotal) : 0;
-  const total = Math.max(0, subtotal - creditsUsed);
-  const shipAddress = addresses.find((a) => a.id === addressId);
-
-  const handlePlaceOrder = () => {
-    const orderId = placeOrder({
-      deliveryMethod: delivery,
-      shippingFee,
-      serviceFee,
-      tip,
-      creditsUsed,
-      shipAddress: delivery === "ship" ? shipAddress : null,
-      machineId: activeMachine.id,
-      addons: activeAddonsList.map((a) => a.id),
-    });
-    navigate(`/orders/${orderId}`);
-  };
-
-  return (
-    <div className="flex flex-1 flex-col">
-      <ScreenHeader title="Secure Checkout" onBack={() => navigate("/quotes")} />
-
-      <div className="flex-1 space-y-5 px-4 py-5">
-        {/* Escrow Guarantee Callout */}
-        <div className="rounded-2xl border border-green-600/20 bg-green-50/70 p-3.5 text-xs text-navy flex items-start gap-2.5">
-          <CheckCircle2 size={18} className="text-green-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-green-950">Poly POD Escrow Protection</p>
-            <p className="mt-0.5 text-green-900/80 leading-snug text-[11px]">
-              Your payment is held safely in escrow until you receive and verify dimensional tolerances (±0.15mm).
-            </p>
-          </div>
-        </div>
-
-        {/* Order Summary */}
-        <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-black/5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-navy">Order summary</h2>
-            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
-              {quote.material}
-            </span>
-          </div>
-
-          <p className="mt-1 text-xs text-navy/60">
-            {printer.name} &bull; {activeMachine.name}
-          </p>
-
-          {activeAddonsList.length > 0 && (
-            <div className="mt-2 text-[11px] text-navy/70 border-t border-dashed border-navy/10 pt-2 space-y-0.5">
-              <span className="font-semibold text-navy/80 block">Included Add-ons:</span>
-              {activeAddonsList.map((addon) => (
-                <div key={addon.id} className="flex justify-between">
-                  <span>&bull; {addon.name}</span>
-                  <span className="font-medium">+${addon.cost.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between text-navy/70">
-              <span>Print fabrication cost</span>
-              <span>${quote.price.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-navy/70">
-              <span>Escrow &amp; Slicer service fee</span>
-              <span>${serviceFee.toFixed(2)}</span>
-            </div>
-            {shippingFee > 0 && (
-              <div className="flex justify-between text-navy/70">
-                <span>Fulfillment dispatch</span>
-                <span>${shippingFee.toFixed(2)}</span>
-              </div>
-            )}
-            {tip > 0 && (
-              <div className="flex justify-between text-navy/70">
-                <span>Tip to shop owner</span>
-                <span>${tip.toFixed(2)}</span>
-              </div>
-            )}
-            {creditsUsed > 0 && (
-              <div className="flex justify-between text-accent font-semibold">
-                <span>Poly POD credit</span>
-                <span>-${creditsUsed.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between border-t border-dashed border-navy/10 pt-2 text-base font-bold text-navy">
-              <span>Total Due</span>
-              <span className="text-accent">${total.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        {availableCredit > 0 && (
-          <button
-            type="button"
-            onClick={() => setUseCredit((v) => !v)}
-            className="flex w-full items-center gap-3 rounded-2xl bg-accent/5 px-4 py-3 text-left transition hover:bg-accent/10 active:scale-[0.99] cursor-pointer"
-          >
-            <Sparkles size={18} className="shrink-0 text-accent" />
-            <span className="flex-1 text-sm font-medium text-navy">
-              Use ${availableCredit.toFixed(2)} Poly POD credit
-            </span>
-            <span
-              className={`h-4 w-4 shrink-0 rounded-full border-2 ${
-                useCredit ? "border-accent bg-accent" : "border-navy/20"
-              }`}
-            />
-          </button>
-        )}
-
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-navy">Tip your printer</h2>
-          <div className="flex gap-2">
-            {TIP_PRESETS.map((pct) => (
-              <button
-                key={pct}
-                type="button"
-                onClick={() => setTipPercent(pct)}
-                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
-                  tipPercent === pct
-                    ? "border-accent bg-accent text-white shadow-xs"
-                    : "border-black/5 bg-surface text-navy/70 hover:bg-navy/5"
-                }`}
-              >
-                {pct === 0 ? "No tip" : `${pct}%`}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-navy">Fulfillment method</h2>
-          <div className="space-y-2">
-            {DELIVERY_METHODS.map(({ id, label, icon: Icon, fee }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setDelivery(id)}
-                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer ${
-                  delivery === id
-                    ? "border-accent bg-accent/5 text-navy ring-1 ring-accent"
-                    : "border-black/5 bg-surface text-navy/70 hover:border-navy/20"
-                }`}
-              >
-                <Icon size={18} className={delivery === id ? "text-accent" : "text-navy/40"} />
-                <span className="flex-1">{label}</span>
-                <span className="text-xs text-navy/40">{fee > 0 ? `+$${fee.toFixed(2)}` : "Free"}</span>
-                <span
-                  className={`h-4 w-4 shrink-0 rounded-full border-2 ${
-                    delivery === id ? "border-accent bg-accent" : "border-navy/20"
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {delivery === "ship" && (
-          <div>
-            <h2 className="mb-2 text-sm font-semibold text-navy">Ship to address</h2>
-            {addresses.length === 0 ? (
-              <button
-                type="button"
-                onClick={() => navigate("/account")}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-navy/20 py-3 text-xs font-semibold text-navy/60 cursor-pointer hover:border-accent"
-              >
-                <Plus size={13} /> Add an address in Account
-              </button>
-            ) : (
-              <div className="space-y-2">
-                {addresses.map((addr) => (
-                  <button
-                    key={addr.id}
-                    type="button"
-                    onClick={() => setAddressId(addr.id)}
-                    className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer ${
-                      addressId === addr.id
-                        ? "border-accent bg-accent/5 ring-1 ring-accent"
-                        : "border-black/5 bg-surface hover:border-navy/20"
-                    }`}
-                  >
-                    <MapPin
-                      size={16}
-                      className={`mt-0.5 shrink-0 ${addressId === addr.id ? "text-accent" : "text-navy/40"}`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-navy">{addr.label}</p>
-                      <p className="text-xs text-navy/50">{addr.line}</p>
-                    </div>
-                    <span
-                      className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 ${
-                        addressId === addr.id ? "border-accent bg-accent" : "border-navy/20"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-navy">Payment method</h2>
-          <div className="space-y-2">
-            {paymentMethods.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setMethod(id)}
-                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer ${
-                  method === id
-                    ? "border-accent bg-accent/5 text-navy ring-1 ring-accent"
-                    : "border-black/5 bg-surface text-navy/70 hover:border-navy/20"
-                }`}
-              >
-                <CreditCard size={18} className={method === id ? "text-accent" : "text-navy/40"} />
-                <span>{label}</span>
-                <span
-                  className={`ml-auto h-4 w-4 rounded-full border-2 ${
-                    method === id ? "border-accent bg-accent" : "border-navy/20"
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
+  const { request, selectedQuote, placeOrder, printers } = useApp();
+  const [delivery, setDelivery] = useState(() => selectedQuote?.fulfillmentPreference && selectedQuote.fulfillmentPreference !== "any" ? selectedQuote.fulfillmentPreference : [...(selectedQuote?.fulfillmentOptions || [])].sort((a,b) => a.feeCents - b.feeCents)[0]?.id || ""), [tipPercent, setTipPercent] = useState(0), [confirmed, setConfirmed] = useState(false), [error, setError] = useState("");
+  const submitted = useRef(false);
+  const farm = printers.find((p) => p.id === selectedQuote?.printerId);
+  if (!request || !selectedQuote || !farm) return <div className="app-page"><div className="empty-state"><Package size={36} /><h1 className="page-heading">Choose an example quote first.</h1><p>Your sample order starts with a configured request and a selected farm.</p><button type="button" className="button" onClick={() => navigate(request ? "/quotes" : "/request")}>Continue your request <ArrowRight size={17} /></button></div></div>;
+  const quote = selectedQuote;
+  const machine = FLEET_MACHINES.find((m) => m.id === quote.machineId);
+  const addons = (quote.addons || []).map((id) => POST_PROCESSING_ADDONS.find((a) => a.id === id)).filter(Boolean);
+  const deliveryOptions = (quote.fulfillmentOptions || []).filter(option => quote.fulfillmentPreference === "any" || option.id === quote.fulfillmentPreference);
+  const selectedDelivery = deliveryOptions.find(option => option.id === delivery);
+  const shippingFee = (selectedDelivery?.feeCents ?? 0) / 100;
+  const priceCents = Math.round(quote.price * 100), tipCents = Math.round(priceCents * tipPercent / 100);
+  const totalCents = priceCents + (selectedDelivery?.feeCents ?? 0) + tipCents;
+  function createSample(event) {
+    event.preventDefault();
+    if (submitted.current) return;
+    if (!confirmed) { setError("Confirm that this is a sample order with no payment or production."); return; }
+    submitted.current = true;
+    try {
+      const id = placeOrder({ deliveryMethod: delivery, tipPercent, shipAddress: null, machineId: machine?.id || null, addons: addons.map((a) => a.id), quantity: request.quantity || 1, fileName: request.fileName, paymentStatus: "not_collected", isDemo: true, taxStatus: "not_calculated" });
+      if (!id) throw new Error("The sample order could not be created. Please select an example quote again.");
+      navigate(`/orders/${id}`);
+    } catch (err) { submitted.current = false; setError(err.message || "The sample order could not be created. Please try again."); }
+  }
+  return <div className="app-page">
+    <button type="button" className="button-secondary mb-5" onClick={() => navigate("/quotes")}><ArrowLeft size={16} /> Back to quotes</button>
+    <header className="page-intro"><div><p className="eyebrow">03 / Review your request</p><h1 className="page-heading">Every detail, up front.</h1><p className="body-copy">Try the order experience. No money changes hands and no job is sent.</p></div><span className="badge">Sample checkout</span></header>
+    <form onSubmit={createSample} className="grid items-start gap-7 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
+      <div className="stack"><section className="panel"><div className="section-row"><h2 className="section-heading">Your example farm</h2><span className="badge">Independent seller</span></div><div className="flex items-center gap-4"><ShopLogo src={farm.logoUrl} alt="" /><div><h3 className="text-xl font-bold">{farm.name}</h3><p className="mt-1 text-sm text-navy/60">Illustrative farm profile · United States</p></div></div><div className="mt-6 rounded-xl bg-navy/[.035] p-5"><p className="break-words font-semibold">{request.fileName}</p><p className="mt-2 text-sm text-navy/60">{request.quantity || 1} {(request.quantity || 1) === 1 ? "piece" : "pieces"} · {quote.material} · {quote.color || "Color to be agreed"}</p><p className="mt-2 text-sm text-navy/60">Equipment preference: {machine?.name || "Farm recommendation"}</p>{addons.length > 0 && <p className="mt-2 text-sm text-navy/60">Included finishing: {addons.map((a) => a.name).join(", ")}</p>}</div></section>
+        <section className="panel"><div className="section-row"><h2 className="section-heading">Receive your print</h2></div><p className="mb-4 text-sm text-navy/60">These are the methods this sample farm offers for your request. Charges apply per order.</p><div className="grid gap-3 sm:grid-cols-2">{deliveryOptions.map(({ id, label, detail, feeCents }) => { const Icon = id === "pickup" ? Store : id === "dropoff" ? Truck : Package; return <label key={id} className={`cursor-pointer rounded-xl border p-5 ${delivery === id ? "border-accent bg-accent/5" : "border-navy/15"}`}><div className="mb-4 flex items-center justify-between"><Icon size={24} className="text-accent" /><input type="radio" name="delivery" value={id} checked={delivery === id} onChange={() => {setDelivery(id);setError("");}} className="accent-orange-600" /></div><span className="block font-semibold">{label}</span><span className="mt-1 block text-xs text-navy/60">{detail}</span><span className="mt-4 block text-sm font-medium">${(feeCents / 100).toFixed(2)} example</span></label>; })}</div><p className="mt-4 text-sm leading-relaxed text-navy/60">{delivery === "ship" ? "Transit time is separate from production time. A real quote must confirm the carrier, delivery charge, and applicable tax before payment." : delivery === "dropoff" ? `This farm lists a ${quote.serviceArea?.radiusMi ?? "sample"}-mile example service radius. Address eligibility, timing, and handoff details still need farm confirmation.` : "Confirm the pickup window and meeting location with the farm before a real order."} No address or contact details are collected in this preview.</p>{!deliveryOptions.length && <p role="alert" className="notice mt-4">This quote has no available fulfillment methods. Return to quotes.</p>}</section>
+        <section className="panel"><h2 className="mb-2 text-lg font-bold">Optional tip</h2><p className="mb-4 text-sm text-navy/60">Try an optional gratuity in the sample total. It starts at zero.</p><div className="flex flex-wrap gap-2">{[0, 10, 15, 20].map((percent) => <button type="button" key={percent} className={`chip ${tipPercent === percent ? "chip-active" : ""}`} aria-pressed={tipPercent === percent} onClick={() => setTipPercent(percent)}>{percent ? `${percent}%` : "No tip"}</button>)}</div></section>
+        <div className="rounded-2xl bg-navy p-6 text-white"><CreditCard size={27} className="mb-4 text-orange-300" /><h2 className="mb-2 text-xl font-semibold">Payment stays with the provider.</h2><p className="text-sm leading-relaxed text-white/70">Live checkout is not connected. At launch, supported payments are planned to use Stripe-hosted checkout. Poly Pod Pro will not ask you to type card or bank details into this app.</p></div>
       </div>
-
-      <div className="border-t border-black/5 bg-surface px-4 py-3.5">
-        <button
-          type="button"
-          onClick={handlePlaceOrder}
-          className="btn-primary w-full py-4 text-sm font-semibold text-white shadow-lg shadow-accent/30 active:scale-[0.98] cursor-pointer"
-        >
-          Authorize Escrow &bull; ${total.toFixed(2)}
-        </button>
-      </div>
-    </div>
-  );
+      <aside className="panel lg:sticky lg:top-24"><p className="eyebrow">Order summary</p><h2 className="mb-6 mt-2 text-2xl font-bold">Simple, visible pricing.</h2><dl className="space-y-4 text-sm"><div className="flex justify-between gap-3"><dt className="text-navy/60">Fabrication, including add-ons</dt><dd className="font-semibold">${(priceCents / 100).toFixed(2)}</dd></div><div className="flex justify-between"><dt className="text-navy/60">{selectedDelivery?.label || "Fulfillment"} example</dt><dd className="font-semibold">${shippingFee.toFixed(2)}</dd></div><div className="flex justify-between"><dt className="text-navy/60">Optional tip</dt><dd className="font-semibold">${(tipCents / 100).toFixed(2)}</dd></div><div className="flex justify-between"><dt className="text-navy/60">Buyer platform fee</dt><dd className="font-semibold">$0.00</dd></div><div className="flex justify-between"><dt className="text-navy/60">Tax</dt><dd className="text-right text-navy/60">Not calculated in preview</dd></div><div className="flex items-baseline justify-between border-t border-navy/15 pt-5"><dt className="font-semibold">Sample subtotal</dt><dd className="text-3xl font-bold">${(totalCents / 100).toFixed(2)}</dd></div></dl><p className="mt-4 text-xs leading-relaxed text-navy/60">Not a payable total. Seller processing costs are planned to come from seller proceeds. A real checkout requires approved seller pricing, tax, delivery, and terms.</p>
+        <label className="my-6 flex items-start gap-3 rounded-xl bg-navy/5 p-4 text-sm leading-relaxed"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} required className="mt-1 h-4 w-4 shrink-0 accent-orange-600" /><span>I understand this creates a sample order only. No payment is collected and nothing will be printed or shipped.</span></label>
+        {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}<button type="submit" className="button w-full" disabled={!selectedDelivery}>Create sample order <ArrowRight size={17} /></button><p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-navy/55"><Check size={13} /> No card. No charge. No commitment.</p>
+      </aside>
+    </form>
+  </div>;
 }
+
+
+

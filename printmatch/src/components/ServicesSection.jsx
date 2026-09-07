@@ -1,4 +1,4 @@
-import { Printer, Scan, Wrench, ShieldCheck, ArrowRight, Zap, Layers } from "lucide-react";
+import { Printer, Scan, ArrowRight } from "lucide-react";
 
 export default function ServicesSection({ onSelectService }) {
   const services = [
@@ -122,3 +122,4 @@ export default function ServicesSection({ onSelectService }) {
     </section>
   );
 }
+
