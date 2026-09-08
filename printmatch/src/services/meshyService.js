@@ -65,12 +65,18 @@ export function taskStatusPath(kind, taskId) {
 async function proxyFetch({ proxyUrl, apiKey, path, method = 'GET', body, signal }) {
   const headers = { 'X-User-Meshy-Key': (apiKey || '').trim() };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const response = await fetch(proxyEndpoint(proxyUrl, path), {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal,
-  });
+  let response;
+  try {
+    response = await fetch(proxyEndpoint(proxyUrl, path), {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal,
+    });
+  } catch (failure) {
+    if (failure?.name === 'AbortError') throw failure;
+    throw new Error('Could not reach the proxy. Check the Proxy URL in settings and that the Worker is deployed (its base URL should return a JSON message in the browser).');
+  }
   const text = await response.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
@@ -114,7 +120,13 @@ export async function pollTask({ proxyUrl, apiKey, kind, taskId, onProgress, sig
 // Download the finished STL through the proxy and return a File the viewer accepts.
 export async function downloadStlFile({ proxyUrl, stlUrl, fileName = 'meshy-model.stl', signal }) {
   const endpoint = proxyEndpoint(proxyUrl, `/download?url=${encodeURIComponent(stlUrl)}`);
-  const response = await fetch(endpoint, { method: 'GET', signal });
+  let response;
+  try {
+    response = await fetch(endpoint, { method: 'GET', signal });
+  } catch (failure) {
+    if (failure?.name === 'AbortError') throw failure;
+    throw new Error('Could not reach the proxy to download the model. Check the Proxy URL in settings.');
+  }
   if (!response.ok) throw new Error(`The generated model could not be downloaded (HTTP ${response.status}).`);
   const blob = await response.blob();
   if (!blob.size) throw new Error('The generated model came back empty. Try generating again.');
