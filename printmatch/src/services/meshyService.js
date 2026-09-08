@@ -1,8 +1,8 @@
 // Meshy BYOK generation service.
 //
-// Generation is optional and buyer-owned: the browser talks to a user-deployed
-// CORS proxy (see serverless-proxy.js) which forwards to Meshy using the user's
-// own API key. Poly Pod Pro never stores the key or pays for credits. The classic
+// Generation is optional and buyer-owned: the browser sends the user's API key
+// through the configured CORS proxy (see serverless-proxy.js) to Meshy. The proxy
+// operator receives the key in transit; Meshy bills the user's account. The classic
 // "open Meshy's website" portal (MESHY_PORTAL / safeMeshyReferral) remains
 // available for users who prefer not to bring a key.
 export { MESHY_PORTAL, safeMeshyReferral } from '../config/meshyPortal.js';
@@ -62,29 +62,100 @@ export function taskStatusPath(kind, taskId) {
 
 // ---- Network calls ---------------------------------------------------------
 
-async function proxyFetch({ proxyUrl, apiKey, path, method = 'GET', body, signal }) {
-  const headers = { 'X-User-Meshy-Key': (apiKey || '').trim() };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-  let response;
-  try {
-    response = await fetch(proxyEndpoint(proxyUrl, path), {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal,
-    });
-  } catch (failure) {
-    if (failure?.name === 'AbortError') throw failure;
-    throw new Error('Could not reach the proxy. Check the Proxy URL in settings and that the Worker is deployed (its base URL should return a JSON message in the browser).');
+const CONNECTION_TIMEOUT_MS = 15_000;
+const INVALID_RESPONSE = 'The proxy returned an unexpected response. Check the Proxy URL in advanced Meshy settings.';
+
+function safeUpstreamMessage(value, apiKey) {
+  if (typeof value !== 'string') return '';
+  let message = value;
+  const key = typeof apiKey === 'string' ? apiKey.trim() : '';
+  if (key) {
+    for (const form of new Set([key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)])) {
+      message = message.split(form).join('[redacted]');
+    }
   }
-  const text = await response.text();
+  return message.replace(/msy_[A-Za-z0-9._-]+/g, '[redacted]').slice(0, 500);
+}
+
+function requestError(status, data, apiKey) {
+  const messages = {
+    401: 'Meshy did not accept this API key. Copy your API key from the Meshy dashboard and reconnect.',
+    402: 'Meshy requires available API credits for this request. Check your API balance and plan in Meshy.',
+    403: 'Access was denied. Check your Meshy API permissions and whether the proxy allows this site origin.',
+    404: 'The Meshy endpoint was not found. Check the Proxy URL in advanced Meshy settings.',
+    429: 'Meshy is receiving too many requests. Wait a moment and try again.',
+  };
+  const detail = safeUpstreamMessage(data?.error?.message || data?.message, apiKey);
+  return new Error(messages[status] || (detail ? `Meshy request failed (HTTP ${status}): ${detail}` : `Meshy request failed (HTTP ${status}). Try again shortly.`));
+}
+
+async function readProxyResponse({ proxyUrl, apiKey, path, method = 'GET', body, signal }) {
+  const endpoint = proxyEndpoint(proxyUrl, path);
+  const headers = {};
+  if (apiKey !== undefined) headers['X-User-Meshy-Key'] = (apiKey || '').trim();
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const init = { method, headers, signal, credentials: 'omit', redirect: 'error' };
+  if (body !== undefined) init.body = JSON.stringify(body);
+  let response;
+  let text;
+  try {
+    response = await fetch(endpoint, init);
+    text = await response.text();
+  } catch (failure) {
+    if (signal?.aborted) throw signal.reason || failure;
+    if (failure?.name === 'AbortError') throw failure;
+    throw new Error('Could not reach the Meshy proxy. Check your internet connection and the Proxy URL in advanced settings. The proxy must allow requests from this site.');
+  }
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
-  if (!response.ok) {
-    const message = data?.error?.message || data?.message || `Meshy request failed (HTTP ${response.status}).`;
-    throw new Error(message);
-  }
+  return { response, data };
+}
+
+async function proxyFetch(options) {
+  const { response, data } = await readProxyResponse(options);
+  if (!response.ok) throw requestError(response.status, data, options.apiKey);
+  if (!data || typeof data !== 'object') throw new Error(INVALID_RESPONSE);
   return data;
+}
+
+async function withConnectionTimeout(signal, operation) {
+  signal?.throwIfAborted();
+  const controller = new AbortController();
+  const forwardAbort = () => controller.abort(signal.reason);
+  signal?.addEventListener('abort', forwardAbort, { once: true });
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, CONNECTION_TIMEOUT_MS);
+  try {
+    return await operation(controller.signal);
+  } catch (failure) {
+    if (timedOut) throw new Error('The Meshy connection check timed out. Check your connection and try again.');
+    throw failure;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', forwardAbort);
+  }
+}
+
+// Verify API access by listing at most one existing task. This creates no model.
+export async function checkMeshyConnection({ proxyUrl, apiKey, signal }) {
+  if (typeof apiKey !== 'string' || !apiKey.trim()) throw new Error('Add your Meshy API key to connect.');
+  return withConnectionTimeout(signal, async (checkSignal) => {
+    const data = await proxyFetch({ proxyUrl, apiKey, path: `${MESHY_PATHS.text}?page_size=1`, signal: checkSignal });
+    if (!Array.isArray(data) || data.some((task) => !task || typeof task !== 'object' || typeof task.id !== 'string')) {
+      throw new Error(INVALID_RESPONSE);
+    }
+    return true;
+  });
+}
+
+// A missing-key response verifies browser access to the proxy without credentials.
+export async function checkMeshyProxy({ proxyUrl, signal }) {
+  return withConnectionTimeout(signal, async (checkSignal) => {
+    const { response, data } = await readProxyResponse({ proxyUrl, path: `${MESHY_PATHS.text}?page_size=1`, signal: checkSignal });
+    if (response.status === 401 && typeof data?.error?.message === 'string' && /missing\s+X-User-Meshy-Key\b/i.test(data.error.message)) return true;
+    if (!response.ok && response.status !== 401) throw requestError(response.status, data);
+    throw new Error(INVALID_RESPONSE);
+  });
 }
 
 // Create a task; returns the Meshy task id.
@@ -111,7 +182,7 @@ export async function pollTask({ proxyUrl, apiKey, kind, taskId, onProgress, sig
     onProgress?.(clampProgress(task?.progress), status);
     if (status === 'SUCCEEDED') return task;
     if (isTerminalStatus(status)) {
-      throw new Error(task?.task_error?.message || `Generation ${String(status || '').toLowerCase() || 'failed'}.`);
+      throw new Error(safeUpstreamMessage(task?.task_error?.message, apiKey) || `Generation ${String(status || '').toLowerCase() || 'failed'}.`);
     }
     await delay(intervalMs, signal);
   }
@@ -122,7 +193,7 @@ export async function downloadStlFile({ proxyUrl, stlUrl, fileName = 'meshy-mode
   const endpoint = proxyEndpoint(proxyUrl, `/download?url=${encodeURIComponent(stlUrl)}`);
   let response;
   try {
-    response = await fetch(endpoint, { method: 'GET', signal });
+    response = await fetch(endpoint, { method: 'GET', signal, credentials: 'omit', redirect: 'error' });
   } catch (failure) {
     if (failure?.name === 'AbortError') throw failure;
     throw new Error('Could not reach the proxy to download the model. Check the Proxy URL in settings.');

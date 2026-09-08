@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   safeProxyUrl, isPlausibleApiKey, isMeshyConfigured,
   readMeshySettings, saveMeshySettings, clearMeshySettings,
+  DEFAULT_MESHY_PROXY_URL,
 } from '../src/lib/meshySettings.js';
 
 function fakeStorage(initial = {}) {
@@ -43,9 +44,33 @@ test('isMeshyConfigured requires both a key and a valid proxy', () => {
 
 test('read/save/clear round-trip through a storage backend', () => {
   const store = fakeStorage();
-  assert.deepEqual(readMeshySettings(store), { apiKey: '', proxyUrl: '' });
+  assert.deepEqual(readMeshySettings(store), { apiKey: '', proxyUrl: DEFAULT_MESHY_PROXY_URL });
   saveMeshySettings({ apiKey: '  msy_abcdefgh  ', proxyUrl: '  https://w.example.dev  ' }, store);
   assert.deepEqual(readMeshySettings(store), { apiKey: 'msy_abcdefgh', proxyUrl: 'https://w.example.dev' });
   clearMeshySettings(store);
-  assert.deepEqual(readMeshySettings(store), { apiKey: '', proxyUrl: '' });
+  assert.deepEqual(readMeshySettings(store), { apiKey: '', proxyUrl: DEFAULT_MESHY_PROXY_URL });
+});
+
+test('proxy URLs cannot hide API routes inside a query or fragment', () => {
+  for (const value of ['https://worker.example/?tab=1', 'https://worker.example/#settings', 'https://worker.example/?', 'https://worker.example/#']) {
+    assert.equal(safeProxyUrl(value), null);
+  }
+});
+
+test('existing custom proxies are never silently replaced', () => {
+  for (const proxyUrl of ['https://private.example', 'https://private.example/#invalid']) {
+    assert.equal(readMeshySettings(fakeStorage({ 'ppp.meshy.proxyUrl': proxyUrl })).proxyUrl, proxyUrl);
+  }
+});
+
+test('blocked storage still supplies the public proxy without fabricating credentials', () => {
+  const store = { getItem() { throw new Error('blocked'); } };
+  assert.deepEqual(readMeshySettings(store), { apiKey: '', proxyUrl: DEFAULT_MESHY_PROXY_URL });
+});
+
+test('API key validation rejects pasted whitespace, control characters and non-header text', () => {
+  for (const apiKey of ['msy_one\nmsy_two', 'Bearer msy_example', 'msy_😀example']) {
+    assert.equal(isPlausibleApiKey(apiKey), false);
+  }
+  assert.equal(isPlausibleApiKey('  msy_example  '), true);
 });
